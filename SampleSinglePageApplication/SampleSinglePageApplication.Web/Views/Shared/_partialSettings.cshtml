@@ -1,0 +1,13 @@
+﻿<script src="~/js/viewModels/settings.js"></script>
+<div id="view-settings">
+    <div data-bind="visible:MainModel().CurrentView() == 'settings'">
+        <div data-bind="css:{fixed: MainModel().StickyMenus() == true}">
+            <i class="sticky-menu-icon" data-bind="html:MainModel().StickyIcon(), click:function(){MainModel().ToggleStickyMenus()}"></i>
+            <h1 class="display-7"><i data-bind="html:MainModel().IconAndText('Settings')"></i></h1>
+        </div>
+
+        <p>
+            Use this page if you wish to show any per-tenant settings that can be edited by Admin users.
+        </p>
+    </div>
+</div>

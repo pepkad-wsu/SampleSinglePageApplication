@@ -1,0 +1,184 @@
+﻿<script src="~/js/viewModels/profile.js"></script>
+<div id="view-profile">
+    <div data-bind="visible:MainModel().CurrentView() == 'profile'">
+        <div data-bind="css:{fixed: MainModel().StickyMenus() == true}">
+            <i class="sticky-menu-icon" data-bind="html:MainModel().StickyIcon(), click:function(){MainModel().ToggleStickyMenus()}"></i>
+            <h1 class="display-7"><i data-bind="html:MainModel().IconAndText('ManageProfile')"></i></h1>
+        </div>
+
+        <div class="card padbottom" data-bind="visible:MainModel().Tenant().tenantSettings().allowUsersToManageAvatars() == true">
+            <div class="card-header">
+                <i data-bind="html:MainModel().IconAndText('ManageAvatar')"></i>
+                <button type="button" class="btn btn-danger" data-bind="click:DeleteAvatarPhoto, visible:MainModel().User().photo() != null && MainModel().User().photo() != ''">
+                    <i data-bind="html:MainModel().IconAndText('DeleteAvatar')"></i>
+                </button>
+            </div>
+            <div class="card-body">
+                <table class="full padded">
+                    <tr>
+                        <!-- ko if: MainModel().User().photo() != null && MainModel().User().photo() != '' -->
+                        <td style="width:1%;">
+                            <img class="user-icon padbottom-5" data-bind="attr: { src: window.baseURL + 'File/View/' + MainModel().User().photo() }"/>
+                        </td>
+                        <!-- /ko -->
+                        <td style="width:99%;">
+                            <div id="dropZoneUploadProfilePhotoArea">
+                                <form action="~/api/Data/UploadUserPhoto/" class="dropzone" id="dropZoneUploadProfilePhoto" method="post" enctype="multipart/form-data">
+                                    <button type="button" class="btn btn-default" data-bind="attr: {'aria-label': MainModel().Language('UploadFile')}">
+                                        <i data-bind="html:MainModel().IconAndText('UploadFile')"></i>
+                                    </button>
+                                    <input type="hidden" name="upload-photo-userid" id="upload-photo-userid" data-bind="value:MainModel().User().userId()" />
+                                    <input type="hidden" name="upload-photo-tenantid" id="upload-photo-tenantid" data-bind="value:MainModel().User().tenantId()" />
+                                    <input type="hidden" name="upload-photo-token" id="upload-photo-token" data-bind="value:MainModel().Token()" />
+                                    <div class="dz-message">
+                                        <span data-bind="html:MainModel().Language('ManageAvatarInstructions')"></span>
+                                        <br />
+                                        <span class="note">Allowed File Types: GIF, JPG, PNG</span>
+                                    </div>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <!-- ko if: MainModel().Tenant().tenantSettings().allowUsersToManageBasicProfileInfo() == true 
+            && MainModel().Tenant().tenantSettings().allowUsersToManageBasicProfileInfoElements() != null 
+            && MainModel().Tenant().tenantSettings().allowUsersToManageBasicProfileInfoElements().length > 0 -->
+        <div class="card padbottom">
+            <div class="card-header">
+                <i data-bind="html:MainModel().IconAndText('ManageProfileInfo')"></i>
+                <button type="button" class="btn btn-success" data-bind="click:SaveProfileInfo">
+                    <i data-bind="html:MainModel().IconAndText('Save')"></i>
+                </button>
+            </div>
+            <div class="card-body">
+                <p data-bind="html:MainModel().Language('ManageProfileInfoInstructions')"></p>
+
+                <div class="padbottom" data-bind="html:ProfileMessage(), visible:ProfileMessage() != ''"></div>
+
+                <!-- ko if: MainModel().Tenant().tenantSettings().allowUsersToManageBasicProfileInfoElements().indexOf("name") > -1 -->
+                <div class="padbottom">
+                    <label for="edit-profile-firstName" data-bind="html:MainModel().Language('FirstName')"></label>
+                    <input type="text" class="form-control" id="edit-profile-firstName" data-bind="value:UserProfile().firstName" />
+                </div>
+
+                <div class="padbottom">
+                    <label for="edit-profile-lastName" data-bind="html:MainModel().Language('LastName')"></label>
+                    <input type="text" class="form-control" id="edit-profile-lastName" data-bind="value:UserProfile().lastName" />
+                </div>
+                <!-- /ko -->
+
+                <!-- ko if: MainModel().Tenant().tenantSettings().allowUsersToManageBasicProfileInfoElements().indexOf("email") > -1 -->
+                <div class="padbottom">
+                    <label for="edit-profile-email" data-bind="html:MainModel().Language('EmailAddress')"></label>
+                    <input type="text" class="form-control" id="edit-profile-email" data-bind="value:UserProfile().email" />
+                </div>
+                <!-- /ko -->
+
+                <!-- ko if: MainModel().Tenant().tenantSettings().allowUsersToManageBasicProfileInfoElements().indexOf("phone") > -1 -->
+                <div class="padbottom">
+                    <label for="edit-profile-phone" data-bind="html:MainModel().Language('PhoneNumber')"></label>
+                    <input type="text" class="form-control" id="edit-profile-phone" data-bind="value:UserProfile().phone" />
+                </div>
+                <!-- /ko -->
+
+                <!-- ko if: MainModel().Tenant().tenantSettings().allowUsersToManageBasicProfileInfoElements().indexOf("employeeid") > -1 -->
+                <div class="padbottom">
+                    <label for="edit-profile-employeeId" data-bind="html:MainModel().Language('EmployeeId')"></label>
+                    <input type="text" class="form-control" id="edit-profile-employeeId" data-bind="value:UserProfile().employeeId" />
+                </div>
+                <!-- /ko -->
+
+                <!-- ko if: MainModel().Tenant().tenantSettings().allowUsersToManageBasicProfileInfoElements().indexOf("title") > -1 -->
+                <div class="padbottom">
+                    <label for="edit-profile-title" data-bind="html:MainModel().Language('Title')"></label>
+                    <input type="text" class="form-control" id="edit-profile-title" data-bind="value:UserProfile().title" />
+                </div>
+                <!-- /ko -->
+
+                <!-- ko if: MainModel().Tenant().tenantSettings().allowUsersToManageBasicProfileInfoElements().indexOf("department") > -1 -->
+                <div class="padbottom">
+                    <label for="edit-profile-department" data-bind="html:MainModel().Language('Department')"></label>
+                    <select class="form-select" id="edit-profile-department" data-bind="value:UserProfile().departmentId,
+                        options: MainModel().Tenant().departments,
+                        optionsText: function(item){return item.departmentName},
+                        optionsValue: function(item){return item.departmentId},
+                        valueAllowUnset: true"></select>
+                </div>
+                <!-- /ko -->
+
+                <!-- ko if: MainModel().Tenant().tenantSettings().allowUsersToManageBasicProfileInfoElements().indexOf("location") > -1 -->
+                <div class="padbottom">
+                    <label for="edit-profile-location" data-bind="html:MainModel().Language('Location')"></label>
+                    <input type="text" class="form-control" id="edit-profile-location" data-bind="value:UserProfile().location" />
+                </div>
+                <!-- /ko -->
+            </div>
+        </div>
+        <!-- /ko -->
+    </div>
+
+    <div data-bind="visible:MainModel().CurrentView() == 'changepassword'">
+        <h1 class="display-7"><i data-bind="html:MainModel().IconAndText('ChangePassword')"></i></h1>
+
+        <div class="padbottom" data-bind="html:MainModel().Language('ChangePasswordInstructions');"></div>
+
+        <div class="padbottom">
+            <label for="change-password-currentPassword" data-bind="html:MainModel().Language('CurrentPassword')"></label>
+            <br />
+            <input type="password" id="change-password-currentPassword" class="form-control fixed-300" data-bind="value:PasswordReset().currentPassword" />
+        </div>
+
+        <div class="padbottom">
+            <label for="change-password-newPassword" data-bind="html:MainModel().Language('NewPassword')"></label>
+            <br />
+            <input type="password" id="change-password-newPassword" class="form-control fixed-300" data-bind="value:PasswordReset().newPassword" />
+        </div>
+
+        <div class="padbottom">
+            <label for="change-password-confirmPassword" data-bind="html:MainModel().Language('ConfirmPassword')"></label>
+            <br />
+            <input type="password" id="change-password-confirmPassword" class="form-control fixed-300" data-bind="value:ConfirmPassword" />
+        </div>
+
+        <div class="padbottom">
+            <button type="button" class="btn btn-primary" data-bind="html:MainModel().IconAndText('ChangePassword'), click:ChangePasswordValidate"></button>
+        </div>
+    </div>
+
+    <div data-bind="visible:MainModel().CurrentView() == 'passwordchanged'">
+        <h1 class="display-7"><i data-bind="html:MainModel().IconAndText('PasswordChanged')"></i></h1>
+    </div>
+</div>
+
+<script type="text/javascript">
+    function resetProfileDropZone() {
+        Dropzone.forElement("#dropZoneUploadProfilePhoto").removeAllFiles();
+    }
+
+    function setupProfileDropZone() {
+        Dropzone.options.dropZoneUploadProfilePhoto = {
+            paramName: "file",
+            maxFilesize: 20,
+            clickable: '#dropZoneUploadProfilePhotoArea',
+            accept: function (file, done) {
+                console.debug("Checkfile DropZone File", file);
+                if (window.mainModel.AllowedFileTypeImage(file.name)) {
+                    done();
+                } else {
+                    done("Invalid File Type");
+                    this.removeFile(file);
+                }
+            },
+            success: function (file) {
+                this.removeFile(file);
+            },
+            complete: function(e){
+                window.profileModel.UploadComplete(e.xhr.response);
+            }
+        };
+        var dz = new Dropzone("#dropZoneUploadProfilePhoto");
+    }
+</script>

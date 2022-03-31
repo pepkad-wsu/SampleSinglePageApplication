@@ -1,0 +1,53 @@
+﻿<script src="~/js/viewModels/login.js"></script>
+<div id="view-login">
+    <div data-bind="visible:MainModel().CurrentView() == 'login'">
+        <div class="row">
+            <div class="col-sm-4"></div>
+            <div class="col-sm-4">
+                <h1 class="display-7"><i data-bind="html:MainModel().IconAndText('LoginTitle')"></i></h1>
+                <p data-bind="html:MainModel().Language('LoginIntro')"></p>
+        
+                <div class="padbottom" data-bind="visible:LoginType() == ''">
+                    <!-- ko if:  LoginUseLocal() == true && ShowLocalLoginButton() == true -->
+                    <div class="padbottom">
+                        <button type="button" class="btn btn-dark" data-bind="click:function(){ Login('local') }">
+                            <i data-bind="html:MainModel().IconAndText('LoginWithLocalAccount')"></i>
+                        </button>
+                    </div>
+                    <!-- /ko -->
+                    <!-- ko if: LoginUseEITSSO() == true -->
+                    <div class="padbottom">
+                        <button type="button" class="btn btn-primary" data-bind="click:function(){ Login('eitSSO') }">
+                            <i data-bind="html:MainModel().IconAndText('LoginWithEITSSO')"></i>
+                        </button>
+                    </div>
+                    <!-- /ko -->
+                </div>
+
+                <div data-bind="visible:LoginType() == 'local' && Validating() == false">
+                    <div class="alert alert-danger" data-bind="visible:LoginError() != '', html:LoginError"></div>
+
+                    <form id="local-login-form" method="post" action="~/Login" data-bind="submit:LocalLogin">
+                        <input type="hidden" name="local-login-tenantid" id="local-login-tenantid" data-bind="value:MainModel().TenantId" />
+                        <input type="hidden" name="local-login-url" id="local-login-url" data-bind="value:LoginUrl()" />
+                        <div class="padbottom">
+                            <label for="username">Username</label>
+                            <input type="text" class="form-control" id="local-username" name="local-username" data-bind="value:Authenticate().username" />
+                        </div>
+                        <div class="padbottom">
+                            <label for="password">Password</label>
+                            <input type="password" class="form-control" id="local-password" name="local-password" data-bind="value:Authenticate().password" />
+                        </div>
+
+                        <button type="button" class="btn btn-dark" data-bind="click:LocalLoginCancel, html:MainModel().IconAndText('Cancel')"></button>
+
+                        <button type="submit" class="btn btn-primary" data-bind="click:LocalLogin, html:MainModel().IconAndText('Login')"></button>
+                    </form>
+                </div>
+
+                <div data-bind="visible:LoginType() == 'local' && Validating() == true, html:MainModel().Language('ValidatingLogin')"></div>
+            </div>
+            <div class="col-sm-4"></div>
+        </div>
+    </div>
+</div>

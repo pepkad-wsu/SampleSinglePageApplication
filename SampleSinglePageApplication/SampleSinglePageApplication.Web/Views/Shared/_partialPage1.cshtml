@@ -1,0 +1,25 @@
+﻿<script src="~/js/viewModels/page1.js"></script>
+<div id="view-page1">
+    <div data-bind="visible:MainModel().CurrentView() == 'page1'">
+        <div data-bind="css:{fixed: MainModel().StickyMenus() == true}">
+            <i class="sticky-menu-icon" data-bind="html:MainModel().StickyIcon(), click:function(){MainModel().ToggleStickyMenus()}"></i>
+            <h1 class="display-7"><i data-bind="html:MainModel().Icon('Page1')"></i>Sample Page 1</h1>
+        </div>
+
+        <div class="padbottom">
+            <strong>A sample HTML Editor</strong>:
+            <textarea id="sample-html-editor" class="form-control"></textarea>
+        </div>
+
+        <div class="padbottom" data-bind="visible:Html() != null && Html() != ''">
+            <strong>Rendered HTML</strong>:
+            <div data-bind="html:Html"></div>
+        </div>
+
+        <div class="padbottom">
+            <label for="sample-user-lookup">Sample User Lookup</label>
+            <input type="text" class="form-control" id="sample-user-lookup" 
+                data-bind="attr: {placeholder: User().displayName() != null && User().displayName() != '' ? User().displayName() : MainModel().Language('AutoCompleteUserLookup')  }"/>
+        </div>
+    </div>
+</div>

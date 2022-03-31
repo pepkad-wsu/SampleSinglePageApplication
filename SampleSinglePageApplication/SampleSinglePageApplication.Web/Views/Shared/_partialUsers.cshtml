@@ -1,0 +1,246 @@
+﻿<script src="~/js/viewModels/users.js"></script>
+<div id="view-users">
+    <div data-bind="visible:MainModel().CurrentView() == 'users'">
+        <div data-bind="css:{fixed: MainModel().StickyMenus() == true}">
+            <i class="sticky-menu-icon" data-bind="html:MainModel().StickyIcon(), click:function(){MainModel().ToggleStickyMenus()}"></i>
+            <h1 class="display-7"><i data-bind="html:MainModel().IconAndText('Users')"></i></h1>
+        </div>
+
+        <div class="btn-group padbottom" role="group">
+            <button type="button" class="btn btn-success" data-bind="click:function(){ MainModel().Nav('NewUser') }">
+                <i data-bind="html:MainModel().IconAndText('AddNewUser')"></i>
+            </button>
+            <button type="button" class="btn btn-primary" data-bind="click:ClearFilter">
+                <i data-bind="html:MainModel().IconAndText('Clear')"></i>
+            </button>
+            <button type="button" class="btn btn-dark" data-bind="visible:Filter().showFilters() == false, click:ToggleShowFilter">
+                <i data-bind="html:MainModel().IconAndText('ShowFilter')"></i>
+            </button>
+            <button type="button" class="btn btn-dark" data-bind="visible:Filter().showFilters() == true, click:ToggleShowFilter">
+                <i data-bind="html:MainModel().IconAndText('HideFilter')"></i>
+            </button>
+            <button type="button" class="btn btn-dark" data-bind="click:RefreshFilter">
+                <i data-bind="html:MainModel().IconAndText('Refresh')"></i>
+            </button>
+        </div>
+        <div class="keyword-search padbottom" data-bind="visible:Filter().showFilters() == true && Filter().loading() == false">
+            <label for="users-filter-keyword">Keyword</label>
+            <div class="fixed-200">
+                <input type="text" id="users-filter-keyword" class="form-control" data-bind="value:Filter().keyword" placeholder="Search Users" />
+            </div>
+        </div>
+
+        <div class="row" data-bind="visible:Filter().loading() == true">
+            <div class="col-sm-12" data-bind="html:MainModel().Language('LoadingWait');"></div>
+        </div>
+
+        <div class="row" data-bind="visible:Filter().loading() == false">
+            <div data-bind="visible:Filter().showFilters() == true">
+                <div class="row padbottom">
+                    <div class="col-sm-3">
+                        <label for="users-filter-departments">Department</label>
+                        <select class="form-control" multiple="multiple" id="users-filter-departments" size="4"
+                                data-bind="selectedOptions:Filter().filterDepartments,
+                                options: MainModel().Tenant().departments,
+                                optionsText: function(item){return item.departmentName},
+                                optionsValue: function(item){return item.departmentId},
+                                valueAllowUnset: true"></select>
+                    </div>
+
+                    <div class="col-sm-2">
+                        <label for="users-filter-enabled">Enabled</label>
+                        <select class="form-control" size="4" id="users-filter-enabled" data-bind="value:Filter().enabled, valueAllowUnset: true">
+                            <option value="">All</option>
+                            <option value="enabled">Enabled Users Only</option>
+                            <option value="disabled">Disabled Users Only</option>
+                        </select>
+                    </div>
+
+                    <div class="col-sm-2">
+                        <label for="users-filter-admin">Admin</label>
+                        <select class="form-control" size="4" id="users-filter-admin" data-bind="value:Filter().admin, valueAllowUnset: true">
+                            <option value="">All</option>
+                            <option value="admin">Admin Users Only</option>
+                            <option value="standard">Non-Admin Users Only</option>
+                        </select>
+                    </div>
+
+                </div>
+            </div>
+
+            <div data-bind="visible:Filter().recordCount() == 0, html:MainModel().Language('NoRecords')"></div>
+
+            <div data-bind="visible:Filter().recordCount() > 0">
+                <div id="user-records"></div>
+            </div>
+        </div>
+    </div>
+
+    <div data-bind="visible:ResettingUserPassword() == true && MainModel().CurrentView() == 'edituser'">
+        <div data-bind="css:{fixed: MainModel().StickyMenus() == true}">
+            <i class="sticky-menu-icon" data-bind="html:MainModel().StickyIcon(), click:function(){MainModel().ToggleStickyMenus()}"></i>
+            <h1 class="display-7" data-bind="html:MainModel().IconAndText('ResetUserPassword')"></h1>
+
+            <div class="padbottom-5">
+                <button type="button" class="btn btn-dark" data-bind="html:MainModel().IconAndText('Cancel'), click:function(){ ResettingUserPassword(false) }"></button>
+                <button type="button" class="btn btn-warning" data-bind="html:MainModel().IconAndText('UpdatePassword'), click:ResetUserPasswordUpdate"></button>
+            </div>
+        </div>
+
+        <div class="padbottom">
+            <label for="reset-user-password" data-bind="html:MainModel().Language('NewPassword')"></label>
+            <br /><input type="text" class="form-control fixed-300" id="reset-user-password" data-bind="value:NewPassword" />
+        </div>
+    </div>
+
+    <div data-bind="visible:(MainModel().CurrentView() == 'edituser' || MainModel().CurrentView() == 'newuser') && ResettingUserPassword() == false">
+        <div data-bind="css:{fixed: MainModel().StickyMenus() == true}">
+            <i class="sticky-menu-icon" data-bind="html:MainModel().StickyIcon(), click:function(){MainModel().ToggleStickyMenus()}"></i>
+            <h1 class="display-7">
+                <i data-bind="html:MainModel().Icon('Users')"></i>
+                <span data-bind="html:MainModel().Language('EditUser'), visible:User().userId() != MainModel().GuidEmpty()"></span>
+                <span data-bind="html:MainModel().Language('AddNewUser'), visible:User().userId() == MainModel().GuidEmpty()"></span>
+                <span data-bind="visible:User().userId() != null && User().userId() != MainModel().GuidEmpty()">
+                    &ldquo;<span data-bind="text:User().userId"></span>&rdquo;
+                </span>
+            </h1>
+
+            <div class="padbottom">
+                <button type="button" class="btn btn-dark" data-bind="click:function(){ MainModel().Nav('Users') }, html:MainModel().IconAndText('Back')"></button>
+                <button type="button" class="btn btn-success" data-bind="click:SaveUser, html:MainModel().IconAndText('Save')"></button>
+                <!-- ko if: MainModel().Id() != null && MainModel().Id() != '' -->
+                    <button type="button" class="btn btn-warning" data-bind="html:MainModel().IconAndText('ResetUserPassword'), click:ResetUserPassword"></button>
+
+                    <!-- ko if: ConfirmDelete() != MainModel().Id() -->
+                    <button type="button" class="btn btn-danger" data-bind="html:MainModel().IconAndText('Delete'), click:function(){ ConfirmDelete(MainModel().Id()) }"></button>
+                    <!-- /ko -->
+                    <!-- ko if: ConfirmDelete() == MainModel().Id() -->
+                    <div class="btn-group" role="group">
+                        <button type="button" class="btn btn-dark" data-bind="html:MainModel().IconAndText('Cancel'), click:function(){ ConfirmDelete('') }"></button>
+                        <button type="button" class="btn btn-danger" data-bind="html:MainModel().IconAndText('ConfirmDelete'), click:DeleteUser"></button>
+                    </div>
+                    <!-- /ko -->
+                <!-- /ko -->
+            </div>
+        </div>
+
+        <div data-bind="visible:User().userId() == null, html:MainModel().Language('LoadingWait')"></div>
+
+        <div data-bind="visible:User().userId() != null">
+            <table class="table first-column-small first-column-bold first-column-right">
+                <tr>
+                    <td><label for="edit-user-firstName" data-bind="html:MainModel().Language('FirstName', null, true)"></label></td>
+                    <td><input type="text" id="edit-user-firstName" class="form-control" data-bind="value:User().firstName" /></td>
+                </tr>
+                <tr>
+                    <td><label for="edit-user-lastName" data-bind="html:MainModel().Language('LastName', null, true)"></label></td>
+                    <td><input type="text" id="edit-user-lastName" class="form-control" data-bind="value:User().lastName" /></td>
+                </tr>
+                <tr>
+                    <td><label for="edit-user-email" data-bind="html:MainModel().Language('Email', null, true)"></label></td>
+                    <td><input type="text" id="edit-user-email" class="form-control" data-bind="value:User().email" /></td>
+                </tr>
+                <tr>
+                    <td><label for="edit-user-username" data-bind="html:MainModel().Language('Username', null, true)"></label></td>
+                    <td><input type="text" id="edit-user-username" class="form-control" data-bind="value:User().username" /></td>
+                </tr>
+                <tr>
+                    <td><label for="edit-user-employeeId" data-bind="html:MainModel().Language('EmployeeId', null, true)"></label></td>
+                    <td><input type="text" id="edit-user-employeeId" class="form-control" data-bind="value:User().employeeId" /></td>
+                </tr>
+                <tr>
+                    <td><label for="edit-user-department" data-bind="html:MainModel().Language('Department', null, true)"></label></td>
+                    <td>
+                        <select id="edit-user-department" class="form-select" 
+                            data-bind="value:User().departmentId,
+                            options: MainModel().Tenant().departments(),
+                            optionsText: function(item){return item.departmentName()},
+                            optionsValue: function(item){return item.departmentId},
+                            optionsCaption: '',
+                            valueAllowUnset: true"></select>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <div class="form-check form-switch right">
+                            <input type="checkbox" id="edit-user-enabled" role="switch" class="form-check-input" data-bind="checked:User().enabled" />
+                        </div>
+                    </td>
+                    <td><label for="edit-user-enabled" class="form-check-label" data-bind="html:MainModel().Language('Enabled')"></label></td>
+                </tr>
+                <tr>
+                    <td>
+                        <div class="form-check form-switch right">
+                            <input type="checkbox" id="edit-user-admin" role="switch" class="form-check-input" data-bind="checked:User().admin" />
+                        </div>
+                    </td>
+                    <td><label for="edit-user-admin" class="form-check-label" data-bind="html:MainModel().Language('Admin')"></label></td>
+                </tr>
+                <tr>
+                    <td><label for="edit-user-photo" data-bind="html:MainModel().Language('Photo')"></label></td>
+                    <td>
+                        <table class="full padded">
+                            <tr>
+                                <td style="width:1%;" class="center" data-bind="visible:User().photo() != null && User().photo() != ''">
+                                    <button type="button" class="btn btn-danger btn-xs" data-bind="click:DeleteUserPhoto">
+                                        <i data-bind="html:MainModel().IconAndText('Delete')"></i>
+                                    </button>
+                                    <!-- ko if: User().photo() != null && User().photo() != '' -->
+                                    <img class="user-icon-small" data-bind="attr: { src: window.baseURL + 'File/View/' + User().photo() }"/>
+                                    <!-- /ko -->
+                                </td>
+                                <td style="width:99%;">
+                                    <div id="dropZoneUploadUserPhotoArea">
+                                        <form action="~/api/Data/UploadUserPhoto/" class="dropzone" id="dropZoneUploadUserPhoto" method="post" enctype="multipart/form-data">
+                                            <button type="button" class="btn btn-default" data-bind="attr: {'aria-label': MainModel().Language('UploadFile')}">
+                                                <i data-bind="html:MainModel().IconAndText('UploadFile')"></i>
+                                            </button>
+                                            <input type="hidden" name="admin-user-photo-userid" id="admin-user-photo-userid" data-bind="value:User().userId()" />
+                                            <input type="hidden" name="admin-user-photo-tenantid" id="admin-user-photo-tenantid" data-bind="value:User().tenantId()" />
+                                            <input type="hidden" name="admin-user-photo-token" id="admin-user-photo-token" data-bind="value:MainModel().Token()" />
+                                            <div class="dz-message">
+                                                <span data-bind="html:MainModel().Language('ManageAvatarInstructionsAdmin')"></span>
+                                                <br />
+                                                <span class="note">Allowed File Types: GIF, JPG, PNG</span>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+    function resetUserPhotoDropZone() {
+        Dropzone.forElement("#dropZoneUploadUserPhoto").removeAllFiles();
+    }
+
+    function setupUserPhotoDropZone() {
+        Dropzone.options.dropZoneUploadUserPhoto = {
+            paramName: "file",
+            maxFilesize: 20,
+            clickable: '#dropZoneUploadUserPhotoArea',
+            accept: function (file, done) {
+                console.debug("Checkfile DropZone File", file);
+                if (window.mainModel.AllowedFileTypeImage(file.name)) {
+                    done();
+                } else {
+                    done("Invalid File Type");
+                    this.removeFile(file);
+                }
+            },
+            success: function (file) {
+                this.removeFile(file);
+            },
+            complete: function(e){
+                window.usersModel.PhotoUploadComplete(e.xhr.response);
+            }
+        };
+        var dz = new Dropzone("#dropZoneUploadUserPhoto");
+    }
+</script>

@@ -1,0 +1,39 @@
+﻿@model SampleSinglePageApplication.DataObjects.ConnectionStringConfig
+@inject IHttpContextAccessor context;
+@inject SampleSinglePageApplication.IDataAccess data;
+@{
+    Layout = "_LayoutNotLoggedIn";
+}
+
+<div class="container-fluid">
+    <h1>Database Not Configured</h1>
+
+    <p>Configure the connection string and click Next to continue:</p>
+
+    <form method="post">
+        <div class="padbottom">
+            <label for="Server">Server</label>
+            <input asp-for="Server" class="form-control" />
+        </div>
+        <div class="padbottom">
+            <label for="Database">Database</label>
+            <input asp-for="Database" class="form-control" />
+        </div>
+        <div class="padbottom">
+            <label for="UserId">UserId</label>
+            <input asp-for="UserId" class="form-control" />
+        </div>
+        <div class="padbottom">
+            <label for="Password">Password</label>
+            <input asp-for="Password" class="form-control" />
+        </div>
+
+        <input type="submit" value="Next" class="btn btn-primary" />
+    </form>
+</div>
+
+<script type="text/javascript">
+    $(document).ready(function(){
+        $("#Server").focus();
+    });
+</script>

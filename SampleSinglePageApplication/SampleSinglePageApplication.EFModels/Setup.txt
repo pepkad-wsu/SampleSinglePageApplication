@@ -1,0 +1,5 @@
+﻿To update the Entity Framework models set the .EFModels project to be the startup project, then open
+the menu item "Tools / NuGet Package Manager / Package Manager Console" and paste the following command into the console and make sure
+the Default Project is set to .EFModels:
+
+Scaffold-DbContext "Server=(local);Database=SampleApplication;Trusted_Connection=True;" Microsoft.EntityFrameworkCore.SqlServer -OutputDir "EFModels" -Context "EFDataModel" -UseDatabaseNames -Force

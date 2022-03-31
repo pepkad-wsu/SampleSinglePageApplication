@@ -1,0 +1,322 @@
+﻿<script src="~/js/viewModels/tenants.js"></script>
+<div id="view-tenants">
+    <div data-bind="visible:MainModel().CurrentView() == 'tenants'">
+        <div class="padbottom" data-bind="css:{fixed: MainModel().StickyMenus() == true}">
+            <i class="sticky-menu-icon" data-bind="html:MainModel().StickyIcon(), click:function(){MainModel().ToggleStickyMenus()}"></i>
+            <h1 class="display-7"><i data-bind="html:MainModel().IconAndText('Tenants')"></i></h1>
+
+            <div data-bind="visible:Tenants() == null || Tenants().length == 0, html:MainModel().Language('LoadingWait')"></div>
+
+            <div data-bind="visible:Tenants() != null && Tenants().length > 0" class="padbottom-5">
+                <button type="button" class="btn btn-success" data-bind="click:function(){ MainModel().Nav('NewTenant') }">
+                    <i data-bind="html:MainModel().IconAndText('AddTenant')"></i>
+                </button>
+            </div>
+        </div>
+
+        <div data-bind="visible:Tenants() != null && Tenants().length > 0">
+            <table class="table">
+                <thead>
+                    <tr class="table-dark">
+                        <th style="width:1%;" class="no-pad-right"></th>
+                        <th style="width:330px;" data-bind="html:MainModel().Language('TenantId')"></th>
+                        <th style="width:auto;" data-bind="html:MainModel().Language('TenantName')"></th>
+                        <th style="width:1%;" class="center" data-bind="html:MainModel().Language('TenantCode', '', true)"></th>
+                        <th style="width:1%;" data-bind="html:MainModel().Language('Enabled')"></th>
+                    </tr>
+                </thead>
+                <tbody data-bind="foreach:Tenants">
+                    <tr>
+                        <td class="no-pad-right">
+                            <button type="button" class="btn btn-sm btn-primary nowrap" 
+                                data-bind="click:function(){ $root.MainModel().Nav('EditTenant', $data.tenantId()) },
+                                    html:$root.MainModel().IconAndText('Edit')">
+                            </button>
+                        </td>
+                        <td data-bind="text:$data.tenantId"></td>
+                        <td data-bind="text:$data.name"></td>
+                        <td data-bind="text:$data.tenantCode" class="center"></td>
+                        <td data-bind="html:tsUtilities.BooleanToCheckbox($data.enabled())" class="center"></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div data-bind="visible:Loading() == false && MainModel().CurrentView() == 'newtenant'">
+        <div class="padbottom" data-bind="css:{fixed: MainModel().StickyMenus() == true}">
+            <i class="sticky-menu-icon" data-bind="html:MainModel().StickyIcon(), click:function(){MainModel().ToggleStickyMenus()}"></i>
+            <h1 class="display-7"><i data-bind="html:MainModel().IconAndText('NewTenant')"></i></h1>
+
+            <div class="padbottom-5">
+                <button type="button" class="btn btn-dark" data-bind="click:function(){ MainModel().Nav('Tenants') }">
+                    <i data-bind="html:MainModel().IconAndText('Back')"></i>
+                </button>
+                <button type="button" class="btn btn-success" data-bind="click:function(){ SaveTenant(true) }">
+                    <i data-bind="html:MainModel().IconAndText('Save')"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="padbottom">
+            To add a new tenant enter the Tenant Name and Tenant Code for this tenant. 
+            The Tenant Code is the portion used in the beginning of the URL to differentiate help desk tenant instances.
+            When saving a new tenant record some default data will be seeded for things
+            like Categories, Priorities, Resolutions, and Statuses.
+            Also, default settings will be set for this tenant.
+        </div>
+
+        <div class="padbottom">
+            <label for="new-tenant-name">Tenant Name</label>
+            <input type="text" class="form-control" id="new-tenant-name" data-bind="value:Tenant().name" />
+        </div>
+
+        <div class="padbottom">
+            <label for="new-tenant-tenantCode">Tenant Code</label>
+            <input type="text" class="form-control" id="new-tenant-tenantCode" data-bind="value:Tenant().tenantCode" />
+        </div>
+    </div>
+
+    <div data-bind="visible:Loading() == false && MainModel().CurrentView() == 'edittenant'">
+        <div class="padbottom" data-bind="css:{fixed: MainModel().StickyMenus() == true}">
+            <i class="sticky-menu-icon" data-bind="html:MainModel().StickyIcon(), click:function(){MainModel().ToggleStickyMenus()}"></i>
+            <h1 class="display-7"><i data-bind="html:MainModel().IconAndText('EditTenant')"></i></h1>
+
+            <div class="padbottom-5">
+                <button type="button" class="btn btn-dark" data-bind="click:function(){ MainModel().Nav('Tenants') }">
+                    <i data-bind="html:MainModel().IconAndText('Back')"></i>
+                </button>
+                <button type="button" class="btn btn-success" data-bind="click:function(){ SaveTenant(false) }">
+                    <i data-bind="html:MainModel().IconAndText('Save')"></i>
+                </button>
+                <!-- ko if: AllowDelete() == true -->
+                <button type="button" class="btn btn-danger" data-bind="click:function(){ MainModel().Nav('DeleteTenant', Tenant().tenantId()) }">
+                    <i data-bind="html:MainModel().IconAndText('DeleteTenant')"></i>
+                </button>
+                <!-- /ko -->
+            </div>
+        </div>
+
+        <div class="padbottom form-check form-switch">
+            <input type="checkbox" role="switch" class="form-check-input" id="edit-tenant-enabled" data-bind="checked:Tenant().enabled" />
+            <label for="edit-tenant-enabled" class="form-check-label">Enabled</label>
+        </div>
+
+        <div class="padbottom">
+            <label for="edit-tenant-name">Name</label>
+            <input type="text" class="form-control" id="edit-tenant-name" data-bind="value:Tenant().name" />
+        </div>
+
+        <!-- ko if: Tenant().tenantId() != $root.MainModel().Guid1() -->
+        <div class="padbottom">
+            <label for="edit-tenant-tenantCode">Code</label>
+            <input type="text" class="form-control" id="edit-tenant-tenantCode" data-bind="value:Tenant().tenantCode" />
+        </div>
+        <!-- /ko -->
+
+        <div class="padbottom form-check form-switch">
+            <input type="checkbox" role="switch" class="form-check-input" id="edit-tenant-requirePreExistingAccountToLogIn" data-bind="checked:Tenant().tenantSettings().requirePreExistingAccountToLogIn" />
+            <label for="edit-tenant-requirePreExistingAccountToLogIn" class="form-check-label">Require Pre-Existing Account to Log In</label>
+            <div class="note indented">
+                If this is set to true then a user cannot login unless a user account already exists in the database. For applications that
+                should allow any user to log in set this to false and a new user account will be created when they log in if there is no user
+                account already in the users table.
+            </div>
+        </div>
+
+        <div class="padbottom form-check form-switch">
+            <input type="checkbox" role="switch" class="form-check-input" id="edit-tenant-allowUsersToManageAvatars" data-bind="checked:Tenant().tenantSettings().allowUsersToManageAvatars" />
+            <label for="edit-tenant-allowUsersToManageAvatars" class="form-check-label">Allow Users to Manage Avatars</label>
+        </div>
+
+        <div class="padbottom">
+            <div class="form-check form-switch">
+                <input type="checkbox" role="switch" class="form-check-input" id="edit-tenant-allowUsersToManageBasicProfileInfo" data-bind="checked:Tenant().tenantSettings().allowUsersToManageBasicProfileInfo" />
+                <label for="edit-tenant-allowUsersToManageBasicProfileInfo" class="form-check-label">Allow Users to Manage Basic Profile Info</label>
+            </div>
+
+            <div data-bind="visible:Tenant().tenantSettings().allowUsersToManageBasicProfileInfo() == true">
+                <label for="edit-tenant-allowUsersToManageBasicProfileInfoElements">Select the User Profile Elements Users Can Edit</label>
+                <select id="allowUsersToManageBasicProfileInfoElements" class="form-select" multiple size="8" 
+                    data-bind="selectedOptions:Tenant().tenantSettings().allowUsersToManageBasicProfileInfoElements">
+                    <option value="name">Name</option>
+                    <option value="email">Email Address</option>
+                    <option value="phone">Phone Number</option>
+                    <option value="employeeid">Employee ID</option>
+                    <option value="title">Title</option>
+                    <option value="department">Department</option>
+                    <option value="location">Location</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="padbottom">
+            <label for="edit-tenant-allowedFileTypes">Allowed File Types</label>
+            <span class="note">- a comma-separated list of file extensions with the leading period</span>
+            <textarea id="edit-tenant-allowedFileTypes" class="form-control" data-bind="value:AllowedFileTypes"></textarea>
+        </div>
+
+        <div class="padbottom">
+            <label for="edit-tenant-jasonWebTokenKey">JSON Web Token Key</label>
+            <span class="note">- A unique key used to encrypt JWT items. Resetting this will void all current logins and require re-authentication.</span>
+            <input type="text" class="form-control" id="edit-tenant-jasonWebTokenKey" data-bind="value:Tenant().tenantSettings().jasonWebTokenKey" />
+        </div>
+
+        <div class="padbottom">
+            <label for="edit-tenant-loginOptions">Login Options</label>
+            <select id="edit-tenant-loginOptions" class="form-select" size="2" multiple data-bind="selectedOptions:Tenant().tenantSettings().loginOptions">
+                <option value="local">Local Login</option>
+            </select>
+        </div>
+
+        <div class="card padbottom">
+            <div class="card-header">Work Schedule</div>
+            <div class="card-body">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th style="width:1%;"></th>
+                            <th style="width:1%;">Day</th>
+                            <th style="width:1%;">AllDay</th>
+                            <th>Start</th>
+                            <th>End</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>
+                                <div class="form-check form-switch">
+                                    <input type="checkbox" id="edit-tenant-sunday" role="switch" class="form-check-input" data-bind="checked:Tenant().tenantSettings().workSchedule().sunday" />
+                                </div>
+                            </td>
+                            <td><label for="edit-tenant-sunday" class="form-check-label">Sunday</label></td>
+                            <td class="center">
+                                <div class="form-check form-switch">
+                                    <input type="checkbox" role="switch" class="form-check-input" data-bind="checked:Tenant().tenantSettings().workSchedule().sundayAllDay, enable:Tenant().tenantSettings().workSchedule().sunday() == true" />
+                                </div>
+                            </td>
+                            <td><input type="text" class="form-control" data-bind="value:Tenant().tenantSettings().workSchedule().sundayStart, enable:Tenant().tenantSettings().workSchedule().sundayAllDay() == false && Tenant().tenantSettings().workSchedule().sunday() == true" /></td>
+                            <td><input type="text" class="form-control" data-bind="value:Tenant().tenantSettings().workSchedule().sundayEnd, enable:Tenant().tenantSettings().workSchedule().sundayAllDay() == false && Tenant().tenantSettings().workSchedule().sunday() == true" /></td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <div class="form-check form-switch">
+                                    <input type="checkbox" id="edit-tenant-monday" role="switch" class="form-check-input" data-bind="checked:Tenant().tenantSettings().workSchedule().monday" />
+                                </div>
+                            </td>
+                            <td><label for="edit-tenant-monday" class="form-check-label">Monday</label></td>
+                            <td class="center">
+                                <div class="form-check form-switch">
+                                    <input type="checkbox" role="switch" class="form-check-input" data-bind="checked:Tenant().tenantSettings().workSchedule().mondayAllDay, enable:Tenant().tenantSettings().workSchedule().monday() == true" />
+                                </div>
+                            </td>
+                            <td><input type="text" class="form-control" data-bind="value:Tenant().tenantSettings().workSchedule().mondayStart, enable:Tenant().tenantSettings().workSchedule().mondayAllDay() == false && Tenant().tenantSettings().workSchedule().monday() == true" /></td>
+                            <td><input type="text" class="form-control" data-bind="value:Tenant().tenantSettings().workSchedule().mondayEnd, enable:Tenant().tenantSettings().workSchedule().mondayAllDay() == false && Tenant().tenantSettings().workSchedule().monday() == true" /></td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <div class="form-check form-switch">
+                                    <input type="checkbox" id="edit-tenant-tuesday" role="switch" class="form-check-input" data-bind="checked:Tenant().tenantSettings().workSchedule().tuesday" />
+                                </div>
+                            </td>
+                            <td><label for="edit-tenant-tuesday" class="form-check-label">Tuesday</label></td>
+                            <td class="center">
+                                <div class="form-check form-switch">
+                                    <input type="checkbox" role="switch" class="form-check-input" data-bind="checked:Tenant().tenantSettings().workSchedule().tuesdayAllDay, enable:Tenant().tenantSettings().workSchedule().tuesday() == true" />
+                                </div>
+                            </td>
+                            <td><input type="text" class="form-control" data-bind="value:Tenant().tenantSettings().workSchedule().tuesdayStart, enable:Tenant().tenantSettings().workSchedule().tuesdayAllDay() == false && Tenant().tenantSettings().workSchedule().tuesday() == true" /></td>
+                            <td><input type="text" class="form-control" data-bind="value:Tenant().tenantSettings().workSchedule().tuesdayEnd, enable:Tenant().tenantSettings().workSchedule().tuesdayAllDay() == false && Tenant().tenantSettings().workSchedule().tuesday() == true" /></td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <div class="form-check form-switch">
+                                    <input type="checkbox" id="edit-tenant-wednesday" role="switch" class="form-check-input" data-bind="checked:Tenant().tenantSettings().workSchedule().wednesday" />
+                                </div>
+                            </td>
+                            <td><label for="edit-tenant-wednesday" class="form-check-label">Wednesday</label></td>
+                            <td class="center">
+                                <div class="form-check form-switch">
+                                    <input type="checkbox" role="switch" class="form-check-input" data-bind="checked:Tenant().tenantSettings().workSchedule().wednesdayAllDay, enable:Tenant().tenantSettings().workSchedule().wednesday() == true" />
+                                </div>
+                            </td>
+                            <td><input type="text" class="form-control" data-bind="value:Tenant().tenantSettings().workSchedule().wednesdayStart, enable:Tenant().tenantSettings().workSchedule().wednesdayAllDay() == false && Tenant().tenantSettings().workSchedule().wednesday() == true" /></td>
+                            <td><input type="text" class="form-control" data-bind="value:Tenant().tenantSettings().workSchedule().wednesdayEnd, enable:Tenant().tenantSettings().workSchedule().wednesdayAllDay() == false && Tenant().tenantSettings().workSchedule().wednesday() == true" /></td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <div class="form-check form-switch">
+                                    <input type="checkbox" id="edit-tenant-thursday" role="switch" class="form-check-input" data-bind="checked:Tenant().tenantSettings().workSchedule().thursday" />
+                                </div>
+                            </td>
+                            <td><label for="edit-tenant-thursday" class="form-check-label">Thursday</label></td>
+                            <td class="center">
+                                <div class="form-check form-switch">
+                                    <input type="checkbox" role="switch" class="form-check-input" data-bind="checked:Tenant().tenantSettings().workSchedule().thursdayAllDay, enable:Tenant().tenantSettings().workSchedule().thursday() == true" />
+                                </div>
+                            </td>
+                            <td><input type="text" class="form-control" data-bind="value:Tenant().tenantSettings().workSchedule().thursdayStart, enable:Tenant().tenantSettings().workSchedule().thursdayAllDay() == false && Tenant().tenantSettings().workSchedule().thursday() == true" /></td>
+                            <td><input type="text" class="form-control" data-bind="value:Tenant().tenantSettings().workSchedule().thursdayEnd, enable:Tenant().tenantSettings().workSchedule().thursdayAllDay() == false && Tenant().tenantSettings().workSchedule().thursday() == true" /></td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <div class="form-check form-switch">
+                                    <input type="checkbox" id="edit-tenant-friday" role="switch" class="form-check-input" data-bind="checked:Tenant().tenantSettings().workSchedule().friday" />
+                                </div>
+                            </td>
+                            <td><label for="edit-tenant-friday" class="form-check-label">Friday</label></td>
+                            <td class="center">
+                                <div class="form-check form-switch">
+                                <input type="checkbox" role="switch" class="form-check-input" data-bind="checked:Tenant().tenantSettings().workSchedule().fridayAllDay, enable:Tenant().tenantSettings().workSchedule().friday() == true" />
+                                    </div>
+                            </td>
+                            <td><input type="text" class="form-control" data-bind="value:Tenant().tenantSettings().workSchedule().fridayStart, enable:Tenant().tenantSettings().workSchedule().fridayAllDay() == false && Tenant().tenantSettings().workSchedule().friday() == true" /></td>
+                            <td><input type="text" class="form-control" data-bind="value:Tenant().tenantSettings().workSchedule().fridayEnd, enable:Tenant().tenantSettings().workSchedule().fridayAllDay() == false && Tenant().tenantSettings().workSchedule().friday() == true" /></td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <div class="form-check form-switch">
+                                    <input type="checkbox" id="edit-tenant-saturday" role="switch" class="form-check-input" data-bind="checked:Tenant().tenantSettings().workSchedule().saturday" />
+                                </div>
+                            </td>
+                            <td><label for="edit-tenant-saturday" class="form-check-label">Saturday</label></td>
+                            <td class="center">
+                                <div class="form-check form-switch">
+                                    <input type="checkbox" role="switch" class="form-check-input" data-bind="checked:Tenant().tenantSettings().workSchedule().saturdayAllDay, enable:Tenant().tenantSettings().workSchedule().saturday() == true" />
+                                </div>
+                            </td>
+                            <td><input type="text" class="form-control" data-bind="value:Tenant().tenantSettings().workSchedule().saturdayStart, enable:Tenant().tenantSettings().workSchedule().saturdayAllDay() == false && Tenant().tenantSettings().workSchedule().saturday() == true" /></td>
+                            <td><input type="text" class="form-control" data-bind="value:Tenant().tenantSettings().workSchedule().saturdayEnd, enable:Tenant().tenantSettings().workSchedule().saturdayAllDay() == false && Tenant().tenantSettings().workSchedule().saturday() == true" /></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div data-bind="visible:MainModel().CurrentView() == 'deletetenant'">
+        <h1 class="display-7"><i data-bind="html:MainModel().IconAndText('DeleteTenant')"></i></h1>
+
+        <div class="padbottom-5">
+            <button type="button" class="btn btn-dark" data-bind="click:function(){ MainModel().Nav('Tenants') }">
+                <i data-bind="html:MainModel().IconAndText('Cancel')"></i>
+            </button>
+        </div>
+
+        <div class="alert alert-danger">
+            <div class="padbottom" data-bind="html:MainModel().Language('DeleteTenantWarning')"></div>
+
+            <div class="padbottom">
+                <input type="text" class="form-control" id="confirm-delete-tenant" />
+            </div>
+
+            <button type="button" class="btn btn-danger" data-bind="click:ConfirmDeleteTenant">
+                <i data-bind="html:MainModel().IconAndText('ConfirmDeleteTenant')"></i>
+            </button>
+        </div>
+    </div>
+
+    <div data-bind="visible:MainModel().CurrentView() == 'deletingtenant'">
+        <h1 class="display-7"><i data-bind="html:MainModel().IconAndText('DeleteTenant')"></i></h1>
+    </div>
+</div>

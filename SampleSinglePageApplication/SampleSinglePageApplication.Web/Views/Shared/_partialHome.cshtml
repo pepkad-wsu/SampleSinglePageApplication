@@ -1,0 +1,9 @@
+﻿<script src="~/js/viewModels/home.js"></script>
+<div id="view-home">
+    <div data-bind="visible:MainModel().CurrentView() == ''">
+        <div data-bind="css:{fixed: MainModel().StickyMenus() == true}">
+            <i class="sticky-menu-icon" data-bind="html:MainModel().StickyIcon(), click:function(){MainModel().ToggleStickyMenus()}"></i>
+            <h1 class="display-7"><i data-bind="html:MainModel().IconAndText('HomePage')"></i></h1>
+        </div>
+    </div>
+</div>
