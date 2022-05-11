@@ -22,6 +22,7 @@ namespace SampleSinglePageApplication.EFModels.EFModels
         public virtual DbSet<FileStorage> FileStorages { get; set; } = null!;
         public virtual DbSet<Setting> Settings { get; set; } = null!;
         public virtual DbSet<Tenant> Tenants { get; set; } = null!;
+        public virtual DbSet<UDFLabel> UDFLabels { get; set; } = null!;
         public virtual DbSet<User> Users { get; set; } = null!;
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
@@ -29,7 +30,7 @@ namespace SampleSinglePageApplication.EFModels.EFModels
             if (!optionsBuilder.IsConfigured)
             {
 #warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see http://go.microsoft.com/fwlink/?LinkId=723263.
-                optionsBuilder.UseSqlServer("Server=(local);Database=SampleApplication;Trusted_Connection=True;");
+                optionsBuilder.UseSqlServer("Server=(local);Database=SampleSinglePageApplication;Trusted_Connection=True;");
             }
         }
 
@@ -102,6 +103,15 @@ namespace SampleSinglePageApplication.EFModels.EFModels
                 entity.Property(e => e.TenantCode).HasMaxLength(50);
             });
 
+            modelBuilder.Entity<UDFLabel>(entity =>
+            {
+                entity.Property(e => e.Id).ValueGeneratedNever();
+
+                entity.Property(e => e.Module).HasMaxLength(20);
+
+                entity.Property(e => e.UDF).HasMaxLength(10);
+            });
+
             modelBuilder.Entity<User>(entity =>
             {
                 entity.Property(e => e.UserId).ValueGeneratedNever();
@@ -123,6 +133,26 @@ namespace SampleSinglePageApplication.EFModels.EFModels
                 entity.Property(e => e.Phone).HasMaxLength(20);
 
                 entity.Property(e => e.Title).HasMaxLength(255);
+
+                entity.Property(e => e.UDF01).HasMaxLength(500);
+
+                entity.Property(e => e.UDF02).HasMaxLength(500);
+
+                entity.Property(e => e.UDF03).HasMaxLength(500);
+
+                entity.Property(e => e.UDF04).HasMaxLength(500);
+
+                entity.Property(e => e.UDF05).HasMaxLength(500);
+
+                entity.Property(e => e.UDF06).HasMaxLength(500);
+
+                entity.Property(e => e.UDF07).HasMaxLength(500);
+
+                entity.Property(e => e.UDF08).HasMaxLength(500);
+
+                entity.Property(e => e.UDF09).HasMaxLength(500);
+
+                entity.Property(e => e.UDF10).HasMaxLength(500);
 
                 entity.Property(e => e.Username).HasMaxLength(100);
 

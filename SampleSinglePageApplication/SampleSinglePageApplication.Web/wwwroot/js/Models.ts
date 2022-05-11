@@ -10,6 +10,7 @@
     objLanguage: server.optionPair[];
     objTenant: server.tenant;
     objUser: server.user;
+    objVersionInfo: server.versionInfo;
     tenantCode: string;
     tenantId: string;
     token: string;
@@ -293,6 +294,16 @@ class filterUsers extends filter {
     filterDepartments: KnockoutObservableArray<string> = ko.observableArray([]);
     enabled: KnockoutObservable<string> = ko.observable(null);
     admin: KnockoutObservable<string> = ko.observable(null);
+    udf01: KnockoutObservable<string> = ko.observable(null);
+    udf02: KnockoutObservable<string> = ko.observable(null);
+    udf03: KnockoutObservable<string> = ko.observable(null);
+    udf04: KnockoutObservable<string> = ko.observable(null);
+    udf05: KnockoutObservable<string> = ko.observable(null);
+    udf06: KnockoutObservable<string> = ko.observable(null);
+    udf07: KnockoutObservable<string> = ko.observable(null);
+    udf08: KnockoutObservable<string> = ko.observable(null);
+    udf09: KnockoutObservable<string> = ko.observable(null);
+    udf10: KnockoutObservable<string> = ko.observable(null);
 
     Load(data: server.filterUsers) {
         if (data != null) {
@@ -330,6 +341,16 @@ class filterUsers extends filter {
             this.filterDepartments(data.filterDepartments);
             this.enabled(data.enabled);
             this.admin(data.admin);
+            this.udf01(data.udf01);
+            this.udf02(data.udf02);
+            this.udf03(data.udf03);
+            this.udf04(data.udf04);
+            this.udf05(data.udf05);
+            this.udf06(data.udf06);
+            this.udf07(data.udf07);
+            this.udf08(data.udf08);
+            this.udf09(data.udf09);
+            this.udf10(data.udf10);
         } else {
             this.actionResponse(new booleanResponse);
             this.tenantId(null);
@@ -350,6 +371,16 @@ class filterUsers extends filter {
             this.filterDepartments([]);
             this.enabled(null);
             this.admin(null);
+            this.udf01(null);
+            this.udf02(null);
+            this.udf03(null);
+            this.udf04(null);
+            this.udf05(null);
+            this.udf06(null);
+            this.udf07(null);
+            this.udf08(null);
+            this.udf09(null);
+            this.udf10(null);
         }
     }
 }
@@ -464,7 +495,6 @@ class simplePost {
     }
 }
 
-
 class tenant extends actionResponseObject {
     tenantId: KnockoutObservable<string> = ko.observable(null);
     name: KnockoutObservable<string> = ko.observable(null);
@@ -474,6 +504,7 @@ class tenant extends actionResponseObject {
     departmentGroups: KnockoutObservableArray<departmentGroup> = ko.observableArray([]);
     tenantSettings: KnockoutObservable<tenantSettings> = ko.observable(new tenantSettings);
     listItems: KnockoutObservableArray<listItem> = ko.observableArray([]);
+    udfLabels: KnockoutObservableArray<udfLabel> = ko.observableArray([]);
 
     Load(data: server.tenant) {
         if (data != null) {
@@ -513,6 +544,16 @@ class tenant extends actionResponseObject {
                 });
             }
             this.listItems(li);
+
+            let u: udfLabel[] = [];
+            if (data.udfLabels != null) {
+                data.udfLabels.forEach(function (e) {
+                    let item: udfLabel = new udfLabel();
+                    item.Load(e);
+                    u.push(item);
+                });
+            }
+            this.udfLabels(u);
         } else {
             this.actionResponse(new booleanResponse);
             this.tenantId(null);
@@ -523,6 +564,7 @@ class tenant extends actionResponseObject {
             this.departments([]);
             this.departmentGroups([]);
             this.listItems([]);
+            this.udfLabels([]);
         }
     }
 }
@@ -531,6 +573,8 @@ class tenantSettings {
     allowUsersToManageAvatars: KnockoutObservable<boolean> = ko.observable(false);
     allowUsersToManageBasicProfileInfo: KnockoutObservable<boolean> = ko.observable(false);
     allowUsersToManageBasicProfileInfoElements: KnockoutObservableArray<string> = ko.observableArray([]);
+    cookieDomain: KnockoutObservable<string> = ko.observable(null);
+    eitSsoUrl: KnockoutObservable<string> = ko.observable(null);
     jasonWebTokenKey: KnockoutObservable<string> = ko.observable(null);
     loginOptions: KnockoutObservableArray<string> = ko.observableArray([]);
     workSchedule: KnockoutObservable<workSchedule> = ko.observable(new workSchedule);
@@ -541,6 +585,8 @@ class tenantSettings {
             this.allowUsersToManageAvatars(data.allowUsersToManageAvatars);
             this.allowUsersToManageBasicProfileInfo(data.allowUsersToManageBasicProfileInfo);
             this.allowUsersToManageBasicProfileInfoElements(data.allowUsersToManageBasicProfileInfoElements);
+            this.cookieDomain(data.cookieDomain);
+            this.eitSsoUrl(data.eitSsoUrl);
             this.jasonWebTokenKey(data.jasonWebTokenKey);
             this.loginOptions(data.loginOptions);
             this.workSchedule().Load(data.workSchedule);
@@ -549,10 +595,39 @@ class tenantSettings {
             this.allowUsersToManageAvatars(null);
             this.allowUsersToManageBasicProfileInfo(null);
             this.allowUsersToManageBasicProfileInfoElements([]);
+            this.cookieDomain(null);
+            this.eitSsoUrl(null);
             this.jasonWebTokenKey(null);
             this.loginOptions(null);
             this.workSchedule(new workSchedule);
             this.requirePreExistingAccountToLogIn(true);
+        }
+    }
+}
+
+class udfLabel extends actionResponseObject {
+    id: KnockoutObservable<string> = ko.observable(null);
+    tenantId: KnockoutObservable<string> = ko.observable(null);
+    module: KnockoutObservable<string> = ko.observable(null);
+    udf: KnockoutObservable<string> = ko.observable(null);
+    label: KnockoutObservable<string> = ko.observable(null);
+    showColumn: KnockoutObservable<boolean> = ko.observable(false);
+    showInFilter: KnockoutObservable<boolean> = ko.observable(false);
+    includeInSearch: KnockoutObservable<boolean> = ko.observable(false);
+    filterOptions: KnockoutObservableArray<string> = ko.observableArray([]);
+
+    Load(data: server.udfLabel) {
+        if (data != null) {
+            this.actionResponse().Load(data.actionResponse);
+            this.id(data.id);
+            this.tenantId(data.tenantId);
+            this.module(data.module);
+            this.udf(data.udf);
+            this.label(data.label);
+            this.showColumn(data.showColumn);
+            this.showInFilter(data.showInFilter);
+            this.includeInSearch(data.includeInSearch);
+            this.filterOptions(data.filterOptions);
         }
     }
 }
@@ -577,10 +652,22 @@ class user extends actionResponseObject {
     appAdmin: KnockoutObservable<boolean> = ko.observable(false);
     photo: KnockoutObservable<string> = ko.observable(null);
     password: KnockoutObservable<string> = ko.observable(null);
+    preventPasswordChange: KnockoutObservable<boolean> = ko.observable(false);
     hasLocalPassword: KnockoutObservable<boolean> = ko.observable(false);
     authToken: KnockoutObservable<string> = ko.observable(null);
+    lastLockoutDate: KnockoutObservable<Date> = ko.observable(null);
     tenants: KnockoutObservableArray<tenant> = ko.observableArray([]);
     userTenants: KnockoutObservableArray<userTenant> = ko.observableArray([]);
+    udf01: KnockoutObservable<string> = ko.observable(null);
+    udf02: KnockoutObservable<string> = ko.observable(null);
+    udf03: KnockoutObservable<string> = ko.observable(null);
+    udf04: KnockoutObservable<string> = ko.observable(null);
+    udf05: KnockoutObservable<string> = ko.observable(null);
+    udf06: KnockoutObservable<string> = ko.observable(null);
+    udf07: KnockoutObservable<string> = ko.observable(null);
+    udf08: KnockoutObservable<string> = ko.observable(null);
+    udf09: KnockoutObservable<string> = ko.observable(null);
+    udf10: KnockoutObservable<string> = ko.observable(null);
 
     Load(data: server.user) {
         if (data != null) {
@@ -604,8 +691,10 @@ class user extends actionResponseObject {
             this.appAdmin(data.appAdmin);
             this.photo(data.photo);
             this.password(data.password);
+            this.preventPasswordChange(data.preventPasswordChange);
             this.hasLocalPassword(data.hasLocalPassword);
             this.authToken(data.authToken);
+            this.lastLockoutDate(data.lastLockoutDate);
 
             let t: tenant[] = [];
             if (data.tenants != null) {
@@ -626,6 +715,17 @@ class user extends actionResponseObject {
                 });
             }
             this.userTenants(ut);
+
+            this.udf01(data.udf01);
+            this.udf02(data.udf02);
+            this.udf03(data.udf03);
+            this.udf04(data.udf04);
+            this.udf05(data.udf05);
+            this.udf06(data.udf06);
+            this.udf07(data.udf07);
+            this.udf08(data.udf08);
+            this.udf09(data.udf09);
+            this.udf10(data.udf10);
         } else {
             this.actionResponse(new booleanResponse);
             this.userId(null);
@@ -647,10 +747,22 @@ class user extends actionResponseObject {
             this.appAdmin(false);
             this.photo(null);
             this.password(null);
+            this.preventPasswordChange(false);
             this.hasLocalPassword(null);
             this.authToken(null);
+            this.lastLockoutDate(null);
             this.tenants([]);
             this.userTenants([]);
+            this.udf01(null);
+            this.udf02(null);
+            this.udf03(null);
+            this.udf04(null);
+            this.udf05(null);
+            this.udf06(null);
+            this.udf07(null);
+            this.udf08(null);
+            this.udf09(null);
+            this.udf10(null);
         }
     }
 }
@@ -695,6 +807,24 @@ class userTenant {
             this.tenantId(null);
             this.tenantCode(null);
             this.tenantName(null);
+        }
+    }
+}
+
+class versionInfo {
+    released: KnockoutObservable<string> = ko.observable(null);
+    runningSince: KnockoutObservable<number> = ko.observable(0);
+    version: KnockoutObservable<string> = ko.observable(null);
+
+    Load(data: server.versionInfo) {
+        if (data != null) {
+            this.released(data.released);
+            this.runningSince(data.runningSince);
+            this.version(data.version);
+        } else {
+            this.released(null);
+            this.runningSince(0);
+            this.version(null);
         }
     }
 }

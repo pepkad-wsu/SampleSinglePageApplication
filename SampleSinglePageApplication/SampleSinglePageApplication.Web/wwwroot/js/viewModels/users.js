@@ -4,6 +4,7 @@ var UsersModel = /** @class */ (function () {
         this.AddToSelectedTeam = ko.observable("");
         this.ConfirmDelete = ko.observable("");
         this.Filter = ko.observable(new filterUsers);
+        this.Loading = ko.observable(false);
         this.MainModel = ko.observable(window.mainModel);
         this.NewPassword = ko.observable("");
         this.ResettingUserPassword = ko.observable(false);
@@ -24,6 +25,7 @@ var UsersModel = /** @class */ (function () {
         this.User(new user);
         this.User().userId(this.MainModel().GuidEmpty());
         this.User().tenantId(this.MainModel().TenantId());
+        this.MainModel().UDFFieldsRender("edit-user-udf-fields", "Users", JSON.parse(ko.toJSON(this.User)));
         tsUtilities.DelayedFocus("edit-user-firstName");
     };
     /**
@@ -34,6 +36,16 @@ var UsersModel = /** @class */ (function () {
         this.Filter().filterDepartments([]);
         this.Filter().enabled(null);
         this.Filter().admin(null);
+        this.Filter().udf01(null);
+        this.Filter().udf02(null);
+        this.Filter().udf03(null);
+        this.Filter().udf04(null);
+        this.Filter().udf05(null);
+        this.Filter().udf06(null);
+        this.Filter().udf07(null);
+        this.Filter().udf08(null);
+        this.Filter().udf09(null);
+        this.Filter().udf10(null);
         this.Filter().page(1);
         this.GetUsers();
     };
@@ -92,11 +104,12 @@ var UsersModel = /** @class */ (function () {
         setTimeout("resetUserPhotoDropZone()", 0);
         if (tsUtilities.HasValue(userId)) {
             var success = function (data) {
-                _this.MainModel().Message_Hide();
                 if (data != null) {
                     if (data.actionResponse.result) {
                         _this.User().Load(data);
                         tsUtilities.DelayedFocus("edit-user-firstName");
+                        _this.MainModel().UDFFieldsRender("edit-user-udf-fields", "Users", JSON.parse(ko.toJSON(_this.User)));
+                        _this.Loading(false);
                     }
                     else {
                         _this.MainModel().Message_Errors(data.actionResponse.messages);
@@ -106,7 +119,7 @@ var UsersModel = /** @class */ (function () {
                     _this.MainModel().Message_Error("An unknown error occurred attempting to load the user record.");
                 }
             };
-            this.MainModel().Message_Loading();
+            this.Loading(true);
             tsUtilities.AjaxData(window.baseURL + "api/data/GetUser/" + userId, null, success);
         }
         else {
@@ -356,6 +369,7 @@ var UsersModel = /** @class */ (function () {
             tsUtilities.DelayedFocus(focus);
             return;
         }
+        this.MainModel().UDFFieldsGetValues("Users", this.User());
         var json = ko.toJSON(this.User);
         var success = function (data) {
             _this.MainModel().Message_Hide();
@@ -426,6 +440,16 @@ var UsersModel = /** @class */ (function () {
         this.Filter().filterDepartments.subscribe(function () { _this.FilterChanged(); });
         this.Filter().enabled.subscribe(function () { _this.FilterChanged(); });
         this.Filter().admin.subscribe(function () { _this.FilterChanged(); });
+        this.Filter().udf01.subscribe(function () { _this.FilterChanged(); });
+        this.Filter().udf02.subscribe(function () { _this.FilterChanged(); });
+        this.Filter().udf03.subscribe(function () { _this.FilterChanged(); });
+        this.Filter().udf04.subscribe(function () { _this.FilterChanged(); });
+        this.Filter().udf05.subscribe(function () { _this.FilterChanged(); });
+        this.Filter().udf06.subscribe(function () { _this.FilterChanged(); });
+        this.Filter().udf07.subscribe(function () { _this.FilterChanged(); });
+        this.Filter().udf08.subscribe(function () { _this.FilterChanged(); });
+        this.Filter().udf09.subscribe(function () { _this.FilterChanged(); });
+        this.Filter().udf10.subscribe(function () { _this.FilterChanged(); });
     };
     /**
      * Called when the Show or Hide Filter buttons are clicked.
@@ -438,6 +462,27 @@ var UsersModel = /** @class */ (function () {
             this.Filter().showFilters(true);
         }
         this.SaveFilter();
+    };
+    /**
+     * Unlocks a user account that was locked due to too many failed login attempts.
+     */
+    UsersModel.prototype.UnlockUserAccount = function () {
+        var _this = this;
+        var success = function (data) {
+            if (data != null) {
+                if (data.actionResponse.result) {
+                    _this.GetUsers();
+                    _this.MainModel().Nav("Users");
+                }
+                else {
+                    _this.MainModel().Message_Errors(data.actionResponse.messages);
+                }
+            }
+            else {
+                _this.MainModel().Message_Error("An unknown error occurred attempting to unlock the user account.");
+            }
+        };
+        tsUtilities.AjaxData(window.baseURL + "api/Data/UnlockUserAccount/" + this.User().userId(), null, success);
     };
     /**
      * Handles changing the sort order and updating the filter.
@@ -475,6 +520,7 @@ var UsersModel = /** @class */ (function () {
      * Called when the view changes in the MainModel to do any necessary work in this viewModel.
      */
     UsersModel.prototype.ViewChanged = function () {
+        this.Loading(false);
         switch (this.MainModel().CurrentView()) {
             case "edituser":
                 this.AddToSelectedTeam("");

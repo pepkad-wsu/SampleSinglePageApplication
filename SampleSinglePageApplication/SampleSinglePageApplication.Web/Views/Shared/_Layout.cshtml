@@ -19,6 +19,7 @@
     string objLanguage = String.Empty;
     string objTenant = String.Empty;
     string objUserJson = String.Empty;
+    string objVersionInfo = String.Empty;
     DataObjects.Tenant tenant = new DataObjects.Tenant();
     string tenantCode = String.Empty;
     string tenantId = String.Empty;
@@ -27,6 +28,7 @@
     bool useTenantCodeInUrl = true;
     bool validTenant = false;
     bool validDatabaseConnection = false;
+    DataObjects.VersionInfo versionInfo = new DataObjects.VersionInfo();
     string version = "";
 
     SampleSinglePageApplication.RouteHelper routeHelper = new RouteHelper(context.HttpContext, useTenantCodeInUrl);
@@ -38,6 +40,8 @@
             return;
         }
     }else{
+        versionInfo = data.VersionInfo;
+
         if (context != null && context.HttpContext != null) {
             if(!data.DatabaseOpen) {
                 IgnoreBody();
@@ -221,6 +225,7 @@
     if(String.IsNullOrEmpty(objLanguage)){ objLanguage = "{}"; }
     if(String.IsNullOrEmpty(objUserJson)) { objUserJson = "{}"; }
     objTenant = Utilities.SerializeObjectToJsonCamelCase(tenant);
+    objVersionInfo = Utilities.SerializeObjectToJsonCamelCase(versionInfo);
 }
 <!DOCTYPE html>
 <html lang="en">
@@ -264,6 +269,7 @@
                                                 @if (appAdminUser) {
                                                     <li><a class="dropdown-item" href="#" data-bind="click:function(){ Nav('Tenants'); }, css: { active: CurrentView() == 'tenants' || CurrentView() == 'edittenant' || CurrentView() == 'newtenant'}"><i data-bind="html:IconAndText('Tenants')"></i></a></li>
                                                 }
+                                                <li><a class="dropdown-item" href="#" data-bind="click:function(){ Nav('UdfLabels'); }, css: { active: CurrentView() == 'udflabels'}"><i data-bind="html:IconAndText('UdfLabels')"></i></a></li>
                                                 <li><a class="dropdown-item" href="#" data-bind="click:function(){ Nav('Users'); }, css: { active: CurrentView() == 'users' || CurrentView() == 'edituser' || CurrentView() == 'newuser'}"><i data-bind="html:IconAndText('Users')"></i></a></li>
                                             }
                                         </ul>
@@ -314,7 +320,7 @@
                                             </p>
 
                                             <li><hr class="dropdown-divider"></li>
-                                            <!-- ko if: User().hasLocalPassword() == true -->
+                                            <!-- ko if: User().hasLocalPassword() == true && User().preventPasswordChange() == false -->
                                             <li><a class="dropdown-item" href="#" data-bind="click:function(){Nav('ChangePassword')}"><i data-bind="html:IconAndText('ChangePassword')"></i></a></li>
                                             <!-- /ko -->
                                             <!-- ko if: Tenant().tenantSettings().allowUsersToManageAvatars() == true || Tenant().tenantSettings().allowUsersToManageBasicProfileInfo() == true -->
@@ -343,6 +349,14 @@
             </div>
             <span data-bind="html:MessageText"></span>
         </div>
+
+        <div data-bind="visible:CurrentView() == 'accessdenied'" class="container-fluid">
+            <h1 class="display-7">
+                <span class="icon-text" data-bind="html:IconAndText('AccessDenied')"></span>
+            </h1>
+
+            <div data-bind="visible:AccessDeniedMessage() != null && AccessDeniedMessage() != '', html:AccessDeniedMessage"></div>
+        </div>
     </div>
     <div id="page-view-model-area" class="container-fluid page-view">
         <main role="main" class="pb-3">
@@ -361,6 +375,7 @@
                     if (appAdminUser) {
                         @await Html.PartialAsync("_partialTenants")
                     }
+                    @await Html.PartialAsync("_partialUdfLabels")
                     @await Html.PartialAsync("_partialUsers")
                 }
         } else if (!validTenant) {
@@ -395,6 +410,7 @@
     window.objLanguage = @Html.Raw(objLanguage);
     window.objTenant = @Html.Raw(objTenant);
     window.objUser = @Html.Raw(objUserJson);
+    window.objVersionInfo = @Html.Raw(objVersionInfo);
     window.requestsModel;
     window.settingsModel;
     window.statsModel;
@@ -443,11 +459,14 @@
                     ko.applyBindings(window.tenantsModel, document.getElementById('view-tenants'));
                 }
 
+                window.udfLabelsModel = new UdfLabelsModel();
+                ko.applyBindings(window.udfLabelsModel, document.getElementById('view-udflabels'));
+
                 window.usersModel = new UsersModel();
                 ko.applyBindings(window.usersModel, document.getElementById('view-users'));
             }
 
-            var connection = new signalR.HubConnectionBuilder().withUrl("/signalRHub").build();
+            var connection = new signalR.HubConnectionBuilder().withUrl(window.baseURL + "signalRHub").withAutomaticReconnect().build();
 
             connection.on("SignalRUpdate", function (update) {
                 //console.log("js SignalR Update", update);

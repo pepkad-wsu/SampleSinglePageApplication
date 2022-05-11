@@ -111,6 +111,16 @@
         filterDepartments: string[];
         enabled: string;
         admin: string;
+        udf01: string;
+        udf02: string;
+        udf03: string;
+        udf04: string;
+        udf05: string;
+        udf06: string;
+        udf07: string;
+        udf08: string;
+        udf09: string;
+        udf10: string;
     }
 
     interface listItem extends actionResponseObject {
@@ -161,16 +171,31 @@
         departmentGroups: departmentGroup[];
         tenantSettings: tenantSettings;
         listItems: listItem[];
+        udfLabels: udfLabel[];
     }
 
     interface tenantSettings {
         allowUsersToManageAvatars: boolean;
         allowUsersToManageBasicProfileInfo: boolean;
         allowUsersToManageBasicProfileInfoElements: string[];
+        cookieDomain: string;
+        eitSsoUrl: string;
         jasonWebTokenKey: string;
         loginOptions: string[];
         workSchedule: workSchedule;
         requirePreExistingAccountToLogIn: boolean;
+    }
+
+    interface udfLabel extends actionResponseObject {
+        id: string;
+        tenantId: string;
+        module: string;
+        udf: string;
+        label: string;
+        showColumn: boolean;
+        showInFilter: boolean;
+        includeInSearch: boolean;
+        filterOptions: string[];
     }
 
     interface user extends actionResponseObject {
@@ -193,10 +218,22 @@
         appAdmin: boolean;
         photo: string;
         password: string;
+        preventPasswordChange: boolean;
         hasLocalPassword: boolean;
         authToken: string;
+        lastLockoutDate: Date;
         tenants: tenant[];
         userTenants: userTenant[];
+        udf01: string;
+        udf02: string;
+        udf03: string;
+        udf04: string;
+        udf05: string;
+        udf06: string;
+        udf07: string;
+        udf08: string;
+        udf09: string;
+        udf10: string;
     }
 
     interface userPasswordReset extends actionResponseObject {
@@ -213,7 +250,13 @@
         tenantName: string;
     }
 
-    interface workSchedule {
+    interface versionInfo {
+        released: string;
+        runningSince: number;
+        version: string;
+    }
+
+   interface workSchedule {
         sunday: boolean;
         sundayAllDay: boolean;
         sundayStart: string;

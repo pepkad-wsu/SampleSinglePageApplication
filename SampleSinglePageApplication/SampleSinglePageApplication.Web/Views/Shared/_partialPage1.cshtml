@@ -1,4 +1,4 @@
-﻿<script src="~/js/viewModels/page1.js"></script>
+﻿<script src="~/js/viewModels/page1.js?v=@Html.Raw(Guid.NewGuid().ToString().Replace("-", ""))"></script>
 <div id="view-page1">
     <div data-bind="visible:MainModel().CurrentView() == 'page1'">
         <div data-bind="css:{fixed: MainModel().StickyMenus() == true}">

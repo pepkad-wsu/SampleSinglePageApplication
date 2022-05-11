@@ -22,6 +22,7 @@ var MainModel = /** @class */ (function () {
      */
     function MainModel() {
         var _this = this;
+        this.AccessDeniedMessage = ko.observable("");
         this.Action = ko.observable("");
         this.DefaultLanguageItems = ko.observableArray([]);
         this.Extra = ko.observableArray([]);
@@ -45,6 +46,7 @@ var MainModel = /** @class */ (function () {
         this.Token = ko.observable("");
         this.User = ko.observable(new user);
         this.View = ko.observable("");
+        this.VersionInfo = ko.observable(new versionInfo);
         this.WindowHeight = ko.observable(0);
         this.WindowWidth = ko.observable(0);
         /**
@@ -98,6 +100,7 @@ var MainModel = /** @class */ (function () {
                     case "newuser":
                     case "settings":
                     case "tenants":
+                    case "udflabels":
                     case "users":
                         output = true;
                         break;
@@ -122,6 +125,9 @@ var MainModel = /** @class */ (function () {
         if (window.objUser != undefined && window.objUser != null) {
             this.User().Load(window.objUser);
             window.objUser = null;
+        }
+        if (window.objVersionInfo != undefined && window.objVersionInfo != null) {
+            this.VersionInfo().Load(window.objVersionInfo);
         }
         if (tsUtilities.HasValue(window.action)) {
             this.Action(window.action);
@@ -155,7 +161,16 @@ var MainModel = /** @class */ (function () {
         }
         this.StickyMenus(stickyMenus == "1");
         window.onpopstate = function () { _this.PopStateChanged(); };
+        this.CheckForUpdates();
     }
+    MainModel.prototype.AccessDenied = function (message) {
+        console.log("Access Denied", message);
+        this.AccessDeniedMessage("");
+        if (message != undefined && message != null && message != "") {
+            this.AccessDeniedMessage(message);
+        }
+        this.Nav("AccessDenied");
+    };
     MainModel.prototype.AjaxUserAutocomplete = function (element, callbackHandler) {
         $("#" + element).autocomplete({
             source: this.AjaxUserSearch,
@@ -263,6 +278,7 @@ var MainModel = /** @class */ (function () {
             if (this.User().admin()) {
                 models.push("LanguageModel");
                 models.push("SettingsModel");
+                models.push("UdfLabelsModel");
                 models.push("UsersModel");
                 if (this.User().appAdmin()) {
                     models.push("TenantsModel");
@@ -284,6 +300,30 @@ var MainModel = /** @class */ (function () {
             this.Loaded(true);
             setTimeout(function () { return _this.Nav(_this.Action(), _this.Id()); }, 500);
         }
+    };
+    /**
+     * Checks the VersionInfo from the server to see if the server has restarted or been updated.
+     */
+    MainModel.prototype.CheckForUpdates = function () {
+        var _this = this;
+        var success = function (data) {
+            var reload = false;
+            if (data != null) {
+                if (_this.VersionInfo().released() != data.released || _this.VersionInfo().runningSince() != data.runningSince || _this.VersionInfo().version() != data.version) {
+                    reload = true;
+                }
+            }
+            if (reload) {
+                _this.Nav("ServerUpdated");
+            }
+            else {
+                setTimeout(function () { return _this.CheckForUpdates(); }, 60000);
+            }
+        };
+        var failure = function () {
+            setTimeout(function () { return _this.CheckForUpdates(); }, 60000);
+        };
+        tsUtilities.AjaxData(window.baseURL + "api/Data/GetVersionInfo", null, success, failure);
     };
     /**
      * The current page URL
@@ -342,6 +382,9 @@ var MainModel = /** @class */ (function () {
         var output = "";
         if (tsUtilities.HasValue(module)) {
             switch (module.toLowerCase()) {
+                case "accessdenied":
+                    output = '<i class="fa-regular fa-shield-exclamation"></i>';
+                    break;
                 case "addnewuser":
                     output = '<i class="fas fa-user-plus"></i>';
                     break;
@@ -447,6 +490,9 @@ var MainModel = /** @class */ (function () {
                 case "selected":
                     output = '<i class="fa-solid fa-circle-check"></i>';
                     break;
+                case "serverupdated":
+                    output = '<i class="fa-solid fa-server"></i>';
+                    break;
                 case "showfilter":
                     output = '<i class="fa-solid fa-filter-circle-xmark"></i>';
                     break;
@@ -458,6 +504,9 @@ var MainModel = /** @class */ (function () {
                     break;
                 case "tenants":
                     output = '<i class="fas fa-users-cog"></i>';
+                    break;
+                case "udflabels":
+                    output = '<i class="fa-brands fa-firstdraft"></i>';
                     break;
                 case "uploadfile":
                     output = '<i class="fas fa-cloud-upload-alt"></i>';
@@ -582,7 +631,12 @@ var MainModel = /** @class */ (function () {
         $("#main-model").hide();
         $("#page-view-model-area").hide();
         // Redirect to the local logout page
-        window.location.href = window.baseURL + "Logout?redirect=" + encodeURI(window.baseURL + window.tenantCode);
+        var returnUrl = window.baseURL;
+        if (window.useTenantCodeInUrl) {
+            returnUrl += this.TenantCode();
+        }
+        var url = window.baseURL + "Logout/" + this.TenantId() + "?redirect=" + encodeURI(returnUrl);
+        window.location.href = url;
     };
     /**
      * Updates the status message shown at the top of the page.
@@ -767,7 +821,7 @@ var MainModel = /** @class */ (function () {
         }
         // If we have a requested URL cookie then clear that cookie and redirect to that page.
         var requestedUrl = tsUtilities.CookieRead("requested-url");
-        if (tsUtilities.HasValue(requestedUrl) && action.toLowerCase() != "login") {
+        if (tsUtilities.HasValue(requestedUrl) && action.toLowerCase() != "login" && requestedUrl.toLowerCase().indexOf("null") == -1) {
             tsUtilities.CookieWrite("requested-url", "");
             window.location.href = requestedUrl;
             return;
@@ -808,11 +862,13 @@ var MainModel = /** @class */ (function () {
         var allowAnonymousAccess = false;
         if (!this.LoggedIn()) {
             switch (action.toLowerCase()) {
+                case "accessdenied":
                 case "login":
                 case "otherpages":
                 case "thatcanbe":
                 case "accessedwhen":
                 case "notloggedin":
+                case "serverupdated":
                     allowAnonymousAccess = true;
                     break;
                 default:
@@ -831,6 +887,12 @@ var MainModel = /** @class */ (function () {
         if (!allowAnonymousAccess) {
             // This is where you would test various actions to make sure the user has access.
             switch (action.toLowerCase()) {
+                case "changepassword":
+                    if (this.User().preventPasswordChange()) {
+                        accessDenied = true;
+                    }
+                    break;
+                case "udflabels":
                 case "users":
                     if (!this.User().admin()) {
                         accessDenied = true;
@@ -840,7 +902,12 @@ var MainModel = /** @class */ (function () {
         }
         if (accessDenied == true) {
             action = "AccessDenied";
-            url = window.baseURL + "AccessDenied";
+            if (window.useTenantCodeInUrl) {
+                url = window.baseURL + this.TenantCode() + "/AccessDenied";
+            }
+            else {
+                url = window.baseURL + "AccessDenied";
+            }
             navChanged = true;
         }
         this.Action(action);
@@ -1114,6 +1181,18 @@ var MainModel = /** @class */ (function () {
                             this.Tenant().departmentGroups.notifySubscribers();
                         }
                         break;
+                    case "savedudflabels":
+                        var labels = update.object;
+                        if (labels != null && labels.length > 0) {
+                            var l_1 = [];
+                            labels.forEach(function (e) {
+                                var item = new udfLabel();
+                                item.Load(e);
+                                l_1.push(item);
+                            });
+                            this.Tenant().udfLabels(l_1);
+                        }
+                        break;
                     case "saveduser":
                         if (this.User().userId() == update.itemId) {
                             // This is the current user, so reload the user object
@@ -1199,6 +1278,406 @@ var MainModel = /** @class */ (function () {
             this.StickyMenus(true);
             tsUtilities.CookieWrite("sticky-menus", "1");
         }
+    };
+    /**
+     * Gets the value for a given UDF
+     * @param module {string} - The name of the UDF module (eg: users)
+     * @param item {number} - The index of the UDF item.
+     */
+    MainModel.prototype.UDFFieldGetValue = function (module, item) {
+        var output = "";
+        if (this.Loaded() == true && module != undefined && module != null && module != "") {
+            var m = module.toLowerCase();
+            var id = m + "-udf-" + item.toString();
+            var type = this.UDFFieldType(module, item);
+            switch (type) {
+                case "input":
+                case "select":
+                    output = $("#" + id).val();
+                    break;
+                case "radio":
+                    output = $('input[name="' + id + '"]:checked').val();
+                    break;
+            }
+        }
+        return output;
+    };
+    /**
+     * If this UDF has options (eg: text separated by pipe characters) then those options are returned.
+     * @param module {string} - The name of the UDF module (eg: users)
+     * @param item {number} - The index of the UDF item.
+     */
+    MainModel.prototype.UDFFieldOptions = function (module, item) {
+        var output = [];
+        if (this.Loaded() == true) {
+            var values = "";
+            var udf_1 = "UDF" + (item < 10 ? "0" : "") + item.toString();
+            var match = ko.utils.arrayFirst(this.Tenant().udfLabels(), function (item) {
+                return item.module().toLowerCase() == module.toLowerCase() && item.udf() == udf_1;
+            });
+            if (match != null && match.label() != null && match.label() != "") {
+                values = match.label();
+            }
+            if (values.indexOf("|") > -1) {
+                var items = values.split("|");
+                if (items != null && items.length > 2) {
+                    values = items[2].trim();
+                    if (values == undefined || values == null) {
+                        values = "";
+                    }
+                }
+                if (values != "") {
+                    var items_1 = values.split(",");
+                    if (items_1 != null && items_1.length > 0) {
+                        items_1.forEach(function (e) {
+                            output.push(e.trim());
+                        });
+                    }
+                }
+            }
+        }
+        return output;
+    };
+    /**
+     * Renders the display-only version of a UDF
+     * @param element {string} - The id of the HTML element where the fields should be rendered.
+     * @param module {string} - The name of the UDF module (eg: users)
+     * @param dataObject {any} - The object that contains the UDF fields (eg: a User object).
+     */
+    MainModel.prototype.UDFFieldsDisplay = function (element, module, dataObject) {
+        var output = "";
+        if (this.Loaded() == true) {
+            var m = module.toLowerCase();
+            var totalItems = m == "assets" ? 20 : 10;
+            for (var x = 1; x <= totalItems; x++) {
+                if (this.UDFShowField(module, x)) {
+                    var label = this.UDFLabel(module, x);
+                    var options = [];
+                    var udfField = "udf" + (x < 10 ? "0" : "") + x.toString();
+                    var value = dataObject[udfField];
+                    if (tsUtilities.HasValue(label)) {
+                        output +=
+                            "<div class='row padtop'>\n" +
+                                "  <div class='col-sm-12'>\n" +
+                                "    <strong>" + label + "</strong>\n" +
+                                "    <div>" + value + "</div>\n" +
+                                "  </div>\n" +
+                                "</div>\n";
+                    }
+                }
+            }
+            $("#" + element).html(output);
+            this.UDFFieldsSetValues(module, dataObject);
+        }
+        else {
+            $("#" + element).html("");
+        }
+    };
+    /**
+     * Renders the input version of a UDF
+     * @param element {string} - The id of the HTML element where the fields should be rendered.
+     * @param module {string} - The name of the UDF module (eg: users)
+     * @param dataObject {any} - The object that contains the UDF fields (eg: a User object).
+     */
+    MainModel.prototype.UDFFieldsRender = function (element, module, dataObject) {
+        //console.log("UDFFieldsRender", element, module, dataObject);
+        var output = "";
+        if (this.Loaded() == true) {
+            var m = module.toLowerCase();
+            var totalItems = m == "assets" ? 20 : 10;
+            var _loop_1 = function (x) {
+                if (this_1.UDFShowField(module, x)) {
+                    var label = this_1.UDFLabel(module, x);
+                    var id_1 = m + "-udf-" + x.toString();
+                    var options = [];
+                    if (tsUtilities.HasValue(label)) {
+                        output +=
+                            "<div class='row padtop'>\n" +
+                                "  <div class='col-sm-12'>\n" +
+                                "    <label for='" + id_1 + "'>" + label + "</label>\n";
+                        var type = this_1.UDFFieldType(module, x);
+                        switch (type) {
+                            case "input":
+                                output +=
+                                    "    <input type='text' class='form-control' id='" + id_1 + "'>";
+                                break;
+                            case "select":
+                                options = this_1.UDFFieldOptions(module, x);
+                                output += "    <select class='form-control' id='" + id_1 + "'>\n";
+                                if (options != null && options.length > 0) {
+                                    output += "      <option value=\"\">Select a Value</option>\n";
+                                    options.forEach(function (item) {
+                                        output += "      <option value=\"" + item + "\">" + item + "</option>\n";
+                                    });
+                                }
+                                output += "    </select>\n";
+                                break;
+                            case "radio":
+                                options = this_1.UDFFieldOptions(module, x);
+                                if (options != null && options.length > 0) {
+                                    var o_1 = 0;
+                                    options.forEach(function (item) {
+                                        o_1++;
+                                        output +=
+                                            "    <div>\n" +
+                                                "      <input type='radio' name='" + id_1 + "' id='" + id_1 + "-" + o_1.toString() + "' value=\"" + item + "\">\n" +
+                                                "      <label for='" + id_1 + "-" + o_1.toString() + "' class='unbold'>" + item + "</label>\n" +
+                                                "    </div>\n";
+                                    });
+                                }
+                                break;
+                        }
+                        output +=
+                            "  </div>\n" +
+                                "</div>\n";
+                    }
+                }
+            };
+            var this_1 = this;
+            for (var x = 1; x <= totalItems; x++) {
+                _loop_1(x);
+            }
+            $("#" + element).html(output);
+            this.UDFFieldsSetValues(module, dataObject);
+        }
+        else {
+            $("#" + element).html("");
+        }
+    };
+    /**
+     * Gets the values from the UDF items and stores them back in the object.
+     * @param module {string} - The name of the UDF module (eg: users)
+     * @param observableObject {any} - The object that contains the UDF fields (eg: a User object).
+     */
+    MainModel.prototype.UDFFieldsGetValues = function (module, observableObject) {
+        var m = module.toLowerCase();
+        var totalItems = m == "assets" ? 20 : 10;
+        for (var x = 1; x <= totalItems; x++) {
+            var label = this.UDFLabel(module, x);
+            if (tsUtilities.HasValue(label)) {
+                var id = m + "-udf-" + x.toString();
+                var type = this.UDFFieldType(module, x);
+                var value = "";
+                switch (type) {
+                    case "input":
+                    case "select":
+                        value = $("#" + id).val();
+                        break;
+                    case "radio":
+                        value = $('input[name="' + id + '"]:checked').val();
+                        break;
+                }
+                switch (x) {
+                    case 1:
+                        observableObject.udf01(value);
+                        break;
+                    case 2:
+                        observableObject.udf02(value);
+                        break;
+                    case 3:
+                        observableObject.udf03(value);
+                        break;
+                    case 4:
+                        observableObject.udf04(value);
+                        break;
+                    case 5:
+                        observableObject.udf05(value);
+                        break;
+                    case 6:
+                        observableObject.udf06(value);
+                        break;
+                    case 7:
+                        observableObject.udf07(value);
+                        break;
+                    case 8:
+                        observableObject.udf08(value);
+                        break;
+                    case 9:
+                        observableObject.udf09(value);
+                        break;
+                    case 10:
+                        observableObject.udf10(value);
+                        break;
+                    case 11:
+                        observableObject.udf11(value);
+                        break;
+                    case 12:
+                        observableObject.udf12(value);
+                        break;
+                    case 13:
+                        observableObject.udf13(value);
+                        break;
+                    case 14:
+                        observableObject.udf14(value);
+                        break;
+                    case 15:
+                        observableObject.udf15(value);
+                        break;
+                    case 16:
+                        observableObject.udf16(value);
+                        break;
+                    case 17:
+                        observableObject.udf17(value);
+                        break;
+                    case 18:
+                        observableObject.udf18(value);
+                        break;
+                    case 19:
+                        observableObject.udf19(value);
+                        break;
+                    case 20:
+                        observableObject.udf20(value);
+                        break;
+                }
+            }
+        }
+    };
+    /**
+     * Sets the values for the rendered UDF items.
+     * @param module {string} - The name of the UDF module (eg: users)
+     * @param dataObject {any} - The object that contains the UDF fields (eg: a User object).
+     */
+    MainModel.prototype.UDFFieldsSetValues = function (module, dataObject) {
+        var m = module.toLowerCase();
+        var totalItems = m == "assets" ? 20 : 10;
+        for (var x = 1; x <= totalItems; x++) {
+            var label = this.UDFLabel(module, x);
+            if (tsUtilities.HasValue(label)) {
+                var udfField = "udf" + (x < 10 ? "0" : "") + x.toString();
+                var id = m + "-udf-" + x.toString();
+                var type = this.UDFFieldType(module, x);
+                var value = dataObject[udfField];
+                switch (type) {
+                    case "input":
+                    case "select":
+                        $("#" + id).val(value);
+                        break;
+                    case "radio":
+                        $('input[name="' + id + '"]').val([value]);
+                        break;
+                }
+            }
+        }
+    };
+    /**
+     * Determines the type of input to render for the given UDF.
+     * @param module {string} - The name of the UDF module (eg: users)
+     * @param item {number} - The index of the UDF item.
+     */
+    MainModel.prototype.UDFFieldType = function (module, item) {
+        var output = "input";
+        if (this.Loaded() == true) {
+            var label = "";
+            var udf_2 = "UDF" + (item < 10 ? "0" : "") + item.toString();
+            var match = ko.utils.arrayFirst(this.Tenant().udfLabels(), function (item) {
+                return item.module().toLowerCase() == module.toLowerCase() && item.udf() == udf_2;
+            });
+            if (match != null && match.label() != null && match.label() != "") {
+                label = match.label();
+            }
+            if (label.indexOf("|") > -1) {
+                var items = label.split("|");
+                if (items != null && items.length > 1) {
+                    output = items[1].trim();
+                    if (output == undefined || output == null || output == "") {
+                        output = "input";
+                    }
+                }
+            }
+        }
+        return output.toLowerCase();
+    };
+    /**
+     * Gets the filter options for the given UDF.
+     * @param module {string} - The name of the UDF module (eg: users)
+     * @param item {number} - The index of the UDF item.
+     */
+    MainModel.prototype.UDFFilterOptions = function (module, item) {
+        var output = [];
+        if (this.Loaded() == true) {
+            var udf_3 = "UDF" + (item < 10 ? "0" : "") + item.toString();
+            var match = ko.utils.arrayFirst(this.Tenant().udfLabels(), function (item) {
+                return item.module().toLowerCase() == module.toLowerCase() && item.udf() == udf_3;
+            });
+            if (match != null && match.filterOptions() != null && match.filterOptions().length > 0) {
+                match.filterOptions().forEach(function (item) {
+                    output.push(item);
+                });
+            }
+        }
+        return output;
+    };
+    /**
+     * Gets the label for the given UDF.
+     * @param module {string} - The name of the UDF module (eg: users)
+     * @param item {number} - The index of the UDF item.
+     */
+    MainModel.prototype.UDFLabel = function (module, item) {
+        var output = "";
+        if (this.Loaded() == true) {
+            var udf_4 = "UDF" + (item < 10 ? "0" : "") + item.toString();
+            var match = ko.utils.arrayFirst(this.Tenant().udfLabels(), function (item) {
+                return item.module().toLowerCase() == module.toLowerCase() && item.udf() == udf_4;
+            });
+            if (match != null && match.label() != null && match.label() != "") {
+                output = match.label();
+            }
+            if (output.indexOf("|") > -1) {
+                output = output.substr(0, output.indexOf("|"));
+            }
+        }
+        return output;
+    };
+    /**
+     * Determines if the given UDF should be shown in a column.
+     * @param module {string} - The name of the UDF module (eg: users)
+     * @param item {number} - The index of the UDF item.
+     */
+    MainModel.prototype.UDFShowColumn = function (module, item) {
+        var output = false;
+        if (this.Loaded() == true) {
+            var udf_5 = "UDF" + (item < 10 ? "0" : "") + item.toString();
+            var match = ko.utils.arrayFirst(this.Tenant().udfLabels(), function (item) {
+                return item.module().toLowerCase() == module.toLowerCase() && item.udf() == udf_5;
+            });
+            if (match != null && match.label() != null && match.label() != "" && match.showColumn() == true) {
+                output = true;
+            }
+        }
+        return output;
+    };
+    /**
+     * Determines if the given UDF should be shown in the interface when editing or viewing an item.
+     * @param module {string} - The name of the UDF module (eg: users)
+     * @param item {number} - The index of the UDF item.
+     */
+    MainModel.prototype.UDFShowField = function (module, item) {
+        var output = false;
+        if (this.Loaded() == true) {
+            var label = this.UDFLabel(module, item);
+            if (tsUtilities.HasValue(label)) {
+                output = true;
+            }
+        }
+        return output;
+    };
+    /**
+     * Determines if the given UDF should be shown in the filter options.
+     * @param module {string} - The name of the UDF module (eg: users)
+     * @param item {number} - The index of the UDF item.
+     */
+    MainModel.prototype.UDFShowInFilter = function (module, item) {
+        var output = false;
+        if (this.Loaded() == true) {
+            var udf_6 = "UDF" + (item < 10 ? "0" : "") + item.toString();
+            var match = ko.utils.arrayFirst(this.Tenant().udfLabels(), function (item) {
+                return item.module().toLowerCase() == module.toLowerCase() && item.udf() == udf_6;
+            });
+            if (match != null && match.label() != null && match.label() != "" && match.showInFilter() == true) {
+                output = true;
+            }
+        }
+        return output;
     };
     /**
      * Called on load and when the window resizes to keep track of whether the mobile menu is visible or not, as well as the window width and height.

@@ -421,7 +421,20 @@ public partial class DataAccess
             output.Username = rec.Username;
             output.EmployeeId = rec.EmployeeId;
             output.Password = String.Empty;
+            output.PreventPasswordChange = rec.PreventPasswordChange.HasValue ? (bool)rec.PreventPasswordChange : false;
             output.HasLocalPassword = !String.IsNullOrWhiteSpace(rec.Password);
+            output.LastLockoutDate = rec.LastLockoutDate;
+
+            output.udf01 = rec.UDF01;
+            output.udf02 = rec.UDF02;
+            output.udf03 = rec.UDF03;
+            output.udf04 = rec.UDF04;
+            output.udf05 = rec.UDF05;
+            output.udf06 = rec.UDF06;
+            output.udf07 = rec.UDF07;
+            output.udf08 = rec.UDF08;
+            output.udf09 = rec.UDF09;
+            output.udf10 = rec.UDF10;
 
             output.Tenants = await GetUserTenants(output.Username, output.Email);
             output.UserTenants = await GetUserTenantList(output.Username, output.Email);
@@ -583,6 +596,27 @@ public partial class DataAccess
             }
         };
 
+        // See if any UDF labels need to be included in the column output
+        var udfLabels = await GetUDFLabels(output.TenantId, false);
+        for (int x = 1; x < 11; x++) {
+            bool show = ShowUDFColumn("Users", x, udfLabels);
+            if (show) {
+                string label = UDFLabel("Users", x, udfLabels);
+                string udf = "udf" + x.ToString().PadLeft(2, '0');
+                if (String.IsNullOrEmpty(label)) {
+                    label = udf.ToUpper();
+                }
+                output.Columns.Add(new DataObjects.FilterColumn {
+                    Align = "",
+                    Label = label,
+                    TipText = "",
+                    Sortable = true,
+                    DataElementName = udf,
+                    DataType = "string"
+                });
+            }
+        }
+
         var recs = data.Users.Where(x => x.TenantId == output.TenantId && x.Username != "admin");
 
         if (output.FilterDepartments != null && output.FilterDepartments.Count() > 0) {
@@ -613,20 +647,61 @@ public partial class DataAccess
             }
         }
 
+        if (!String.IsNullOrWhiteSpace(output.udf01)) { recs = recs.Where(x => x.UDF01 != null && x.UDF01.Contains(output.udf01)); }
+        if (!String.IsNullOrWhiteSpace(output.udf02)) { recs = recs.Where(x => x.UDF02 != null && x.UDF02.Contains(output.udf02)); }
+        if (!String.IsNullOrWhiteSpace(output.udf03)) { recs = recs.Where(x => x.UDF03 != null && x.UDF03.Contains(output.udf03)); }
+        if (!String.IsNullOrWhiteSpace(output.udf04)) { recs = recs.Where(x => x.UDF04 != null && x.UDF04.Contains(output.udf04)); }
+        if (!String.IsNullOrWhiteSpace(output.udf05)) { recs = recs.Where(x => x.UDF05 != null && x.UDF05.Contains(output.udf05)); }
+        if (!String.IsNullOrWhiteSpace(output.udf06)) { recs = recs.Where(x => x.UDF06 != null && x.UDF06.Contains(output.udf06)); }
+        if (!String.IsNullOrWhiteSpace(output.udf07)) { recs = recs.Where(x => x.UDF07 != null && x.UDF07.Contains(output.udf07)); }
+        if (!String.IsNullOrWhiteSpace(output.udf08)) { recs = recs.Where(x => x.UDF08 != null && x.UDF08.Contains(output.udf08)); }
+        if (!String.IsNullOrWhiteSpace(output.udf09)) { recs = recs.Where(x => x.UDF09 != null && x.UDF09.Contains(output.udf09)); }
+        if (!String.IsNullOrWhiteSpace(output.udf10)) { recs = recs.Where(x => x.UDF10 != null && x.UDF10.Contains(output.udf10)); }
+
         // Add any filters
         if (!String.IsNullOrEmpty(output.Keyword)) {
             // Dynamically include only the UDF fields that are needed
-            recs = recs.Where(x => (x.LastName != null && x.LastName.Contains(output.Keyword))
-                || (x.FirstName != null && x.FirstName.Contains(output.Keyword))
-                || (x.Email != null && x.Email.Contains(output.Keyword))
-                || (x.Username != null && x.Username.Contains(output.Keyword))
-            );
+            bool includeUdf01 = UDFLabelIncludedInSearch("Users", "UDF01", udfLabels);
+            bool includeUdf02 = UDFLabelIncludedInSearch("Users", "UDF02", udfLabels);
+            bool includeUdf03 = UDFLabelIncludedInSearch("Users", "UDF03", udfLabels);
+            bool includeUdf04 = UDFLabelIncludedInSearch("Users", "UDF04", udfLabels);
+            bool includeUdf05 = UDFLabelIncludedInSearch("Users", "UDF05", udfLabels);
+            bool includeUdf06 = UDFLabelIncludedInSearch("Users", "UDF06", udfLabels);
+            bool includeUdf07 = UDFLabelIncludedInSearch("Users", "UDF07", udfLabels);
+            bool includeUdf08 = UDFLabelIncludedInSearch("Users", "UDF08", udfLabels);
+            bool includeUdf09 = UDFLabelIncludedInSearch("Users", "UDF09", udfLabels);
+            bool includeUdf10 = UDFLabelIncludedInSearch("Users", "UDF10", udfLabels);
+
+            if (includeUdf01 || includeUdf02 || includeUdf03 || includeUdf04 || includeUdf05 || includeUdf06 || includeUdf07 || includeUdf08 || includeUdf09 || includeUdf10) {
+                recs = recs.Where(x => (x.LastName != null && x.LastName.Contains(output.Keyword))
+                    || (x.FirstName != null && x.FirstName.Contains(output.Keyword))
+                    || (x.Email != null && x.Email.Contains(output.Keyword))
+                    || (x.Username != null && x.Username.Contains(output.Keyword))
+                    || (includeUdf01 ? x.UDF01 != null && x.UDF01.Contains(output.Keyword) : false)
+                    || (includeUdf02 ? x.UDF02 != null && x.UDF02.Contains(output.Keyword) : false)
+                    || (includeUdf03 ? x.UDF03 != null && x.UDF03.Contains(output.Keyword) : false)
+                    || (includeUdf04 ? x.UDF04 != null && x.UDF04.Contains(output.Keyword) : false)
+                    || (includeUdf05 ? x.UDF05 != null && x.UDF05.Contains(output.Keyword) : false)
+                    || (includeUdf06 ? x.UDF06 != null && x.UDF06.Contains(output.Keyword) : false)
+                    || (includeUdf07 ? x.UDF07 != null && x.UDF07.Contains(output.Keyword) : false)
+                    || (includeUdf08 ? x.UDF08 != null && x.UDF08.Contains(output.Keyword) : false)
+                    || (includeUdf09 ? x.UDF09 != null && x.UDF09.Contains(output.Keyword) : false)
+                    || (includeUdf10 ? x.UDF10 != null && x.UDF10.Contains(output.Keyword) : false)
+                );
+            } else {
+                recs = recs.Where(x => (x.LastName != null && x.LastName.Contains(output.Keyword))
+                    || (x.FirstName != null && x.FirstName.Contains(output.Keyword))
+                    || (x.Email != null && x.Email.Contains(output.Keyword))
+                    || (x.Username != null && x.Username.Contains(output.Keyword))
+                );
+            }
         }
 
         bool Ascending = true;
         if (StringOrEmpty(output.SortOrder).ToUpper() == "DESC") {
             Ascending = false;
         }
+        
         switch (StringOrEmpty(output.Sort).ToUpper()) {
             case "LAST":
                 if (Ascending) {
@@ -699,6 +774,46 @@ public partial class DataAccess
                     recs = recs.OrderByDescending(x => x.LastLogin).ThenByDescending(x => x.LastName).ThenByDescending(x => x.FirstName);
                 }
                 break;
+            
+            case "UDF01":
+                recs = Ascending ? recs.OrderBy(x => x.UDF01) : recs.OrderByDescending(x => x.UDF01);
+                break;
+            
+            case "UDF02":
+                recs = Ascending ? recs.OrderBy(x => x.UDF02) : recs.OrderByDescending(x => x.UDF02);
+                break;
+            
+            case "UDF03":
+                recs = Ascending ? recs.OrderBy(x => x.UDF03) : recs.OrderByDescending(x => x.UDF03);
+                break;
+            
+            case "UDF04":
+                recs = Ascending ? recs.OrderBy(x => x.UDF04) : recs.OrderByDescending(x => x.UDF04);
+                break;
+            
+            case "UDF05":
+                recs = Ascending ? recs.OrderBy(x => x.UDF05) : recs.OrderByDescending(x => x.UDF05);
+                break;
+            
+            case "UDF06":
+                recs = Ascending ? recs.OrderBy(x => x.UDF06) : recs.OrderByDescending(x => x.UDF06);
+                break;
+            
+            case "UDF07":
+                recs = Ascending ? recs.OrderBy(x => x.UDF07) : recs.OrderByDescending(x => x.UDF07);
+                break;
+            
+            case "UDF08":
+                recs = Ascending ? recs.OrderBy(x => x.UDF08) : recs.OrderByDescending(x => x.UDF08);
+                break;
+            
+            case "UDF09":
+                recs = Ascending ? recs.OrderBy(x => x.UDF09) : recs.OrderByDescending(x => x.UDF09);
+                break;
+            
+            case "UDF10":
+                recs = Ascending ? recs.OrderBy(x => x.UDF10) : recs.OrderByDescending(x => x.UDF10);
+                break;
         }
 
         if (recs != null && recs.Count() > 0) {
@@ -755,7 +870,19 @@ public partial class DataAccess
                     UserId = rec.UserId,
                     Username = rec.Username,
                     Photo = await GetUserPhoto(rec.UserId),
-                    HasLocalPassword = !String.IsNullOrWhiteSpace(rec.Password)
+                    PreventPasswordChange = rec.PreventPasswordChange.HasValue ? (bool)rec.PreventPasswordChange : false,
+                    HasLocalPassword = !String.IsNullOrWhiteSpace(rec.Password),
+                    LastLockoutDate = rec.LastLockoutDate,
+                    udf01 = rec.UDF01,
+                    udf02 = rec.UDF02,
+                    udf03 = rec.UDF03,
+                    udf04 = rec.UDF04,
+                    udf05 = rec.UDF05,
+                    udf06 = rec.UDF06,
+                    udf07 = rec.UDF07,
+                    udf08 = rec.UDF08,
+                    udf09 = rec.UDF09,
+                    udf10 = rec.UDF10
                 };
 
                 if(_inMemoryDatabase && u.DepartmentId.HasValue && String.IsNullOrEmpty(u.DepartmentName)) {
@@ -835,7 +962,19 @@ public partial class DataAccess
                     Username = rec.Username,
                     EmployeeId = rec.EmployeeId,
                     Password = String.Empty,
-                    HasLocalPassword = !String.IsNullOrWhiteSpace(rec.Password)
+                    PreventPasswordChange = rec.PreventPasswordChange.HasValue ? (bool)rec.PreventPasswordChange : false,
+                    HasLocalPassword = !String.IsNullOrWhiteSpace(rec.Password),
+                    LastLockoutDate = rec.LastLockoutDate,
+                    udf01 = rec.UDF01,
+                    udf02 = rec.UDF02,
+                    udf03 = rec.UDF03,
+                    udf04 = rec.UDF04,
+                    udf05 = rec.UDF05,
+                    udf06 = rec.UDF06,
+                    udf07 = rec.UDF07,
+                    udf08 = rec.UDF08,
+                    udf09 = rec.UDF09,
+                    udf10 = rec.UDF10
                 };
 
                 u.DisplayName = DisplayNameFromLastAndFirst(u.LastName, u.FirstName, u.Email, u.DepartmentName, u.Location);
@@ -1039,6 +1178,28 @@ public partial class DataAccess
         rec.Enabled = user.Enabled;
         rec.LastLogin = user.LastLogin.HasValue ? (DateTime)user.LastLogin : (DateTime?)null;
         rec.Admin = user.Admin;
+        rec.PreventPasswordChange = user.PreventPasswordChange;
+
+        user.udf01 = MaxStringLength(user.udf01, 500);
+        user.udf02 = MaxStringLength(user.udf02, 500);
+        user.udf03 = MaxStringLength(user.udf03, 500);
+        user.udf04 = MaxStringLength(user.udf04, 500);
+        user.udf05 = MaxStringLength(user.udf05, 500);
+        user.udf06 = MaxStringLength(user.udf06, 500);
+        user.udf07 = MaxStringLength(user.udf07, 500);
+        user.udf08 = MaxStringLength(user.udf08, 500);
+        user.udf09 = MaxStringLength(user.udf09, 500);
+        user.udf10 = MaxStringLength(user.udf10, 500);
+        rec.UDF01 = user.udf01;
+        rec.UDF02 = user.udf02;
+        rec.UDF03 = user.udf03;
+        rec.UDF04 = user.udf04;
+        rec.UDF05 = user.udf05;
+        rec.UDF06 = user.udf06;
+        rec.UDF07 = user.udf07;
+        rec.UDF08 = user.udf08;
+        rec.UDF09 = user.udf09;
+        rec.UDF10 = user.udf10;
 
         try {
             if (newRecord) {
@@ -1107,6 +1268,27 @@ public partial class DataAccess
         rec.LastLogin = user.LastLogin.HasValue ? (DateTime)user.LastLogin : (DateTime?)null;
         rec.Admin = user.Admin;
 
+        user.udf01 = MaxStringLength(user.udf01, 500);
+        user.udf02 = MaxStringLength(user.udf02, 500);
+        user.udf03 = MaxStringLength(user.udf03, 500);
+        user.udf04 = MaxStringLength(user.udf04, 500);
+        user.udf05 = MaxStringLength(user.udf05, 500);
+        user.udf06 = MaxStringLength(user.udf06, 500);
+        user.udf07 = MaxStringLength(user.udf07, 500);
+        user.udf08 = MaxStringLength(user.udf08, 500);
+        user.udf09 = MaxStringLength(user.udf09, 500);
+        user.udf10 = MaxStringLength(user.udf10, 500);
+        rec.UDF01 = user.udf01;
+        rec.UDF02 = user.udf02;
+        rec.UDF03 = user.udf03;
+        rec.UDF04 = user.udf04;
+        rec.UDF05 = user.udf05;
+        rec.UDF06 = user.udf06;
+        rec.UDF07 = user.udf07;
+        rec.UDF08 = user.udf08;
+        rec.UDF09 = user.udf09;
+        rec.UDF10 = user.udf10;
+
         try {
             if (newRecord) {
                 data.Users.Add(rec);
@@ -1127,6 +1309,28 @@ public partial class DataAccess
             var saved = await SaveUser(user);
             output.Add(saved);
         }
+        return output;
+    }
+
+    public async Task<DataObjects.User> UnlockUserAccount(Guid UserId)
+    {
+        DataObjects.User output = await GetUser(UserId);
+
+        if (output.ActionResponse.Result) {
+            if (output.LastLockoutDate.HasValue) {
+                var rec = await data.Users.FirstOrDefaultAsync(x => x.UserId == UserId);
+                if (rec != null) {
+                    rec.LastLockoutDate = null;
+                    await data.SaveChangesAsync();
+                    output = await GetUser(UserId);
+                } else {
+                    output.ActionResponse = GetNewActionResponse(false, "UserId not found.");
+                }
+            } else {
+                output.ActionResponse = GetNewActionResponse(false, "Account Has Already Been Unlocked");
+            }
+        }
+
         return output;
     }
 
@@ -1201,7 +1405,8 @@ public partial class DataAccess
             if (rec == null) {
                 rec = new EFModels.EFModels.User {
                     TenantId = _guid1,
-                    UserId = _guid1
+                    UserId = _guid1,
+                    PreventPasswordChange = false
                 };
                 newRecord = true;
             }
@@ -1232,7 +1437,8 @@ public partial class DataAccess
                     if (tenantAdmin == null) {
                         tenantAdmin = new EFModels.EFModels.User {
                             TenantId = tenant.TenantId,
-                            UserId = Guid.NewGuid()
+                            UserId = Guid.NewGuid(),
+                            PreventPasswordChange = false
                         };
                         newRecord = true;
                     }
@@ -1280,7 +1486,8 @@ public partial class DataAccess
                             EmployeeId = user.EmployeeId,
                             Enabled = true,
                             Admin = false,
-                            Password = user.Password
+                            Password = user.Password,
+                            PreventPasswordChange = false
                         };
 
                         await data.Users.AddAsync(rec);

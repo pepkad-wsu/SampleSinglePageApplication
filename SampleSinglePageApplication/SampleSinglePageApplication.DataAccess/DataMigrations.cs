@@ -93,6 +93,22 @@ public class DataMigrations
 
         m1.Add("SET ANSI_NULLS ON;" + Environment.NewLine +
             "SET QUOTED_IDENTIFIER ON;" + Environment.NewLine +
+            "IF NOT EXISTS (SELECT * FROM sys.tables WHERE name='UDFLabels')" + Environment.NewLine +
+            "CREATE TABLE [dbo].[UDFLabels](" + Environment.NewLine +
+            "	[Id] [uniqueidentifier] NOT NULL," + Environment.NewLine +
+            "	[Module] [nvarchar](20) NULL," + Environment.NewLine +
+            "	[UDF] [nvarchar](10) NULL," + Environment.NewLine +
+            "	[Label] [nvarchar](max) NULL," + Environment.NewLine +
+            "	[ShowColumn] [bit] NULL," + Environment.NewLine +
+            "	[ShowInFilter] [bit] NULL," + Environment.NewLine +
+            "	[IncludeInSearch] [bit] NULL," + Environment.NewLine +
+            "	[TenantId] [uniqueidentifier] NULL," + Environment.NewLine +
+            "   CONSTRAINT [PK_UDFLabels] PRIMARY KEY CLUSTERED ([Id] ASC)" + Environment.NewLine +
+            "   WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF)" + Environment.NewLine +
+            "    ON [PRIMARY]) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]");
+
+        m1.Add("SET ANSI_NULLS ON;" + Environment.NewLine +
+            "SET QUOTED_IDENTIFIER ON;" + Environment.NewLine +
             "IF NOT EXISTS (SELECT * FROM sys.tables WHERE name='Users')" + Environment.NewLine +
             "CREATE TABLE [dbo].[Users](" + Environment.NewLine +
             "  	[UserId] [uniqueidentifier] NOT NULL," + Environment.NewLine +
@@ -110,8 +126,19 @@ public class DataMigrations
             "	[LastLogin] [datetime] NULL," + Environment.NewLine +
             "	[Admin] [bit] NULL," + Environment.NewLine +
             "	[Password] [nvarchar](max) NULL," + Environment.NewLine +
+            "	[PreventPasswordChange] [bit] NULL," + Environment.NewLine +
             "	[FailedLoginAttempts] [int] NULL," + Environment.NewLine +
             "	[LastLockoutDate] [datetime] NULL," + Environment.NewLine +
+            "   [UDF01] [nvarchar](500) NULL," + Environment.NewLine +
+            "   [UDF02] [nvarchar](500) NULL," + Environment.NewLine +
+            "   [UDF03] [nvarchar](500) NULL," + Environment.NewLine +
+            "   [UDF04] [nvarchar](500) NULL," + Environment.NewLine +
+            "   [UDF05] [nvarchar](500) NULL," + Environment.NewLine +
+            "   [UDF06] [nvarchar](500) NULL," + Environment.NewLine +
+            "   [UDF07] [nvarchar](500) NULL," + Environment.NewLine +
+            "   [UDF08] [nvarchar](500) NULL," + Environment.NewLine +
+            "   [UDF09] [nvarchar](500) NULL," + Environment.NewLine +
+            "   [UDF10] [nvarchar](500) NULL," + Environment.NewLine +
             "    CONSTRAINT [PK_Users] PRIMARY KEY CLUSTERED ([UserId] ASC)" + Environment.NewLine +
             "	WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF)" + Environment.NewLine +
             "	ON [PRIMARY]) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]");

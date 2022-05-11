@@ -1,5 +1,6 @@
 ﻿interface Window {
     mainModel: MainModel;
+    udfLabelsModel: UdfLabelsModel;
     usersModel: UsersModel;
 }
 /**
@@ -21,6 +22,7 @@ enum StyleType {
  * The main viewmodel shared among all pages.
  */
 class MainModel {
+    AccessDeniedMessage: KnockoutObservable<string> = ko.observable("");
     Action: KnockoutObservable<string> = ko.observable("");
     DefaultLanguageItems: KnockoutObservableArray<optionPair> = ko.observableArray([]);
     Extra: KnockoutObservableArray<string> = ko.observableArray([]);
@@ -44,6 +46,7 @@ class MainModel {
     Token: KnockoutObservable<string> = ko.observable("");
     User: KnockoutObservable<user> = ko.observable(new user);
     View: KnockoutObservable<string> = ko.observable("");
+    VersionInfo: KnockoutObservable<versionInfo> = ko.observable(new versionInfo);
     WindowHeight: KnockoutObservable<number> = ko.observable(0);
     WindowWidth: KnockoutObservable<number> = ko.observable(0);
 
@@ -77,6 +80,10 @@ class MainModel {
         if (window.objUser != undefined && window.objUser != null) {
             this.User().Load(window.objUser);
             window.objUser = null;
+        }
+
+        if (window.objVersionInfo != undefined && window.objVersionInfo != null) {
+            this.VersionInfo().Load(window.objVersionInfo);
         }
 
         if (tsUtilities.HasValue(window.action)) {
@@ -119,6 +126,19 @@ class MainModel {
         this.StickyMenus(stickyMenus == "1");
 
         window.onpopstate = () => { this.PopStateChanged(); }
+
+        this.CheckForUpdates();
+    }
+
+    AccessDenied(message?: string): void {
+        console.log("Access Denied", message);
+        this.AccessDeniedMessage("");
+
+        if (message != undefined && message != null && message != "") {
+            this.AccessDeniedMessage(message);
+        }
+
+        this.Nav("AccessDenied");
     }
 
     AjaxUserAutocomplete(element: string, callbackHandler: Function): void {
@@ -262,6 +282,7 @@ class MainModel {
             if (this.User().admin()) {
                 models.push("LanguageModel");
                 models.push("SettingsModel");
+                models.push("UdfLabelsModel");
                 models.push("UsersModel");
                 if (this.User().appAdmin()) {
                     models.push("TenantsModel");
@@ -285,6 +306,34 @@ class MainModel {
             this.Loaded(true);
             setTimeout(() => this.Nav(this.Action(), this.Id()), 500);
         }
+    }
+
+    /**
+     * Checks the VersionInfo from the server to see if the server has restarted or been updated.
+     */
+    CheckForUpdates(): void {
+        let success: Function = (data: server.versionInfo) => {
+            let reload: boolean = false;
+
+            if (data != null) {
+                if (this.VersionInfo().released() != data.released || this.VersionInfo().runningSince() != data.runningSince || this.VersionInfo().version() != data.version) {
+                    reload = true;
+                }
+            }
+
+            if (reload) {
+                this.Nav("ServerUpdated");
+            } else {
+                setTimeout(() => this.CheckForUpdates(), 60000);
+            }
+        };
+
+
+        let failure: Function = () => {
+            setTimeout(() => this.CheckForUpdates(), 60000);
+        };
+
+        tsUtilities.AjaxData(window.baseURL + "api/Data/GetVersionInfo", null, success, failure);
     }
 
     /**
@@ -344,6 +393,7 @@ class MainModel {
                 case "newuser":
                 case "settings":
                 case "tenants":
+                case "udflabels":
                 case "users":
                     output = true;
                     break;
@@ -401,6 +451,9 @@ class MainModel {
 
         if (tsUtilities.HasValue(module)) {
             switch (module.toLowerCase()) {
+                case "accessdenied":
+                    output = '<i class="fa-regular fa-shield-exclamation"></i>';
+                    break;
                 case "addnewuser":
                     output = '<i class="fas fa-user-plus"></i>';
                     break;
@@ -506,6 +559,9 @@ class MainModel {
                 case "selected":
                     output = '<i class="fa-solid fa-circle-check"></i>';
                     break;
+                case "serverupdated":
+                    output = '<i class="fa-solid fa-server"></i>';
+                    break;
                 case "showfilter":
                     output = '<i class="fa-solid fa-filter-circle-xmark"></i>';
                     break;
@@ -517,6 +573,9 @@ class MainModel {
                     break;
                 case "tenants":
                     output = '<i class="fas fa-users-cog"></i>';
+                    break;
+                case "udflabels":
+                    output = '<i class="fa-brands fa-firstdraft"></i>';
                     break;
                 case "uploadfile":
                     output = '<i class="fas fa-cloud-upload-alt"></i>';
@@ -662,7 +721,13 @@ class MainModel {
         $("#page-view-model-area").hide();
 
         // Redirect to the local logout page
-        window.location.href = window.baseURL + "Logout?redirect=" + encodeURI(window.baseURL + window.tenantCode);
+        let returnUrl: string = window.baseURL;
+        if (window.useTenantCodeInUrl) {
+            returnUrl += this.TenantCode();
+        }
+
+        let url: string = window.baseURL + "Logout/" + this.TenantId() + "?redirect=" + encodeURI(returnUrl);
+        window.location.href = url;
     }
 
     /**
@@ -880,7 +945,8 @@ class MainModel {
 
         // If we have a requested URL cookie then clear that cookie and redirect to that page.
         let requestedUrl: string = tsUtilities.CookieRead("requested-url");
-        if (tsUtilities.HasValue(requestedUrl) && action.toLowerCase() != "login") {
+
+        if (tsUtilities.HasValue(requestedUrl) && action.toLowerCase() != "login" && requestedUrl.toLowerCase().indexOf("null") == -1) {
             tsUtilities.CookieWrite("requested-url", "");
             window.location.href = requestedUrl;
             return;
@@ -932,11 +998,13 @@ class MainModel {
 
         if (!this.LoggedIn()) {
             switch (action.toLowerCase()) {
+                case "accessdenied":
                 case "login":
                 case "otherpages":
                 case "thatcanbe":
                 case "accessedwhen":
                 case "notloggedin":
+                case "serverupdated":
                     allowAnonymousAccess = true;
                     break;
 
@@ -957,6 +1025,13 @@ class MainModel {
         if (!allowAnonymousAccess) {
             // This is where you would test various actions to make sure the user has access.
             switch (action.toLowerCase()) {
+                case "changepassword":
+                    if (this.User().preventPasswordChange()) {
+                        accessDenied = true;
+                    }
+                    break;
+
+                case "udflabels":
                 case "users":
                     if (!this.User().admin()) {
                         accessDenied = true;
@@ -967,7 +1042,11 @@ class MainModel {
 
         if (accessDenied == true) {
             action = "AccessDenied";
-            url = window.baseURL + "AccessDenied";
+            if (window.useTenantCodeInUrl) {
+                url = window.baseURL + this.TenantCode() + "/AccessDenied";
+            } else {
+                url = window.baseURL + "AccessDenied";
+            }
             navChanged = true;
         }
 
@@ -1282,6 +1361,21 @@ class MainModel {
 
                         break;
 
+                    case "savedudflabels":
+                        let labels: server.udfLabel[] = update.object;
+                        if (labels != null && labels.length > 0) {
+                            let l: udfLabel[] = [];
+
+                            labels.forEach(function (e) {
+                                let item: udfLabel = new udfLabel();
+                                item.Load(e);
+                                l.push(item);
+                            });
+
+                            this.Tenant().udfLabels(l);
+                        }
+                        break;
+
                     case "saveduser":
                         if (this.User().userId() == update.itemId) {
                             // This is the current user, so reload the user object
@@ -1375,6 +1469,463 @@ class MainModel {
             this.StickyMenus(true);
             tsUtilities.CookieWrite("sticky-menus", "1");
         }
+    }
+
+    /**
+     * Gets the value for a given UDF
+     * @param module {string} - The name of the UDF module (eg: users)
+     * @param item {number} - The index of the UDF item.
+     */
+    UDFFieldGetValue(module: string, item: number): string {
+        let output: string = "";
+
+        if (this.Loaded() == true && module != undefined && module != null && module != "") {
+            let m: string = module.toLowerCase();
+            let id: string = m + "-udf-" + item.toString();
+            let type: string = this.UDFFieldType(module, item);
+
+            switch (type) {
+                case "input":
+                case "select":
+                    output = $("#" + id).val();
+                    break;
+
+                case "radio":
+                    output = $('input[name="' + id + '"]:checked').val();
+                    break;
+            }
+        }
+
+        return output;
+    }
+
+    /**
+     * If this UDF has options (eg: text separated by pipe characters) then those options are returned.
+     * @param module {string} - The name of the UDF module (eg: users)
+     * @param item {number} - The index of the UDF item.
+     */
+    UDFFieldOptions(module: string, item: number): string[] {
+        let output: string[] = [];
+
+        if (this.Loaded() == true) {
+            let values: string = "";
+
+            let udf: string = "UDF" + (item < 10 ? "0" : "") + item.toString();
+
+            let match: udfLabel = ko.utils.arrayFirst(this.Tenant().udfLabels(), function (item) {
+                return item.module().toLowerCase() == module.toLowerCase() && item.udf() == udf;
+            });
+            if (match != null && match.label() != null && match.label() != "") {
+                values = match.label();
+            }
+            if (values.indexOf("|") > -1) {
+                let items: string[] = values.split("|");
+                if (items != null && items.length > 2) {
+                    values = items[2].trim();
+                    if (values == undefined || values == null) {
+                        values = "";
+                    }
+                }
+                if (values != "") {
+                    let items: string[] = values.split(",");
+                    if (items != null && items.length > 0) {
+                        items.forEach(function (e) {
+                            output.push(e.trim());
+                        });
+                    }
+                }
+            }
+        }
+
+        return output;
+    }
+
+    /**
+     * Renders the display-only version of a UDF
+     * @param element {string} - The id of the HTML element where the fields should be rendered.
+     * @param module {string} - The name of the UDF module (eg: users)
+     * @param dataObject {any} - The object that contains the UDF fields (eg: a User object).
+     */
+    UDFFieldsDisplay(element: string, module: string, dataObject: any): void {
+        let output: string = "";
+
+        if (this.Loaded() == true) {
+            let m: string = module.toLowerCase();
+            let totalItems: number = m == "assets" ? 20 : 10;
+
+            for (let x: number = 1; x <= totalItems; x++) {
+                if (this.UDFShowField(module, x)) {
+                    let label: string = this.UDFLabel(module, x);
+                    let options: string[] = [];
+
+                    let udfField: string = "udf" + (x < 10 ? "0" : "") + x.toString();
+                    let value: string = dataObject[udfField];
+
+                    if (tsUtilities.HasValue(label)) {
+                        output +=
+                            "<div class='row padtop'>\n" +
+                            "  <div class='col-sm-12'>\n" +
+                            "    <strong>" + label + "</strong>\n" +
+                            "    <div>" + value + "</div>\n" +
+                            "  </div>\n" +
+                            "</div>\n";
+                    }
+                }
+            }
+            $("#" + element).html(output);
+            this.UDFFieldsSetValues(module, dataObject);
+        } else {
+            $("#" + element).html("");
+        }
+    }
+
+    /**
+     * Renders the input version of a UDF
+     * @param element {string} - The id of the HTML element where the fields should be rendered.
+     * @param module {string} - The name of the UDF module (eg: users)
+     * @param dataObject {any} - The object that contains the UDF fields (eg: a User object).
+     */
+    UDFFieldsRender(element: string, module: string, dataObject: any): void {
+        //console.log("UDFFieldsRender", element, module, dataObject);
+        let output: string = "";
+
+        if (this.Loaded() == true) {
+            let m: string = module.toLowerCase();
+            let totalItems: number = m == "assets" ? 20 : 10;
+
+            for (let x: number = 1; x <= totalItems; x++) {
+                if (this.UDFShowField(module, x)) {
+                    let label: string = this.UDFLabel(module, x);
+                    let id: string = m + "-udf-" + x.toString();
+                    let options: string[] = [];
+
+                    if (tsUtilities.HasValue(label)) {
+                        output +=
+                            "<div class='row padtop'>\n" +
+                            "  <div class='col-sm-12'>\n" +
+                            "    <label for='" + id + "'>" + label + "</label>\n";
+
+                        let type: string = this.UDFFieldType(module, x);
+                        switch (type) {
+                            case "input":
+                                output +=
+                                    "    <input type='text' class='form-control' id='" + id + "'>";
+                                break;
+
+                            case "select":
+                                options = this.UDFFieldOptions(module, x);
+                                output += "    <select class='form-control' id='" + id + "'>\n";
+
+                                if (options != null && options.length > 0) {
+                                    output += "      <option value=\"\">Select a Value</option>\n";
+                                    options.forEach(function (item) {
+                                        output += "      <option value=\"" + item + "\">" + item + "</option>\n";
+                                    });
+                                }
+
+                                output += "    </select>\n";
+                                break;
+
+                            case "radio":
+                                options = this.UDFFieldOptions(module, x);
+
+                                if (options != null && options.length > 0) {
+                                    let o: number = 0;
+                                    options.forEach(function (item) {
+                                        o++;
+                                        output +=
+                                            "    <div>\n" +
+                                            "      <input type='radio' name='" + id + "' id='" + id + "-" + o.toString() + "' value=\"" + item + "\">\n" +
+                                            "      <label for='" + id + "-" + o.toString() + "' class='unbold'>" + item + "</label>\n" +
+                                            "    </div>\n";
+                                    });
+                                }
+                                break;
+                        }
+
+                        output +=
+                            "  </div>\n" +
+                            "</div>\n";
+                    }
+                }
+            }
+            $("#" + element).html(output);
+            this.UDFFieldsSetValues(module, dataObject);
+        } else {
+            $("#" + element).html("");
+        }
+    }
+
+    /**
+     * Gets the values from the UDF items and stores them back in the object.
+     * @param module {string} - The name of the UDF module (eg: users)
+     * @param observableObject {any} - The object that contains the UDF fields (eg: a User object).
+     */
+    UDFFieldsGetValues(module: string, observableObject: any): void {
+        let m: string = module.toLowerCase();
+        let totalItems: number = m == "assets" ? 20 : 10;
+
+        for (let x: number = 1; x <= totalItems; x++) {
+            let label: string = this.UDFLabel(module, x);
+
+            if (tsUtilities.HasValue(label)) {
+                let id: string = m + "-udf-" + x.toString();
+                let type: string = this.UDFFieldType(module, x);
+                let value: string = "";
+
+                switch (type) {
+                    case "input":
+                    case "select":
+                        value = $("#" + id).val();
+                        break;
+
+                    case "radio":
+                        value = $('input[name="' + id + '"]:checked').val();
+                        break;
+                }
+
+                switch (x) {
+                    case 1:
+                        observableObject.udf01(value);
+                        break;
+                    case 2:
+                        observableObject.udf02(value);
+                        break;
+                    case 3:
+                        observableObject.udf03(value);
+                        break;
+                    case 4:
+                        observableObject.udf04(value);
+                        break;
+                    case 5:
+                        observableObject.udf05(value);
+                        break;
+                    case 6:
+                        observableObject.udf06(value);
+                        break;
+                    case 7:
+                        observableObject.udf07(value);
+                        break;
+                    case 8:
+                        observableObject.udf08(value);
+                        break;
+                    case 9:
+                        observableObject.udf09(value);
+                        break;
+                    case 10:
+                        observableObject.udf10(value);
+                        break;
+                    case 11:
+                        observableObject.udf11(value);
+                        break;
+                    case 12:
+                        observableObject.udf12(value);
+                        break;
+                    case 13:
+                        observableObject.udf13(value);
+                        break;
+                    case 14:
+                        observableObject.udf14(value);
+                        break;
+                    case 15:
+                        observableObject.udf15(value);
+                        break;
+                    case 16:
+                        observableObject.udf16(value);
+                        break;
+                    case 17:
+                        observableObject.udf17(value);
+                        break;
+                    case 18:
+                        observableObject.udf18(value);
+                        break;
+                    case 19:
+                        observableObject.udf19(value);
+                        break;
+                    case 20:
+                        observableObject.udf20(value);
+                        break;
+                }
+            }
+        }
+    }
+
+    /**
+     * Sets the values for the rendered UDF items.
+     * @param module {string} - The name of the UDF module (eg: users)
+     * @param dataObject {any} - The object that contains the UDF fields (eg: a User object).
+     */
+    UDFFieldsSetValues(module: string, dataObject: any): void {
+        let m: string = module.toLowerCase();
+        let totalItems: number = m == "assets" ? 20 : 10;
+
+        for (let x: number = 1; x <= totalItems; x++) {
+            let label: string = this.UDFLabel(module, x);
+
+            if (tsUtilities.HasValue(label)) {
+                let udfField: string = "udf" + (x < 10 ? "0" : "") + x.toString();
+                let id: string = m + "-udf-" + x.toString();
+                let type: string = this.UDFFieldType(module, x);
+                let value: string = dataObject[udfField];
+
+
+                switch (type) {
+                    case "input":
+                    case "select":
+                        $("#" + id).val(value);
+                        break;
+
+                    case "radio":
+                        $('input[name="' + id + '"]').val([value]);
+                        break;
+                }
+            }
+        }
+    }
+
+    /**
+     * Determines the type of input to render for the given UDF.
+     * @param module {string} - The name of the UDF module (eg: users)
+     * @param item {number} - The index of the UDF item.
+     */
+    UDFFieldType(module: string, item: number): string {
+        let output: string = "input";
+
+        if (this.Loaded() == true) {
+            let label: string = "";
+            let udf: string = "UDF" + (item < 10 ? "0" : "") + item.toString();
+
+            let match: udfLabel = ko.utils.arrayFirst(this.Tenant().udfLabels(), function (item) {
+                return item.module().toLowerCase() == module.toLowerCase() && item.udf() == udf;
+            });
+            if (match != null && match.label() != null && match.label() != "") {
+                label = match.label();
+            }
+            if (label.indexOf("|") > -1) {
+                let items: string[] = label.split("|");
+                if (items != null && items.length > 1) {
+                    output = items[1].trim();
+                    if (output == undefined || output == null || output == "") {
+                        output = "input";
+                    }
+                }
+            }
+        }
+
+        return output.toLowerCase();
+    }
+
+    /**
+     * Gets the filter options for the given UDF.
+     * @param module {string} - The name of the UDF module (eg: users)
+     * @param item {number} - The index of the UDF item.
+     */
+    UDFFilterOptions(module: string, item: number): string[] {
+        let output: string[] = [];
+
+        if (this.Loaded() == true) {
+            let udf: string = "UDF" + (item < 10 ? "0" : "") + item.toString();
+
+            let match: udfLabel = ko.utils.arrayFirst(this.Tenant().udfLabels(), function (item) {
+                return item.module().toLowerCase() == module.toLowerCase() && item.udf() == udf;
+            });
+            if (match != null && match.filterOptions() != null && match.filterOptions().length > 0) {
+                match.filterOptions().forEach(function (item) {
+                    output.push(item);
+                });
+            }
+        }
+
+        return output;
+    }
+
+    /**
+     * Gets the label for the given UDF.
+     * @param module {string} - The name of the UDF module (eg: users)
+     * @param item {number} - The index of the UDF item.
+     */
+    UDFLabel(module: string, item: number): string {
+        let output: string = "";
+
+        if (this.Loaded() == true) {
+            let udf: string = "UDF" + (item < 10 ? "0" : "") + item.toString();
+
+            let match: udfLabel = ko.utils.arrayFirst(this.Tenant().udfLabels(), function (item) {
+                return item.module().toLowerCase() == module.toLowerCase() && item.udf() == udf;
+            });
+            if (match != null && match.label() != null && match.label() != "") {
+                output = match.label();
+            }
+            if (output.indexOf("|") > -1) {
+                output = output.substr(0, output.indexOf("|"));
+            }
+        }
+
+        return output;
+    }
+
+    /**
+     * Determines if the given UDF should be shown in a column.
+     * @param module {string} - The name of the UDF module (eg: users)
+     * @param item {number} - The index of the UDF item.
+     */
+    UDFShowColumn(module: string, item: number): boolean {
+        let output: boolean = false;
+
+        if (this.Loaded() == true) {
+            let udf: string = "UDF" + (item < 10 ? "0" : "") + item.toString();
+
+            let match: udfLabel = ko.utils.arrayFirst(this.Tenant().udfLabels(), function (item) {
+                return item.module().toLowerCase() == module.toLowerCase() && item.udf() == udf;
+            });
+
+            if (match != null && match.label() != null && match.label() != "" && match.showColumn() == true) {
+                output = true;
+            }
+        }
+
+        return output;
+    }
+
+    /**
+     * Determines if the given UDF should be shown in the interface when editing or viewing an item.
+     * @param module {string} - The name of the UDF module (eg: users)
+     * @param item {number} - The index of the UDF item.
+     */
+    UDFShowField(module: string, item: number): boolean {
+        let output: boolean = false;
+
+        if (this.Loaded() == true) {
+            let label: string = this.UDFLabel(module, item);
+            if (tsUtilities.HasValue(label)) {
+                output = true;
+            }
+        }
+
+        return output;
+    }
+
+    /**
+     * Determines if the given UDF should be shown in the filter options.
+     * @param module {string} - The name of the UDF module (eg: users)
+     * @param item {number} - The index of the UDF item.
+     */
+    UDFShowInFilter(module: string, item: number): boolean {
+        let output: boolean = false;
+
+        if (this.Loaded() == true) {
+            let udf: string = "UDF" + (item < 10 ? "0" : "") + item.toString();
+
+            let match: udfLabel = ko.utils.arrayFirst(this.Tenant().udfLabels(), function (item) {
+                return item.module().toLowerCase() == module.toLowerCase() && item.udf() == udf;
+            });
+
+            if (match != null && match.label() != null && match.label() != "" && match.showInFilter() == true) {
+                output = true;
+            }
+        }
+
+        return output;
     }
 
     /**

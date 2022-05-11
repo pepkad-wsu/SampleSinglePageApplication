@@ -1,4 +1,6 @@
-﻿    <link rel="stylesheet" href="~/lib/bootstrap/css/bootstrap.min.css" />
+﻿@{
+    string unique = "v=" + Guid.NewGuid().ToString().Replace("-", "");
+}<link rel="stylesheet" href="~/lib/bootstrap/css/bootstrap.min.css" />
     <script src="https://kit.fontawesome.com/da9cb2f29a.js" crossorigin="anonymous"></script>
     <link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/themes/smoothness/jquery-ui.css" type="text/css" />
     <link rel="stylesheet" href="~/js/DateTimePicker/jquery-ui-timepicker-addon.css" />
@@ -6,8 +8,8 @@
     <link rel="stylesheet" href="~/lib/chosen/chosen.css" />
     <link rel="stylesheet" href="~/lib/colorbox/colorbox.css" />
     <link rel="stylesheet" href="~/lib/selectize/selectize.bootstrap5.css" />
-    <link rel="stylesheet" href="~/css/site.css" />
-    <link rel="stylesheet" href="~/css/themes.css" />
+    <link rel="stylesheet" href="~/css/site.css?@Html.Raw(unique)" />
+    <link rel="stylesheet" href="~/css/themes.css?@Html.Raw(unique)" />
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
     <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js" integrity="sha256-VazP97ZCwtekAsvgPBSUwPFKdrwD3unUfSGVYrahUqU=" crossorigin="anonymous"></script>
     <script src="~/js/DateTimePicker/jquery-ui-timepicker-addon.js"></script>
@@ -20,10 +22,10 @@
     <script src="~/lib/moment/moment-with-locales.min.js"></script>
     <script src="~/lib/moment/moment-timezone-with-data-2012-2022.min.js"></script>
     <script src="~/lib/knockout/knockout-3.5.1.js"></script>
-    <script src="~/lib/tsUtilities/utilModels.js"></script>
-    <script src="~/lib/tsUtilities/utilFunctions.js"></script>
-    <script src="~/lib/pagedRecordset/pagedRecordset.js"></script>
-    <script src="~/js/Models.js"></script>
+    <script src="~/lib/tsUtilities/utilModels.js?@Html.Raw(unique)"></script>
+    <script src="~/lib/tsUtilities/utilFunctions.js?@Html.Raw(unique)"></script>
+    <script src="~/lib/pagedRecordset/pagedRecordset.js?@Html.Raw(unique)"></script>
+    <script src="~/js/Models.js?@Html.Raw(unique)"></script>
     <script src="https://code.highcharts.com/stock/highstock.js" type="text/javascript"></script>
     <script src="https://code.highcharts.com/stock/modules/drilldown.js" type="text/javascript"></script>
     <script src="https://code.highcharts.com/highcharts-3d.js" type="text/javascript"></script>

@@ -1,4 +1,4 @@
-﻿<script src="~/js/viewModels/departments.js"></script>
+﻿<script src="~/js/viewModels/departments.js?v=@Html.Raw(Guid.NewGuid().ToString().Replace("-", ""))"></script>
 <div id="view-departments">
     <div data-bind="visible:MainModel().CurrentView() == 'departments'">
         <div data-bind="css:{fixed: MainModel().StickyMenus() == true}">
@@ -11,11 +11,13 @@
             </div>
         </div>
 
-        <div class="padbottom" data-bind="visible:MainModel().Tenant().departments() == null || MainModel().Tenant().departments().length == 0">
+        <div data-bind="visible:Loading() == true, html:MainModel().Language('LoadingWait')"></div>
+
+        <div class="padbottom" data-bind="visible:Loading() == false && (MainModel().Tenant().departments() == null || MainModel().Tenant().departments().length == 0)">
             <span data-bind="html:MainModel().Language('NoItemsToShow')"></span>
         </div>
 
-        <table class="table" data-bind="visible:MainModel().Tenant().departments() != null && MainModel().Tenant().departments().length > 0">
+        <table class="table" data-bind="visible:Loading() == false && MainModel().Tenant().departments() != null && MainModel().Tenant().departments().length > 0">
             <thead>
                 <tr class="table-dark">
                     <th style="width:1%;"></th>
@@ -46,12 +48,12 @@
             <i class="sticky-menu-icon" data-bind="html:MainModel().StickyIcon(), click:function(){MainModel().ToggleStickyMenus()}"></i>
             <h1 class="display-7">
                 <!-- ko if: MainModel().Id() == null || MainModel().Id() == '' -->
-                    <i data-bind="html:MainModel().IconAndText('AddNewDepartment')"></i>
+                    <i data-bind="html:MainModel().Icon('Departments')"></i><span class="icon-text" data-bind="html:MainModel().Language('AddNewDepartment')"></span>
                 <!-- /ko -->
                 
                 <!-- ko if: MainModel().Id() != null && MainModel().Id() != '' -->
-                    <span data-bind="html:MainModel().IconAndText('EditDepartment')"></span>
-                    &ldquo;<span data-bind="text:MainModel().Id"></span>&rdquo;
+                    <i data-bind="html:MainModel().IconAndText('EditDepartment')"></i>
+                    <span class="element-id" data-bind="visible:Loading() == false">&ldquo;<span data-bind="text:MainModel().Id"></span>&rdquo;</span>
                 <!-- /ko -->
             </h1>
 
@@ -72,32 +74,36 @@
             </div>
         </div>
         
-        <div class="padbottom">
-            <label for="edit-department-departmentName" data-bind="html:MainModel().Language('DepartmentName')"></label>
-            <input type="text" id="edit-department-departmentName" class="form-control" data-bind="value:Department().departmentName" />
-        </div>
+        <div data-bind="visible:Loading() == true, html:MainModel().Language('LoadingWait')"></div>
+        
+        <div data-bind="visible:Loading() == false">
+            <div class="padbottom">
+                <label for="edit-department-departmentName" data-bind="html:MainModel().Language('DepartmentName')"></label>
+                <input type="text" id="edit-department-departmentName" class="form-control" data-bind="value:Department().departmentName" />
+            </div>
 
-        <div class="padbottom">
-            <label for="edit-department-activeDirectoryNames" data-bind="html:MainModel().Language('ActiveDirectoryNames')"></label>
-            <span class="note" data-bind="html:MainModel().Language('ActiveDirectoryNamesInfo')"></span>
-            <input type="text" id="edit-department-activeDirectoryNames" class="form-control" data-bind="value:Department().activeDirectoryNames" />
-        </div>
+            <div class="padbottom">
+                <label for="edit-department-activeDirectoryNames" data-bind="html:MainModel().Language('ActiveDirectoryNames')"></label>
+                <span class="note" data-bind="html:MainModel().Language('ActiveDirectoryNamesInfo')"></span>
+                <input type="text" id="edit-department-activeDirectoryNames" class="form-control" data-bind="value:Department().activeDirectoryNames" />
+            </div>
 
-        <div class="padbottom" data-bind="visible:MainModel().Tenant().departmentGroups() != null && MainModel().Tenant().departmentGroups().length > 0">
-            <label for="edit-department-departmentGroupId" data-bind="html:MainModel().Language('DepartmentGroup')"></label>
-            <select id="edit-department-departmentGroupId" class="form-select" 
-                data-bind="value:Department().departmentGroupId,
-                    options: MainModel().Tenant().departmentGroups(),
-                    optionsText: function(item){return item.departmentGroupName},
-                    optionsValue: function(item){return item.departmentGroupId},
-                    optionsCaption: '',
-                    valueAllowUnset: true">
-            </select>
-        </div>
+            <div class="padbottom" data-bind="visible:MainModel().Tenant().departmentGroups() != null && MainModel().Tenant().departmentGroups().length > 0">
+                <label for="edit-department-departmentGroupId" data-bind="html:MainModel().Language('DepartmentGroup')"></label>
+                <select id="edit-department-departmentGroupId" class="form-select" 
+                    data-bind="value:Department().departmentGroupId,
+                        options: MainModel().Tenant().departmentGroups(),
+                        optionsText: function(item){return item.departmentGroupName},
+                        optionsValue: function(item){return item.departmentGroupId},
+                        optionsCaption: '',
+                        valueAllowUnset: true">
+                </select>
+            </div>
 
-        <div class="padbottom form-check form-switch">
-            <input type="checkbox" role="switch" class="form-check-input" id="edit-department-enabled" data-bind="checked:Department().enabled" />
-            <label for="edit-department-enabled" class="form-check-label" data-bind="html:MainModel().Language('Enabled')"></label>
+            <div class="padbottom form-check form-switch">
+                <input type="checkbox" role="switch" class="form-check-input" id="edit-department-enabled" data-bind="checked:Department().enabled" />
+                <label for="edit-department-enabled" class="form-check-label" data-bind="html:MainModel().Language('Enabled')"></label>
+            </div>
         </div>
     </div>
 
@@ -116,7 +122,9 @@
             <span data-bind="html:MainModel().Language('NoItemsToShow')"></span>
         </div>
 
-        <table class="table" data-bind="visible:MainModel().Tenant().departmentGroups() != null && MainModel().Tenant().departmentGroups().length > 0">
+        <div data-bind="visible:Loading() == true, html:MainModel().Language('LoadingWait')"></div>
+
+        <table class="table" data-bind="visible:Loading() == false && MainModel().Tenant().departmentGroups() != null && MainModel().Tenant().departmentGroups().length > 0">
             <thead>
                 <tr class="table-dark">
                     <th style="width:1%;"></th>
@@ -145,8 +153,8 @@
                 <!-- /ko -->
                 
                 <!-- ko if: MainModel().Id() != null && MainModel().Id() != '' -->
-                    <span data-bind="html:MainModel().IconAndText('EditDepartmentGroup')"></span>
-                    &ldquo;<span data-bind="text:MainModel().Id"></span>&rdquo;
+                    <i data-bind="html:MainModel().IconAndText('EditDepartmentGroup')"></i>
+                    <span class="element-id" data-bind="visible:Loading() == false">&ldquo;<span data-bind="text:MainModel().Id"></span>&rdquo;</span>
                 <!-- /ko -->
             </h1>
 
@@ -167,10 +175,13 @@
             </div>
         </div>
         
-        <div class="padbottom">
-            <label for="edit-departmentgroup-departmentGroupName" data-bind="html:MainModel().Language('DepartmentGroupName')"></label>
-            <input type="text" id="edit-departmentgroup-departmentGroupName" class="form-control" data-bind="value:DepartmentGroup().departmentGroupName" />
+        <div data-bind="visible:Loading() == true, html:MainModel().Language('LoadingWait')"></div>
+        
+        <div data-bind="visible:Loading() == false">
+            <div class="padbottom">
+                <label for="edit-departmentgroup-departmentGroupName" data-bind="html:MainModel().Language('DepartmentGroupName')"></label>
+                <input type="text" id="edit-departmentgroup-departmentGroupName" class="form-control" data-bind="value:DepartmentGroup().departmentGroupName" />
+            </div>
         </div>
-
     </div>
 </div>

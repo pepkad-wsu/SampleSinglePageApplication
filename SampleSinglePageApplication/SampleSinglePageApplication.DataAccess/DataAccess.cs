@@ -15,6 +15,7 @@ public partial class DataAccess : IDisposable, IDataAccess
     private bool _localDb = false;
     private bool _open;
     private string _version = "1.0.0";
+    private string _released = "May 4, 2022";
 
 
     public DataAccess(string ConnectionString = "")
@@ -34,7 +35,7 @@ public partial class DataAccess : IDisposable, IDataAccess
                 optionsBuilder.UseInMemoryDatabase(_connectionString);
                 _inMemoryDatabase = true;
             } else {
-                optionsBuilder.UseSqlServer(_connectionString);
+                optionsBuilder.UseSqlServer(_connectionString, options => options.EnableRetryOnFailure());
             }
 
             data = new EFDataModel(optionsBuilder.Options);
@@ -68,6 +69,7 @@ public partial class DataAccess : IDisposable, IDataAccess
                 SeedTestData();
 
                 GlobalSettings.StartupRun = true;
+                GlobalSettings.RunningSince = NowFromUnixEpoch();
             } else {
                 _databaseExists = true;
                 _open = true;

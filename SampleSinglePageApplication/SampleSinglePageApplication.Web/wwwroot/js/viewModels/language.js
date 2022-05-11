@@ -3,6 +3,22 @@ var LanguageModel = /** @class */ (function () {
         var _this = this;
         this.LanguageItems = ko.observableArray([]);
         this.MainModel = ko.observable(window.mainModel);
+        this.ModifiedItemsOnly = ko.observable(false);
+        /**
+         * Determines whether the reset should be available
+         */
+        this.ResetAvailable = ko.computed(function () {
+            var output = false;
+            if (_this.LanguageItems() != null && _this.LanguageItems().length > 0) {
+                var t_1 = _this;
+                _this.LanguageItems().forEach(function (item) {
+                    if (item.value() != t_1.DefaultLanguageItem(item.id())) {
+                        output = true;
+                    }
+                });
+            }
+            return output;
+        });
         this.MainModel().View.subscribe(function () {
             _this.ViewChanged();
         });
@@ -35,6 +51,20 @@ var LanguageModel = /** @class */ (function () {
             return l.id() > r.id() ? 1 : -1;
         });
         this.LanguageItems(items);
+    };
+    /**
+     * Resets all language back to defaults.
+     */
+    LanguageModel.prototype.ResetAll = function () {
+        if (window.objDefaultLanguage != undefined) {
+            var options_1 = [];
+            window.objDefaultLanguage.forEach(function (e) {
+                var item = new optionPair();
+                item.Load(e);
+                options_1.push(item);
+            });
+            this.LanguageItems(options_1);
+        }
     };
     /**
      * Handles resetting a given language item to the default value. When editing language items if an item

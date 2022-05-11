@@ -69,7 +69,9 @@ public static class Utilities
     /// </summary>
     /// <param name="cookieName">The name of the cookie.</param>
     /// <param name="value">The value for the cookie.</param>
-    public static void CookieWrite(string cookieName, string value, Microsoft.AspNetCore.Http.HttpContext httpContext)
+    /// <param name="httpContext">The current HTTP Context</param>
+    /// <param name="cookieDomain">An optional domain to set for the cookie. Never used when running on localhost.</param>
+    public static void CookieWrite(string cookieName, string value, Microsoft.AspNetCore.Http.HttpContext httpContext, string cookieDomain = "")
     {
         if (httpContext != null) {
             DateTime now = DateTime.Now;
@@ -80,8 +82,8 @@ public static class Utilities
 
             string fullUrl = GetFullUrl(httpContext);
 
-            if (!String.IsNullOrWhiteSpace(fullUrl) && !fullUrl.ToLower().Contains("localhost")) {
-                option.Domain = ".wsu.edu";
+            if (!String.IsNullOrWhiteSpace(cookieDomain) && !String.IsNullOrWhiteSpace(fullUrl) && !fullUrl.ToLower().Contains("localhost")) {
+                option.Domain = cookieDomain;
             }
 
             httpContext.Response.Cookies.Append(cookieName, value, option);

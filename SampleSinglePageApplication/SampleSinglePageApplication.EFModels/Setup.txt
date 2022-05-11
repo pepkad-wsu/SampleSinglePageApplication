@@ -2,4 +2,4 @@
 the menu item "Tools / NuGet Package Manager / Package Manager Console" and paste the following command into the console and make sure
 the Default Project is set to .EFModels:
 
-Scaffold-DbContext "Server=(local);Database=SampleApplication;Trusted_Connection=True;" Microsoft.EntityFrameworkCore.SqlServer -OutputDir "EFModels" -Context "EFDataModel" -UseDatabaseNames -Force
+Scaffold-DbContext "Server=(local);Database=SampleSinglePageApplication;Trusted_Connection=True;" Microsoft.EntityFrameworkCore.SqlServer -OutputDir "EFModels" -Context "EFDataModel" -UseDatabaseNames -Force

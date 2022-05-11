@@ -4,6 +4,7 @@ var DepartmentsModel = /** @class */ (function () {
         this.ConfirmDelete = ko.observable("");
         this.Department = ko.observable(new department);
         this.DepartmentGroup = ko.observable(new departmentGroup);
+        this.Loading = ko.observable(false);
         this.MainModel = ko.observable(window.mainModel);
         this.MainModel().View.subscribe(function () {
             _this.ViewChanged();
@@ -68,10 +69,10 @@ var DepartmentsModel = /** @class */ (function () {
             return;
         }
         var success = function (data) {
-            _this.MainModel().Message_Hide();
             if (data != null) {
                 if (data.actionResponse.result) {
                     _this.Department().Load(data);
+                    _this.Loading(false);
                 }
                 else {
                     _this.MainModel().Message_Errors(data.actionResponse.messages);
@@ -81,7 +82,7 @@ var DepartmentsModel = /** @class */ (function () {
                 _this.MainModel().Message_Error("An unknown error occurred attempting to load the department.");
             }
         };
-        this.MainModel().Message_Loading();
+        this.Loading(true);
         tsUtilities.AjaxData(window.baseURL + "api/Data/GetDepartment/" + this.MainModel().Id(), null, success);
     };
     /**
@@ -98,10 +99,10 @@ var DepartmentsModel = /** @class */ (function () {
             return;
         }
         var success = function (data) {
-            _this.MainModel().Message_Hide();
             if (data != null) {
                 if (data.actionResponse.result) {
                     _this.DepartmentGroup().Load(data);
+                    _this.Loading(false);
                 }
                 else {
                     _this.MainModel().Message_Errors(data.actionResponse.messages);
@@ -111,7 +112,7 @@ var DepartmentsModel = /** @class */ (function () {
                 _this.MainModel().Message_Error("An unknown error occurred attempting to load the department group.");
             }
         };
-        this.MainModel().Message_Loading();
+        this.Loading(true);
         tsUtilities.AjaxData(window.baseURL + "api/Data/GetDepartmentGroup/" + this.MainModel().Id(), null, success);
     };
     /**
@@ -120,7 +121,6 @@ var DepartmentsModel = /** @class */ (function () {
     DepartmentsModel.prototype.GetDepartments = function () {
         var _this = this;
         var success = function (data) {
-            _this.MainModel().Message_Hide();
             if (data != null) {
                 var d_1 = [];
                 if (data != null) {
@@ -131,12 +131,13 @@ var DepartmentsModel = /** @class */ (function () {
                     });
                 }
                 _this.MainModel().Tenant().departments(d_1);
+                _this.Loading(false);
             }
             else {
                 _this.MainModel().Message_Error("An unknown error occurred attempting to load the departments.");
             }
         };
-        this.MainModel().Message_Loading();
+        this.Loading(true);
         tsUtilities.AjaxData(window.baseURL + "api/Data/GetDepartments/" + this.MainModel().TenantId(), null, success);
     };
     /**
@@ -145,7 +146,6 @@ var DepartmentsModel = /** @class */ (function () {
     DepartmentsModel.prototype.GetDepartmentGroups = function () {
         var _this = this;
         var success = function (data) {
-            _this.MainModel().Message_Hide();
             if (data != null) {
                 var d_2 = [];
                 if (data != null) {
@@ -156,12 +156,13 @@ var DepartmentsModel = /** @class */ (function () {
                     });
                 }
                 _this.MainModel().Tenant().departmentGroups(d_2);
+                _this.Loading(false);
             }
             else {
                 _this.MainModel().Message_Error("An unknown error occurred attempting to load the department groups.");
             }
         };
-        this.MainModel().Message_Loading();
+        this.Loading(true);
         tsUtilities.AjaxData(window.baseURL + "api/Data/GetDepartmentGroups/" + this.MainModel().TenantId(), null, success);
     };
     /**
@@ -240,6 +241,7 @@ var DepartmentsModel = /** @class */ (function () {
      * Called when the view changes in the MainModel to do any necessary work in this viewModel.
      */
     DepartmentsModel.prototype.ViewChanged = function () {
+        this.Loading(false);
         switch (this.MainModel().CurrentView()) {
             case "departmentgroups":
                 this.GetDepartmentGroups();

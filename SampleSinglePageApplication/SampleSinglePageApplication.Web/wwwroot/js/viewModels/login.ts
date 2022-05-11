@@ -46,19 +46,24 @@
         let output: string[] = [];
         let allowLocalLogin: boolean = false;
         let allowLoginEITSSO: boolean = false;
+        let eitSsoUrl: string = "";
 
         if (this.MainModel().TenantId() == this.MainModel().Guid1()) {
             output.push("local");
             allowLocalLogin = true;
         } else {
             if (this.MainModel().Tenant() != null && this.MainModel().Tenant().tenantSettings() != null) {
+                eitSsoUrl = this.MainModel().Tenant().tenantSettings().eitSsoUrl();
+
                 this.MainModel().Tenant().tenantSettings().loginOptions().forEach(function (item) {
                     if (item.toLowerCase() == "local") {
                         allowLocalLogin = true;
-                    } else if (item.toLowerCase() == "eitsso") {
+                        output.push("local");
+                    } else if (item.toLowerCase() == "eitsso" && tsUtilities.HasValue(eitSsoUrl)) {
+                        // Only include this option if the SSO URL is set
                         allowLoginEITSSO = true;
+                        output.push("eitsso");
                     }
-                    output.push(item);
                 });
             }
         }
@@ -95,11 +100,20 @@
                 break;
 
             case "eitsso":
-                $("#main-model").hide();
-                $("#page-view-model-area").hide();
+                let eitSsoUrl: string = "";
+                if (this.MainModel().Tenant() != null && this.MainModel().Tenant().tenantSettings() != null) {
+                    eitSsoUrl = this.MainModel().Tenant().tenantSettings().eitSsoUrl();
+                }
 
-                let url: string = "https://sso.em.wsu.edu/Login/SSO?Redirect=" + encodeURI(window.baseURL + "SSO/Authenticate?redirect=" + encodeURI(window.baseURL + window.tenantCode));
-                window.location.href = url;
+                if (tsUtilities.HasValue(eitSsoUrl)) {
+                    $("#main-model").hide();
+                    $("#page-view-model-area").hide();
+
+                    let url: string = eitSsoUrl + "Login/SSO?Redirect=" + encodeURI(window.baseURL + "SSO/Authenticate?redirect=" + encodeURI(window.baseURL + window.tenantCode));
+                    window.location.href = url;
+                } else {
+                    this.MainModel().Message_Error("Missing the EIT SSO URL setting.");
+                }
                 break;
         }
     }
@@ -122,6 +136,8 @@
                 error = decodeURIComponent(error);
             }
 
+            tsUtilities.CookieWrite("login-error", "");
+
             this.LoginError(error);
         }
     }
@@ -139,6 +155,18 @@
     }
 
     /**
+     * This is the view that is loaded when the server has been updated and the app needs to reload.
+     */
+    ServerUpdated(): void {
+        let url: string = window.baseURL;
+        if (window.useTenantCodeInUrl) {
+            url += this.MainModel().TenantCode();
+        }
+
+        window.location.href = url;
+    }
+
+    /**
      * Called when the view changes in the MainModel to do any necessary work in this viewModel.
      */
     ViewChanged() {
@@ -147,6 +175,10 @@
         switch (this.MainModel().CurrentView()) {
             case "login":
                 this.LoginPageLoaded();
+                break;
+
+            case "serverupdated":
+                setTimeout(() => this.ServerUpdated(), 5000);
                 break;
         }
     }

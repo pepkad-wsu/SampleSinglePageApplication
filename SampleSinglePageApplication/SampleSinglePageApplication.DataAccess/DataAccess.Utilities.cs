@@ -170,7 +170,8 @@ public partial class DataAccess
     /// </summary>
     /// <param name="cookieName">The name of the cookie.</param>
     /// <param name="value">The value for the cookie.</param>
-    public void CookieWrite(string cookieName, string value)
+    /// <param name="cookieDomain">An optional domain to set for the cookie. Never used when running on localhost.</param>
+    public void CookieWrite(string cookieName, string value, string cookieDomain = "")
     {
         if (_httpContext != null) {
             DateTime now = DateTime.Now;
@@ -181,8 +182,8 @@ public partial class DataAccess
 
             string fullUrl = GetFullUrl();
 
-            if (!String.IsNullOrWhiteSpace(fullUrl) && !fullUrl.ToLower().Contains("localhost")) {
-                option.Domain = ".wsu.edu";
+            if (!String.IsNullOrWhiteSpace(cookieDomain) && !String.IsNullOrWhiteSpace(fullUrl) && !fullUrl.ToLower().Contains("localhost")) {
+                option.Domain = cookieDomain;
             }
 
             _httpContext.Response.Cookies.Append(cookieName, value, option);
@@ -318,6 +319,12 @@ public partial class DataAccess
         return output;
     }
 
+    public string Released {
+        get {
+            return _released;
+        }
+    }
+
     public string Replace(string input, string replaceText, string withText)
     {
         string output = input;
@@ -355,6 +362,12 @@ public partial class DataAccess
         }
 
         return output;
+    }
+
+    public double RunningSince {
+        get {
+            return GlobalSettings.RunningSince;
+        }
     }
 
     public async Task<DataObjects.BooleanResponse> SendEmail(DataObjects.EmailMessage message, DataObjects.MailServerConfig? config = null)
@@ -580,4 +593,13 @@ public partial class DataAccess
         }
     }
 
+    public DataObjects.VersionInfo VersionInfo {
+        get {
+            return new DataObjects.VersionInfo {
+                Released = _released,
+                RunningSince = GlobalSettings.RunningSince,
+                Version = _version
+            };
+        }
+    }
 }

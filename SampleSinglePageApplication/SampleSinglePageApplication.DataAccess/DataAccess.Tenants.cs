@@ -47,6 +47,8 @@ public partial class DataAccess
                 await data.SaveChangesAsync();
                 data.Users.RemoveRange(data.Users.Where(x => x.TenantId == TenantId));
                 await data.SaveChangesAsync();
+                data.UDFLabels.RemoveRange(data.UDFLabels.Where(x => x.TenantId == TenantId));
+                await data.SaveChangesAsync();
                 data.Tenants.RemoveRange(data.Tenants.Where(x => x.TenantId == TenantId));
                 await data.SaveChangesAsync();
             } else {
@@ -56,6 +58,7 @@ public partial class DataAccess
                 await data.Database.ExecuteSqlRawAsync("DELETE FROM DepartmentGroups WHERE TenantId={0}", TenantId);
                 await data.Database.ExecuteSqlRawAsync("DELETE FROM Departments WHERE TenantId={0}", TenantId);
                 await data.Database.ExecuteSqlRawAsync("DELETE FROM Users WHERE TenantId={0}", TenantId);
+                await data.Database.ExecuteSqlRawAsync("DELETE FROM UDFLabels WHERE TenantId={0}", TenantId);
                 await data.Database.ExecuteSqlRawAsync("DELETE FROM Tenants WHERE TenantId={0}", TenantId);
             }
         } catch (Exception ex) {
@@ -103,6 +106,7 @@ public partial class DataAccess
                 output = tenant;
                 output.Departments = await GetDepartments(TenantId);
                 output.DepartmentGroups = await GetDepartmentGroups(TenantId);
+                output.udfLabels = await GetUDFLabels(TenantId);
             }
             CacheStore.SetCacheItem(TenantId, "FullTenant", output);
         }
@@ -277,11 +281,15 @@ public partial class DataAccess
             // Create default settings for this tenant.
             output = new DataObjects.TenantSettings {
                 JasonWebTokenKey = Guid.NewGuid().ToString().Replace("-", ""),
-                LoginOptions = new List<string>() { "local", "eitSSO" },
+                LoginOptions = new List<string>() { "local", "eitsso" },
                 WorkSchedule = defaultWorkSchedule
             };
 
             SaveTenantSettings(TenantId, output);
+        }
+
+        if(!String.IsNullOrWhiteSpace(output.EitSsoUrl) && !output.EitSsoUrl.EndsWith("/")) {
+            output.EitSsoUrl += "/";
         }
 
         return output;
@@ -349,6 +357,10 @@ public partial class DataAccess
 
     public void SaveTenantSettings(Guid TenantId, DataObjects.TenantSettings settings)
     {
+        if (!String.IsNullOrWhiteSpace(settings.EitSsoUrl) && !settings.EitSsoUrl.EndsWith("/")) {
+            settings.EitSsoUrl += "/";
+        }
+
         SaveSetting("Settings", DataObjects.SettingType.Object, settings, TenantId);
     }
 }

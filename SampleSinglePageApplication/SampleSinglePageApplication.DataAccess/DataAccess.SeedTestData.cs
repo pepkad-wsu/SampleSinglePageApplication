@@ -92,7 +92,7 @@ public partial class DataAccess
     private void SeedTestData_CreateDefaultTenantData(Guid TenantId)
     {
         var tenantSettings = GetTenantSettings(TenantId);
-        tenantSettings.LoginOptions = new List<string> { "local", "eitSSO" };
+        tenantSettings.LoginOptions = new List<string> { "local", "eitsso" };
         tenantSettings.JasonWebTokenKey = TenantId.ToString().Replace("-", "");
         tenantSettings.AllowUsersToManageAvatars = true;
         tenantSettings.AllowUsersToManageBasicProfileInfo = true;

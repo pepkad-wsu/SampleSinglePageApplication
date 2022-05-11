@@ -19,6 +19,18 @@
          * field then enter that data element name here.
          */
         showIfElementHasValue?: string;
+        /**
+         * OPTIONAL: A column title option
+         */
+        columnTitle?: string;
+        /**
+         * OPTIONAL: If using a column title this is the optional alignment (left, center, or right)
+         */
+        columnTitleAlign?: string;
+        /**
+         * OPTIONAL: When clicking on the column title an optional sort field.
+         */
+        dataElementName?: string;
     }
 
     /**
@@ -154,6 +166,21 @@ namespace pagedRecordset {
      * @param {pagedRecordsetData.configuration} configuration - REQUIRED: The configuration for how to render the recordset.
     */
     let config: pagedRecordsetData.configuration = null;
+    let reloadingCheckboxes: boolean = false;
+
+    export function CheckItems(indexes: number[]): void {
+        reloadingCheckboxes = true;
+
+        $(".check-record").prop("checked", false);
+
+        if (indexes != null && indexes.length > 0) {
+            indexes.forEach(function (i) {
+                $(".form-check-input-" + i.toString()).prop("checked", true);
+            });
+        }
+
+        reloadingCheckboxes = false;
+    }
 
     export function Render(
         configuration: pagedRecordsetData.configuration): void {
@@ -296,9 +323,33 @@ namespace pagedRecordset {
                     "        <tr class='table-dark'>\n";
 
                 if (showActionButtons > 0) {
-                    for (let b: number = 0; b < showActionButtons; b++) {
-                        recordTable += "          <th class='action-item'></th>\n";
-                    }
+                    //    for (let b: number = 0; b < showActionButtons; b++) {
+                    //        recordTable += "          <th class='action-item'></th>\n";
+                    //    }
+                    configuration.actionHandlers.forEach(function (handler) {
+                        if (handler.actionElement != undefined && handler.actionElement != null && handler.actionElement != "") {
+                            recordTable += "          <th class='action-item" + (HasValue(handler.columnTitleAlign) ? " " + handler.columnTitleAlign : "") + "'>";
+
+                            if (HasValue(handler.columnTitle)) {
+                                if (HasValue(handler.dataElementName)) {
+                                    recordTable += "<button type='button' class='btn btn-xs " +
+                                        (configuration.data.sort.toLowerCase() == handler.dataElementName.toLowerCase() ? "btn-sortable btn-primary" : "btn-sortable btn-default") +
+                                        " nowrap' sort-element='" + handler.dataElementName + "'>";
+
+                                    if (configuration.data.sort.toLowerCase() == handler.dataElementName.toLowerCase()) {
+                                        recordTable += "<i class='sort-indicator " + (configuration.data.sortOrder.toUpperCase() == "ASC"
+                                            ? "fas fa-caret-up sort-arrow" : "fas fa-caret-down sort-arrow") + "'></i>";
+                                    }
+
+                                    recordTable += handler.columnTitle + "</button>";
+                                } else {
+                                    recordTable += "<button type='button' class='btn btn-xs btn-default nowrap' DISABLED>" + handler.columnTitle + "</button>";
+                                }
+                            }
+
+                            recordTable += "</th>\n";
+                        }
+                    });
                 }
                 if (configuration.includeCheckboxes) {
                     recordTable += "          <th class='action-item'><input type='checkbox' class='form-check-input check-all-records' /></th>\n";
@@ -407,7 +458,7 @@ namespace pagedRecordset {
                     }
 
                     if (configuration.includeCheckboxes) {
-                        recordTable += "        <td><input type='checkbox' class='form-check-input check-record' record-id='" + index.toString() + "' /></td>\n";
+                        recordTable += "        <td><input type='checkbox' class='form-check-input form-check-input-" + index.toString() + " check-record' record-id='" + index.toString() + "' /></td>\n";
                     }
 
                     configuration.data.columns.forEach(function (c) {
@@ -559,7 +610,12 @@ namespace pagedRecordset {
                 c = e.target.parentElement.getAttribute("sort-element");
             }
             if (HasValue(c)) {
-                configuration.recordsetCallbackHandler("sort", configuration.data.columns[parseInt(c)].dataElementName);
+                if (HasNumericalValue(c)) {
+                    configuration.recordsetCallbackHandler("sort", configuration.data.columns[parseInt(c)].dataElementName);
+                } else {
+                    configuration.recordsetCallbackHandler("sort", c);
+                }
+
             }
         });
 
@@ -607,17 +663,19 @@ namespace pagedRecordset {
     }
 
     function CallCheckboxCallbackHandler() {
-        if (config.checkboxCallbackHandler != undefined && config.checkboxCallbackHandler != null && typeof config.checkboxCallbackHandler === 'function') {
-            let output: string[] = [];
+        if (!reloadingCheckboxes) {
+            if (config.checkboxCallbackHandler != undefined && config.checkboxCallbackHandler != null && typeof config.checkboxCallbackHandler === 'function') {
+                let output: string[] = [];
 
-            $(".check-record:checkbox:checked").each(function () {
-                let index: string = $(this).attr("record-id");
-                if (HasValue(index)) {
-                    output.push(index);
-                }
-            });
+                $(".check-record:checkbox:checked").each(function () {
+                    let index: string = $(this).attr("record-id");
+                    if (HasValue(index)) {
+                        output.push(index);
+                    }
+                });
 
-            config.checkboxCallbackHandler(output);
+                config.checkboxCallbackHandler(output);
+            }
         }
     }
 

@@ -18,7 +18,7 @@ namespace SampleSinglePageApplication.Web.Controllers
             }
         }
 
-        public async Task<RedirectResult> Authenticate()
+        public RedirectResult Authenticate()
         {
             string redirect = da.QueryStringValue("redirect");
 
@@ -34,7 +34,7 @@ namespace SampleSinglePageApplication.Web.Controllers
             }
         }
 
-        public async Task<RedirectResult> Logout()
+        public RedirectResult Logout()
         {
             string returnUrl = da.QueryStringValue("ReturnUrl");
 
@@ -50,7 +50,7 @@ namespace SampleSinglePageApplication.Web.Controllers
                 }
             }
 
-            return Redirect("https://sso.em.wsu.edu/Logout?Redirect=" + da.UrlEncode(returnUrl));
+            return Redirect(returnUrl);
         }
     }
 }

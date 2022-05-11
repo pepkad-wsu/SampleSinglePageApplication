@@ -409,6 +409,19 @@ namespace SampleSinglePageApplication.Web.Controllers
         }
 
         [HttpGet]
+        [Route("~/api/Data/GetUDFLabels/{id}")]
+        public async Task<ActionResult<List<DataObjects.udfLabel>?>> GetUDFLabels(Guid id)
+        {
+            List<DataObjects.udfLabel>? output = null;
+
+            if (CurrentUser.Enabled) {
+                output = await da.GetUDFLabels(id);
+            }
+
+            return Ok(output);
+        }
+
+        [HttpGet]
         [Route("~/api/Data/GetUser/{id}")]
         public async Task<ActionResult<DataObjects.User>> GetUser(Guid id)
         {
@@ -495,6 +508,14 @@ namespace SampleSinglePageApplication.Web.Controllers
             }
         }
 
+        [HttpGet]
+        [Route("~/api/Data/GetVersionInfo")]
+        public ActionResult<DataObjects.VersionInfo> GetVersionInfo()
+        {
+            var output = da.VersionInfo;
+            return Ok(output);
+        }
+
         [HttpPost]
         [Route("~/api/Data/Encrypt/")]
         public ActionResult<DataObjects.BooleanResponse> Encrypt(DataObjects.SimplePost post)
@@ -537,7 +558,7 @@ namespace SampleSinglePageApplication.Web.Controllers
         {
             DataObjects.BooleanResponse output = new DataObjects.BooleanResponse();
 
-            if (CurrentUser.Admin || CurrentUser.UserId == reset.UserId) {
+            if (CurrentUser.Admin || (CurrentUser.UserId == reset.UserId && CurrentUser.PreventPasswordChange == false)) {
                 output = await da.ResetUserPassword(reset, CurrentUser);
                 return Ok(output);
             } else {
@@ -625,6 +646,20 @@ namespace SampleSinglePageApplication.Web.Controllers
         }
 
         [HttpPost]
+        [Route("~/api/Data/SaveUDFLabels/{id}")]
+        public async Task<ActionResult<DataObjects.BooleanResponse>> SaveUDFLabels(Guid id, List<DataObjects.udfLabel> labels)
+        {
+            DataObjects.BooleanResponse output = new DataObjects.BooleanResponse();
+
+            if (CurrentUser.Admin) {
+                output = await da.SaveUDFLabels(id, labels);
+                return Ok(output);
+            } else {
+                return Unauthorized("Access Denied");
+            }
+        }
+
+        [HttpPost]
         [Route("~/api/Data/SaveUser/")]
         public async Task<ActionResult<DataObjects.User>> SaveUser(DataObjects.User user)
         {
@@ -651,6 +686,18 @@ namespace SampleSinglePageApplication.Web.Controllers
 
             //await _signalR.Clients.All.SendAsync("SignalRUpdate", update);
             //await _signalR.Groups(update.TenantId.ToString())
+        }
+
+        [HttpGet]
+        [Route("~/api/Data/UnlockUserAccount/{id}")]
+        public async Task<ActionResult<DataObjects.User>> UnlockUserAccount(Guid id)
+        {
+            if (CurrentUser.Admin) {
+                var output = await da.UnlockUserAccount(id);
+                return Ok(output);
+            } else {
+                return Unauthorized("Access Denied");
+            }
         }
 
         [HttpPost]

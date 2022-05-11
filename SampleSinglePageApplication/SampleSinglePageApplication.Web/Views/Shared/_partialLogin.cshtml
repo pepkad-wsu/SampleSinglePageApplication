@@ -1,4 +1,4 @@
-﻿<script src="~/js/viewModels/login.js"></script>
+﻿<script src="~/js/viewModels/login.js?v=@Html.Raw(Guid.NewGuid().ToString().Replace("-", ""))"></script>
 <div id="view-login">
     <div data-bind="visible:MainModel().CurrentView() == 'login'">
         <div class="row">
@@ -49,5 +49,22 @@
             </div>
             <div class="col-sm-4"></div>
         </div>
+    </div>
+
+
+
+
+
+
+
+
+
+
+    <div data-bind="visible:MainModel().CurrentView() == 'serverupdated'">
+        <div class="padbottom">
+            <h1 class="display-7"><i data-bind="html:MainModel().IconAndText('ServerUpdated')"></i></h1>
+        </div>
+
+        <div data-bind="html:MainModel().Language('ServerUpdatedMessage')"></div>
     </div>
 </div>

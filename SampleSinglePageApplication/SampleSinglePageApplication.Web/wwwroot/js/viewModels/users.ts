@@ -2,6 +2,7 @@
     AddToSelectedTeam: KnockoutObservable<string> = ko.observable("");
     ConfirmDelete: KnockoutObservable<string> = ko.observable("");
     Filter: KnockoutObservable<filterUsers> = ko.observable(new filterUsers);
+    Loading: KnockoutObservable<boolean> = ko.observable(false);
     MainModel: KnockoutObservable<MainModel> = ko.observable(window.mainModel);
     NewPassword: KnockoutObservable<string> = ko.observable("");
     ResettingUserPassword: KnockoutObservable<boolean> = ko.observable(false);
@@ -28,6 +29,9 @@
         this.User(new user);
         this.User().userId(this.MainModel().GuidEmpty());
         this.User().tenantId(this.MainModel().TenantId());
+
+        this.MainModel().UDFFieldsRender("edit-user-udf-fields", "Users", JSON.parse(ko.toJSON(this.User)));
+
         tsUtilities.DelayedFocus("edit-user-firstName");
     }
 
@@ -39,6 +43,16 @@
         this.Filter().filterDepartments([]);
         this.Filter().enabled(null);
         this.Filter().admin(null);
+        this.Filter().udf01(null);
+        this.Filter().udf02(null);
+        this.Filter().udf03(null);
+        this.Filter().udf04(null);
+        this.Filter().udf05(null);
+        this.Filter().udf06(null);
+        this.Filter().udf07(null);
+        this.Filter().udf08(null);
+        this.Filter().udf09(null);
+        this.Filter().udf10(null);
         this.Filter().page(1);
         this.GetUsers();
     }
@@ -98,11 +112,14 @@
 
         if (tsUtilities.HasValue(userId)) {
             let success: Function = (data: server.user) => {
-                this.MainModel().Message_Hide();
                 if (data != null) {
                     if (data.actionResponse.result) {
                         this.User().Load(data);
                         tsUtilities.DelayedFocus("edit-user-firstName");
+
+                        this.MainModel().UDFFieldsRender("edit-user-udf-fields", "Users", JSON.parse(ko.toJSON(this.User)));
+
+                        this.Loading(false);
                     } else {
                         this.MainModel().Message_Errors(data.actionResponse.messages);
                     }
@@ -111,7 +128,7 @@
                 }
             };
 
-            this.MainModel().Message_Loading();
+            this.Loading(true);
             tsUtilities.AjaxData(window.baseURL + "api/data/GetUser/" + userId, null, success);
         } else {
             this.MainModel().Message_Error("No valid UserId received.");
@@ -382,6 +399,7 @@
             return;
         }
 
+        this.MainModel().UDFFieldsGetValues("Users", this.User());
         let json: string = ko.toJSON(this.User);
 
         let success: Function = (data: server.user) => {
@@ -459,6 +477,16 @@
         this.Filter().filterDepartments.subscribe(() => { this.FilterChanged(); });
         this.Filter().enabled.subscribe(() => { this.FilterChanged(); });
         this.Filter().admin.subscribe(() => { this.FilterChanged(); });
+        this.Filter().udf01.subscribe(() => { this.FilterChanged(); });
+        this.Filter().udf02.subscribe(() => { this.FilterChanged(); });
+        this.Filter().udf03.subscribe(() => { this.FilterChanged(); });
+        this.Filter().udf04.subscribe(() => { this.FilterChanged(); });
+        this.Filter().udf05.subscribe(() => { this.FilterChanged(); });
+        this.Filter().udf06.subscribe(() => { this.FilterChanged(); });
+        this.Filter().udf07.subscribe(() => { this.FilterChanged(); });
+        this.Filter().udf08.subscribe(() => { this.FilterChanged(); });
+        this.Filter().udf09.subscribe(() => { this.FilterChanged(); });
+        this.Filter().udf10.subscribe(() => { this.FilterChanged(); });
     }
 
     /**
@@ -471,6 +499,26 @@
             this.Filter().showFilters(true);
         }
         this.SaveFilter();
+    }
+
+    /**
+     * Unlocks a user account that was locked due to too many failed login attempts.
+     */
+    UnlockUserAccount(): void {
+        let success: Function = (data: server.user) => {
+            if (data != null) {
+                if (data.actionResponse.result) {
+                    this.GetUsers();
+                    this.MainModel().Nav("Users");
+                } else {
+                    this.MainModel().Message_Errors(data.actionResponse.messages);
+                }
+            } else {
+                this.MainModel().Message_Error("An unknown error occurred attempting to unlock the user account.");
+            }
+        };
+
+        tsUtilities.AjaxData(window.baseURL + "api/Data/UnlockUserAccount/" + this.User().userId(), null, success);
     }
 
     /**
@@ -509,6 +557,8 @@
      * Called when the view changes in the MainModel to do any necessary work in this viewModel.
      */
     ViewChanged(): void {
+        this.Loading(false);
+
         switch (this.MainModel().CurrentView()) {
             case "edituser":
                 this.AddToSelectedTeam("");

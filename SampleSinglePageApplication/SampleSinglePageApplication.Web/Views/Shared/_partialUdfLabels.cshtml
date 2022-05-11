@@ -1,0 +1,99 @@
+﻿<script src="~/js/viewModels/udfLabels.js?v=@Html.Raw(Guid.NewGuid().ToString().Replace("-", ""))"></script>
+<div id="view-udflabels">
+    <div data-bind="visible:MainModel().CurrentView() == 'udflabels'">
+        <div data-bind="css:{fixed: MainModel().StickyMenus() == true}">
+            <i class="sticky-menu-icon" data-bind="html:MainModel().StickyIcon(), click:function(){MainModel().ToggleStickyMenus()}"></i>
+            <h1 class="display-7"><i data-bind="html:MainModel().IconAndText('UdfLabels')"></i></h1>
+        
+            <div class="padbottom-5">
+                <button type="button" class="btn btn-success" data-bind="html:MainModel().IconAndText('Save'), click:Save"></button>
+
+                <button type="button" class="btn btn-primary" data-bind="click:ManageUDFLabelsToggleHelp">
+                    <span data-bind="visible:ManageUdfLabelsShowHelp() == false, html:MainModel().IconAndText('ShowHelp')"></span>
+                    <span data-bind="visible:ManageUdfLabelsShowHelp() == true, html:MainModel().IconAndText('HideHelp')"></span>
+                </button>
+            </div>
+        </div>
+
+        <div class="row padbottom" data-bind="visible:ManageUdfLabelsShowHelp">
+            <div class="col-sm-12">
+                <div class="alert alert-info">
+                    <div class="padbottom">
+                        For a simple text input just enter the field name in the Label field.
+                    </div>
+                    <div class="padbottom">
+                        Alternatively, you can specify that the field should be a select element or a list of radio buttons by using the following format:
+                    </div>
+                    <div class="padbottom">
+                        Label|select|options,separated,by,commas
+                        <br />
+                        Label|radio|options,separated,by,commas
+                    </div>
+                    <div class="padbottom">
+                        Options:
+                    </div>
+                    <div class="padbottom">
+                        <i class="fas fa-columns"></i> <strong>Show Column</strong> -
+                        Indicates if this field should be show when listing records. Any UDF with a value in the Label field
+                        will be shown when editing a record. The Show Column is only used to toggle this column on and off in the records view.
+                    </div>
+                    <div class="padbottom">
+                        <i class="fas fa-filter"></i> <strong>Show in Filter</strong> -
+                        If this option is selected this field will be shown in the filter options as a select list. Only use this option on
+                        fields with limited values, as every distinct value from the records will be used to create this list.
+                    </div>
+                    <div class="padbottom">
+                        <i class="fas fa-search"></i> <strong>Include in Search</strong> -
+                        If this option is selected this field will be included when using the keyword search.
+                    </div>
+                    <div>
+                        NOTE: While it is possible to use both Show in Filter and Include in Search for an item, this is not recommended as it
+                        is a duplication of searching. If the item is shown as a filter you can quickly find those items by clicking the appropriate
+                        filter option. Adding unneccesary fields to the Include in Search can affect performance.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-sm-12">
+                <table class="table">
+                    <thead>
+                        <tr class="table-dark">
+                            <th style="width:1%;">Module</th>
+                            <th style="width:1%;">UDF</th>
+                            <th>Label</th>
+                            <th style="width:1%;"><i class="fas fa-columns" title="Show Column"></i></th>
+                            <th style="width:1%;"><i class="fas fa-filter" title="Show in Filter"></i></th>
+                            <th style="width:1%;"><i class="fas fa-search" title="Include in Search"></i></th>
+                        </tr>
+                    </thead>
+                    <tbody data-bind="foreach:UDFLabels">
+                        <tr>
+                            <td data-bind="text:$data.module"></td>
+                            <td data-bind="text:$data.udf"></td>
+                            <td>
+                                <input type="text" class="form-control" data-bind="value:$data.label" />
+                            </td>
+                            <td class="center">
+                                <div class="form-check">
+                                    <input type="checkbox" class="form-check-input" data-bind="checked:$data.showColumn" title="Show Column" />
+                                </div>
+                            </td>
+                            <td class="center">
+                                <div class="form-check">
+                                    <input type="checkbox" class="form-check-input" data-bind="checked:$data.showInFilter" title="Show in Filter" />
+                                </div>
+                            </td>
+                            <td class="center">
+                                <div class="form-check">
+                                    <input type="checkbox" class="form-check-input" data-bind="checked:$data.includeInSearch" title="Include in Search" />
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

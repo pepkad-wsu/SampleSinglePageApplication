@@ -1,4 +1,4 @@
-﻿<script src="~/js/viewModels/tenants.js"></script>
+﻿<script src="~/js/viewModels/tenants.js?v=@Html.Raw(Guid.NewGuid().ToString().Replace("-", ""))"></script>
 <div id="view-tenants">
     <div data-bind="visible:MainModel().CurrentView() == 'tenants'">
         <div class="padbottom" data-bind="css:{fixed: MainModel().StickyMenus() == true}">
@@ -80,7 +80,10 @@
     <div data-bind="visible:Loading() == false && MainModel().CurrentView() == 'edittenant'">
         <div class="padbottom" data-bind="css:{fixed: MainModel().StickyMenus() == true}">
             <i class="sticky-menu-icon" data-bind="html:MainModel().StickyIcon(), click:function(){MainModel().ToggleStickyMenus()}"></i>
-            <h1 class="display-7"><i data-bind="html:MainModel().IconAndText('EditTenant')"></i></h1>
+            <h1 class="display-7">
+                <i data-bind="html:MainModel().IconAndText('EditTenant')"></i>
+                <span class="element-id" data-bind="visible:Loading() == false">&ldquo;<span data-bind="text:MainModel().Id"></span>&rdquo;</span>
+            </h1>
 
             <div class="padbottom-5">
                 <button type="button" class="btn btn-dark" data-bind="click:function(){ MainModel().Nav('Tenants') }">
@@ -157,6 +160,12 @@
         </div>
 
         <div class="padbottom">
+            <label for="edit-tenant-cookieDomain">Cookie Domain</label>
+            <span class="note">- an optional domain to add to cookies when not running locally (eg: ".yourdomain.com")</span>
+            <input type="text" class="form-control" id="edit-tenant-cookieDomain" data-bind="value:Tenant().tenantSettings().cookieDomain" />
+        </div>
+
+        <div class="padbottom">
             <label for="edit-tenant-jasonWebTokenKey">JSON Web Token Key</label>
             <span class="note">- A unique key used to encrypt JWT items. Resetting this will void all current logins and require re-authentication.</span>
             <input type="text" class="form-control" id="edit-tenant-jasonWebTokenKey" data-bind="value:Tenant().tenantSettings().jasonWebTokenKey" />
@@ -166,7 +175,13 @@
             <label for="edit-tenant-loginOptions">Login Options</label>
             <select id="edit-tenant-loginOptions" class="form-select" size="2" multiple data-bind="selectedOptions:Tenant().tenantSettings().loginOptions">
                 <option value="local">Local Login</option>
+                <option value="eitsso">EIT Okta Single Sign-On</option>
             </select>
+        </div>
+
+        <div class="padbottom">
+            <label for="edit-tenant-eitSsoUrl">EIT SSO URL</label>
+            <input type="text" class="form-control" id="edit-tenant-eitSsoUrl" data-bind="value:Tenant().tenantSettings().eitSsoUrl" />
         </div>
 
         <div class="card padbottom">

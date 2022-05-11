@@ -1,4 +1,4 @@
-﻿<script src="~/js/viewModels/language.js"></script>
+﻿<script src="~/js/viewModels/language.js?v=@Html.Raw(Guid.NewGuid().ToString().Replace("-", ""))"></script>
 <div id="view-language">
     <div data-bind="visible:MainModel().CurrentView() == 'language'">
         <div data-bind="css:{fixed: MainModel().StickyMenus() == true}">
@@ -6,14 +6,18 @@
             <h1 class="display-7"><i data-bind="html:MainModel().IconAndText('Language')"></i></h1>
 
             <div class="padbottom-5">
-                <button type="button" class="btn btn-success" data-bind="click:SaveLanguage">
-                    <i data-bind="html:MainModel().IconAndText('Save')"></i>
+                <button type="button" class="btn btn-success" data-bind="click:SaveLanguage, html:MainModel().IconAndText('Save')"></button>
+                <button type="button" class="btn btn-warning" data-bind="click:ResetAll, visible:ResetAvailable">
+                    <i data-bind="html:MainModel().Icon('Reset')"></i>
+                    Reset All Language to Defaults
                 </button>
+                <button type="button" class="btn btn-dark" data-bind="html:MainModel().IconAndText('AllItems'), visible:ModifiedItemsOnly() == false, click:function(){ModifiedItemsOnly(true);}"></button>
+                <button type="button" class="btn btn-dark" data-bind="html:MainModel().IconAndText('ModifiedItems'), visible:ModifiedItemsOnly() == true, click:function(){ModifiedItemsOnly(false);}"></button>
             </div>
         </div>
 
         <div data-bind="foreach:LanguageItems">
-            <div class="padbottom">
+            <div class="padbottom" data-bind="visible:$root.ModifiedItemsOnly() == false || $data.value() != $root.DefaultLanguageItem($data.id())">
                 <label data-bind="text: $data.id, attr: {for: 'language-item-' + $data.id()}"></label> -
                 <span class="note">
                     (default: <span data-bind="text:$root.DefaultLanguageItem($data.id())"></span>)

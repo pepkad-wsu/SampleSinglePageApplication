@@ -40,6 +40,18 @@ var pagedRecordset;
      * @param {pagedRecordsetData.configuration} configuration - REQUIRED: The configuration for how to render the recordset.
     */
     var config = null;
+    var reloadingCheckboxes = false;
+    function CheckItems(indexes) {
+        reloadingCheckboxes = true;
+        $(".check-record").prop("checked", false);
+        if (indexes != null && indexes.length > 0) {
+            indexes.forEach(function (i) {
+                $(".form-check-input-" + i.toString()).prop("checked", true);
+            });
+        }
+        reloadingCheckboxes = false;
+    }
+    pagedRecordset.CheckItems = CheckItems;
     function Render(configuration) {
         var output = "";
         var navigation = "";
@@ -159,9 +171,30 @@ var pagedRecordset;
                         "      <thead>\n" +
                         "        <tr class='table-dark'>\n";
                 if (showActionButtons > 0) {
-                    for (var b = 0; b < showActionButtons; b++) {
-                        recordTable += "          <th class='action-item'></th>\n";
-                    }
+                    //    for (let b: number = 0; b < showActionButtons; b++) {
+                    //        recordTable += "          <th class='action-item'></th>\n";
+                    //    }
+                    configuration.actionHandlers.forEach(function (handler) {
+                        if (handler.actionElement != undefined && handler.actionElement != null && handler.actionElement != "") {
+                            recordTable += "          <th class='action-item" + (HasValue(handler.columnTitleAlign) ? " " + handler.columnTitleAlign : "") + "'>";
+                            if (HasValue(handler.columnTitle)) {
+                                if (HasValue(handler.dataElementName)) {
+                                    recordTable += "<button type='button' class='btn btn-xs " +
+                                        (configuration.data.sort.toLowerCase() == handler.dataElementName.toLowerCase() ? "btn-sortable btn-primary" : "btn-sortable btn-default") +
+                                        " nowrap' sort-element='" + handler.dataElementName + "'>";
+                                    if (configuration.data.sort.toLowerCase() == handler.dataElementName.toLowerCase()) {
+                                        recordTable += "<i class='sort-indicator " + (configuration.data.sortOrder.toUpperCase() == "ASC"
+                                            ? "fas fa-caret-up sort-arrow" : "fas fa-caret-down sort-arrow") + "'></i>";
+                                    }
+                                    recordTable += handler.columnTitle + "</button>";
+                                }
+                                else {
+                                    recordTable += "<button type='button' class='btn btn-xs btn-default nowrap' DISABLED>" + handler.columnTitle + "</button>";
+                                }
+                            }
+                            recordTable += "</th>\n";
+                        }
+                    });
                 }
                 if (configuration.includeCheckboxes) {
                     recordTable += "          <th class='action-item'><input type='checkbox' class='form-check-input check-all-records' /></th>\n";
@@ -257,7 +290,7 @@ var pagedRecordset;
                         recordTable += "        <tr class='" + rowClass + "'>\n";
                     }
                     if (configuration.includeCheckboxes) {
-                        recordTable += "        <td><input type='checkbox' class='form-check-input check-record' record-id='" + index_1.toString() + "' /></td>\n";
+                        recordTable += "        <td><input type='checkbox' class='form-check-input form-check-input-" + index_1.toString() + " check-record' record-id='" + index_1.toString() + "' /></td>\n";
                     }
                     configuration.data.columns.forEach(function (c) {
                         var value = "";
@@ -396,7 +429,12 @@ var pagedRecordset;
                 c = e.target.parentElement.getAttribute("sort-element");
             }
             if (HasValue(c)) {
-                configuration.recordsetCallbackHandler("sort", configuration.data.columns[parseInt(c)].dataElementName);
+                if (HasNumericalValue(c)) {
+                    configuration.recordsetCallbackHandler("sort", configuration.data.columns[parseInt(c)].dataElementName);
+                }
+                else {
+                    configuration.recordsetCallbackHandler("sort", c);
+                }
             }
         });
         if (useActionHandler) {
@@ -437,15 +475,17 @@ var pagedRecordset;
     }
     pagedRecordset.Render = Render;
     function CallCheckboxCallbackHandler() {
-        if (config.checkboxCallbackHandler != undefined && config.checkboxCallbackHandler != null && typeof config.checkboxCallbackHandler === 'function') {
-            var output_1 = [];
-            $(".check-record:checkbox:checked").each(function () {
-                var index = $(this).attr("record-id");
-                if (HasValue(index)) {
-                    output_1.push(index);
-                }
-            });
-            config.checkboxCallbackHandler(output_1);
+        if (!reloadingCheckboxes) {
+            if (config.checkboxCallbackHandler != undefined && config.checkboxCallbackHandler != null && typeof config.checkboxCallbackHandler === 'function') {
+                var output_1 = [];
+                $(".check-record:checkbox:checked").each(function () {
+                    var index = $(this).attr("record-id");
+                    if (HasValue(index)) {
+                        output_1.push(index);
+                    }
+                });
+                config.checkboxCallbackHandler(output_1);
+            }
         }
     }
     function FormatDateTime(date) {

@@ -197,6 +197,16 @@ public class DataObjects
         public List<Guid>? FilterDepartments { get; set; }
         public string? Enabled { get; set; }
         public string? Admin { get; set; }
+        public string? udf01 { get; set; }
+        public string? udf02 { get; set; }
+        public string? udf03 { get; set; }
+        public string? udf04 { get; set; }
+        public string? udf05 { get; set; }
+        public string? udf06 { get; set; }
+        public string? udf07 { get; set; }
+        public string? udf08 { get; set; }
+        public string? udf09 { get; set; }
+        public string? udf10 { get; set; }
     }
 
     public class ListItem : ActionResponseObject
@@ -267,6 +277,7 @@ public class DataObjects
         public List<Department>? Departments { get; set; } = null!;
         public List<DepartmentGroup>? DepartmentGroups { get; set; } = null!;
         public TenantSettings TenantSettings { get; set; } = new TenantSettings();
+        public List<udfLabel>? udfLabels { get; set; } = null!;
     }
 
     public class TenantSettings
@@ -274,11 +285,31 @@ public class DataObjects
         public bool AllowUsersToManageAvatars { get; set; }
         public bool AllowUsersToManageBasicProfileInfo { get; set; }
         public List<string>? AllowUsersToManageBasicProfileInfoElements { get; set; }
+        public string? CookieDomain { get; set; }
+        public string? EitSsoUrl { get; set; }
         public string? JasonWebTokenKey { get; set; }
         public List<string> LoginOptions { get; set; } = new List<string>();
         public WorkSchedule WorkSchedule { get; set; } = new WorkSchedule();
         public bool RequirePreExistingAccountToLogIn { get; set; }
         public List<ListItem>? ListItems { get; set; } = null!;
+    }
+
+    public class udfLabel
+    {
+        public Guid Id { get; set; }
+        public Guid TenantId { get; set; }
+        public string? Module { get; set; }
+        public string? udf { get; set; }
+        public string? Label { get; set; }
+        public bool ShowColumn { get; set; }
+        public bool ShowInFilter { get; set; }
+        public bool IncludeInSearch { get; set; }
+        public List<string> FilterOptions { get; set; }
+
+        public udfLabel()
+        {
+            this.FilterOptions = new List<string>();
+        }
     }
 
     public class User : ActionResponseObject
@@ -302,12 +333,23 @@ public class DataObjects
         public bool AppAdmin { get; set; }
         public Guid? Photo { get; set; }
         public string? Password { get; set; }
+        public bool PreventPasswordChange { get; set; }
         public bool HasLocalPassword { get; set; }
         public string? AuthToken { get; set; }
         public int FailedLoginAttempts { get; set; }
         public DateTime? LastLockoutDate { get; set; }
         public List<Tenant>? Tenants { get; set; }
         public List<UserTenant> UserTenants { get; set; } = new List<UserTenant>();
+        public string? udf01 { get; set; }
+        public string? udf02 { get; set; }
+        public string? udf03 { get; set; }
+        public string? udf04 { get; set; }
+        public string? udf05 { get; set; }
+        public string? udf06 { get; set; }
+        public string? udf07 { get; set; }
+        public string? udf08 { get; set; }
+        public string? udf09 { get; set; }
+        public string? udf10 { get; set; }
     }
 
     public class UserPasswordReset
@@ -324,6 +366,13 @@ public class DataObjects
         public Guid TenantId { get; set; }
         public string TenantCode { get; set; } = null!;
         public string TenantName { get; set; } = null!;
+    }
+
+    public class VersionInfo
+    {
+        public string? Released { get; set; }
+        public double RunningSince { get; set; }
+        public string? Version { get; set; }
     }
 
     public class WorkSchedule

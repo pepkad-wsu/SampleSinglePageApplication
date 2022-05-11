@@ -1,6 +1,7 @@
 ﻿class LanguageModel {
     LanguageItems: KnockoutObservableArray<optionPair> = ko.observableArray([]);
     MainModel: KnockoutObservable<MainModel> = ko.observable(window.mainModel);
+    ModifiedItemsOnly: KnockoutObservable<boolean> = ko.observable(false);
 
     constructor() {
         this.MainModel().View.subscribe(() => {
@@ -41,6 +42,39 @@
         this.LanguageItems(items);
 
     }
+
+    /**
+     * Resets all language back to defaults.
+     */
+    ResetAll(): void {
+        if (window.objDefaultLanguage != undefined) {
+            let options: optionPair[] = [];
+            window.objDefaultLanguage.forEach(function (e) {
+                let item: optionPair = new optionPair();
+                item.Load(e);
+                options.push(item);
+            });
+            this.LanguageItems(options);
+        }
+    }
+
+    /**
+     * Determines whether the reset should be available
+     */
+    ResetAvailable = ko.computed((): boolean => {
+        let output: boolean = false;
+
+        if (this.LanguageItems() != null && this.LanguageItems().length > 0) {
+            let t: this = this;
+            this.LanguageItems().forEach(function (item) {
+                if (item.value() != t.DefaultLanguageItem(item.id())) {
+                    output = true;
+                }
+            });
+        }
+
+        return output;
+    });
 
     /**
      * Handles resetting a given language item to the default value. When editing language items if an item

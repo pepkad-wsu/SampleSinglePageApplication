@@ -2,6 +2,7 @@
     ConfirmDelete: KnockoutObservable<string> = ko.observable("");
     Department: KnockoutObservable<department> = ko.observable(new department);
     DepartmentGroup: KnockoutObservable<departmentGroup> = ko.observable(new departmentGroup);
+    Loading: KnockoutObservable<boolean> = ko.observable(false);
     MainModel: KnockoutObservable<MainModel> = ko.observable(window.mainModel);
 
     constructor() {
@@ -70,11 +71,10 @@
         }
 
         let success: Function = (data: server.department) => {
-            this.MainModel().Message_Hide();
-
             if (data != null) {
                 if (data.actionResponse.result) {
                     this.Department().Load(data);
+                    this.Loading(false);
                 } else {
                     this.MainModel().Message_Errors(data.actionResponse.messages);
                 }
@@ -83,7 +83,7 @@
             }
         };
 
-        this.MainModel().Message_Loading();
+        this.Loading(true);
         tsUtilities.AjaxData(window.baseURL + "api/Data/GetDepartment/" + this.MainModel().Id(), null, success);
     }
 
@@ -102,11 +102,10 @@
         }
 
         let success: Function = (data: server.departmentGroup) => {
-            this.MainModel().Message_Hide();
-
             if (data != null) {
                 if (data.actionResponse.result) {
                     this.DepartmentGroup().Load(data);
+                    this.Loading(false);
                 } else {
                     this.MainModel().Message_Errors(data.actionResponse.messages);
                 }
@@ -115,7 +114,7 @@
             }
         };
 
-        this.MainModel().Message_Loading();
+        this.Loading(true);
         tsUtilities.AjaxData(window.baseURL + "api/Data/GetDepartmentGroup/" + this.MainModel().Id(), null, success);
     }
 
@@ -124,8 +123,6 @@
      */
     GetDepartments(): void {
         let success: Function = (data: server.department[]) => {
-            this.MainModel().Message_Hide();
-
             if (data != null) {
                 let d: department[] = [];
                 if (data != null) {
@@ -136,13 +133,13 @@
                     });
                 }
                 this.MainModel().Tenant().departments(d);
-
+                this.Loading(false);
             } else {
                 this.MainModel().Message_Error("An unknown error occurred attempting to load the departments.");
             }
         };
 
-        this.MainModel().Message_Loading();
+        this.Loading(true);
         tsUtilities.AjaxData(window.baseURL + "api/Data/GetDepartments/" + this.MainModel().TenantId(), null, success);
     }
 
@@ -151,8 +148,6 @@
      */
     GetDepartmentGroups(): void {
         let success: Function = (data: server.departmentGroup[]) => {
-            this.MainModel().Message_Hide();
-
             if (data != null) {
                 let d: departmentGroup[] = [];
                 if (data != null) {
@@ -163,13 +158,13 @@
                     });
                 }
                 this.MainModel().Tenant().departmentGroups(d);
-
+                this.Loading(false);
             } else {
                 this.MainModel().Message_Error("An unknown error occurred attempting to load the department groups.");
             }
         };
 
-        this.MainModel().Message_Loading();
+        this.Loading(true);
         tsUtilities.AjaxData(window.baseURL + "api/Data/GetDepartmentGroups/" + this.MainModel().TenantId(), null, success);
     }
 
@@ -252,6 +247,8 @@
      * Called when the view changes in the MainModel to do any necessary work in this viewModel.
      */
     ViewChanged(): void {
+        this.Loading(false);
+
         switch (this.MainModel().CurrentView()) {
             case "departmentgroups":
                 this.GetDepartmentGroups();

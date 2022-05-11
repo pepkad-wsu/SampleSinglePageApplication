@@ -305,6 +305,16 @@ var filterUsers = /** @class */ (function (_super) {
         _this.filterDepartments = ko.observableArray([]);
         _this.enabled = ko.observable(null);
         _this.admin = ko.observable(null);
+        _this.udf01 = ko.observable(null);
+        _this.udf02 = ko.observable(null);
+        _this.udf03 = ko.observable(null);
+        _this.udf04 = ko.observable(null);
+        _this.udf05 = ko.observable(null);
+        _this.udf06 = ko.observable(null);
+        _this.udf07 = ko.observable(null);
+        _this.udf08 = ko.observable(null);
+        _this.udf09 = ko.observable(null);
+        _this.udf10 = ko.observable(null);
         return _this;
     }
     filterUsers.prototype.Load = function (data) {
@@ -341,6 +351,16 @@ var filterUsers = /** @class */ (function (_super) {
             this.filterDepartments(data.filterDepartments);
             this.enabled(data.enabled);
             this.admin(data.admin);
+            this.udf01(data.udf01);
+            this.udf02(data.udf02);
+            this.udf03(data.udf03);
+            this.udf04(data.udf04);
+            this.udf05(data.udf05);
+            this.udf06(data.udf06);
+            this.udf07(data.udf07);
+            this.udf08(data.udf08);
+            this.udf09(data.udf09);
+            this.udf10(data.udf10);
         }
         else {
             this.actionResponse(new booleanResponse);
@@ -362,6 +382,16 @@ var filterUsers = /** @class */ (function (_super) {
             this.filterDepartments([]);
             this.enabled(null);
             this.admin(null);
+            this.udf01(null);
+            this.udf02(null);
+            this.udf03(null);
+            this.udf04(null);
+            this.udf05(null);
+            this.udf06(null);
+            this.udf07(null);
+            this.udf08(null);
+            this.udf09(null);
+            this.udf10(null);
         }
     };
     return filterUsers;
@@ -502,6 +532,7 @@ var tenant = /** @class */ (function (_super) {
         _this.departmentGroups = ko.observableArray([]);
         _this.tenantSettings = ko.observable(new tenantSettings);
         _this.listItems = ko.observableArray([]);
+        _this.udfLabels = ko.observableArray([]);
         return _this;
     }
     tenant.prototype.Load = function (data) {
@@ -539,6 +570,15 @@ var tenant = /** @class */ (function (_super) {
                 });
             }
             this.listItems(li_1);
+            var u_1 = [];
+            if (data.udfLabels != null) {
+                data.udfLabels.forEach(function (e) {
+                    var item = new udfLabel();
+                    item.Load(e);
+                    u_1.push(item);
+                });
+            }
+            this.udfLabels(u_1);
         }
         else {
             this.actionResponse(new booleanResponse);
@@ -550,6 +590,7 @@ var tenant = /** @class */ (function (_super) {
             this.departments([]);
             this.departmentGroups([]);
             this.listItems([]);
+            this.udfLabels([]);
         }
     };
     return tenant;
@@ -559,6 +600,8 @@ var tenantSettings = /** @class */ (function () {
         this.allowUsersToManageAvatars = ko.observable(false);
         this.allowUsersToManageBasicProfileInfo = ko.observable(false);
         this.allowUsersToManageBasicProfileInfoElements = ko.observableArray([]);
+        this.cookieDomain = ko.observable(null);
+        this.eitSsoUrl = ko.observable(null);
         this.jasonWebTokenKey = ko.observable(null);
         this.loginOptions = ko.observableArray([]);
         this.workSchedule = ko.observable(new workSchedule);
@@ -569,6 +612,8 @@ var tenantSettings = /** @class */ (function () {
             this.allowUsersToManageAvatars(data.allowUsersToManageAvatars);
             this.allowUsersToManageBasicProfileInfo(data.allowUsersToManageBasicProfileInfo);
             this.allowUsersToManageBasicProfileInfoElements(data.allowUsersToManageBasicProfileInfoElements);
+            this.cookieDomain(data.cookieDomain);
+            this.eitSsoUrl(data.eitSsoUrl);
             this.jasonWebTokenKey(data.jasonWebTokenKey);
             this.loginOptions(data.loginOptions);
             this.workSchedule().Load(data.workSchedule);
@@ -578,6 +623,8 @@ var tenantSettings = /** @class */ (function () {
             this.allowUsersToManageAvatars(null);
             this.allowUsersToManageBasicProfileInfo(null);
             this.allowUsersToManageBasicProfileInfoElements([]);
+            this.cookieDomain(null);
+            this.eitSsoUrl(null);
             this.jasonWebTokenKey(null);
             this.loginOptions(null);
             this.workSchedule(new workSchedule);
@@ -586,6 +633,37 @@ var tenantSettings = /** @class */ (function () {
     };
     return tenantSettings;
 }());
+var udfLabel = /** @class */ (function (_super) {
+    __extends(udfLabel, _super);
+    function udfLabel() {
+        var _this = _super !== null && _super.apply(this, arguments) || this;
+        _this.id = ko.observable(null);
+        _this.tenantId = ko.observable(null);
+        _this.module = ko.observable(null);
+        _this.udf = ko.observable(null);
+        _this.label = ko.observable(null);
+        _this.showColumn = ko.observable(false);
+        _this.showInFilter = ko.observable(false);
+        _this.includeInSearch = ko.observable(false);
+        _this.filterOptions = ko.observableArray([]);
+        return _this;
+    }
+    udfLabel.prototype.Load = function (data) {
+        if (data != null) {
+            this.actionResponse().Load(data.actionResponse);
+            this.id(data.id);
+            this.tenantId(data.tenantId);
+            this.module(data.module);
+            this.udf(data.udf);
+            this.label(data.label);
+            this.showColumn(data.showColumn);
+            this.showInFilter(data.showInFilter);
+            this.includeInSearch(data.includeInSearch);
+            this.filterOptions(data.filterOptions);
+        }
+    };
+    return udfLabel;
+}(actionResponseObject));
 var user = /** @class */ (function (_super) {
     __extends(user, _super);
     function user() {
@@ -609,10 +687,22 @@ var user = /** @class */ (function (_super) {
         _this.appAdmin = ko.observable(false);
         _this.photo = ko.observable(null);
         _this.password = ko.observable(null);
+        _this.preventPasswordChange = ko.observable(false);
         _this.hasLocalPassword = ko.observable(false);
         _this.authToken = ko.observable(null);
+        _this.lastLockoutDate = ko.observable(null);
         _this.tenants = ko.observableArray([]);
         _this.userTenants = ko.observableArray([]);
+        _this.udf01 = ko.observable(null);
+        _this.udf02 = ko.observable(null);
+        _this.udf03 = ko.observable(null);
+        _this.udf04 = ko.observable(null);
+        _this.udf05 = ko.observable(null);
+        _this.udf06 = ko.observable(null);
+        _this.udf07 = ko.observable(null);
+        _this.udf08 = ko.observable(null);
+        _this.udf09 = ko.observable(null);
+        _this.udf10 = ko.observable(null);
         return _this;
     }
     user.prototype.Load = function (data) {
@@ -637,8 +727,10 @@ var user = /** @class */ (function (_super) {
             this.appAdmin(data.appAdmin);
             this.photo(data.photo);
             this.password(data.password);
+            this.preventPasswordChange(data.preventPasswordChange);
             this.hasLocalPassword(data.hasLocalPassword);
             this.authToken(data.authToken);
+            this.lastLockoutDate(data.lastLockoutDate);
             var t_1 = [];
             if (data.tenants != null) {
                 data.tenants.forEach(function (e) {
@@ -657,6 +749,16 @@ var user = /** @class */ (function (_super) {
                 });
             }
             this.userTenants(ut_1);
+            this.udf01(data.udf01);
+            this.udf02(data.udf02);
+            this.udf03(data.udf03);
+            this.udf04(data.udf04);
+            this.udf05(data.udf05);
+            this.udf06(data.udf06);
+            this.udf07(data.udf07);
+            this.udf08(data.udf08);
+            this.udf09(data.udf09);
+            this.udf10(data.udf10);
         }
         else {
             this.actionResponse(new booleanResponse);
@@ -679,10 +781,22 @@ var user = /** @class */ (function (_super) {
             this.appAdmin(false);
             this.photo(null);
             this.password(null);
+            this.preventPasswordChange(false);
             this.hasLocalPassword(null);
             this.authToken(null);
+            this.lastLockoutDate(null);
             this.tenants([]);
             this.userTenants([]);
+            this.udf01(null);
+            this.udf02(null);
+            this.udf03(null);
+            this.udf04(null);
+            this.udf05(null);
+            this.udf06(null);
+            this.udf07(null);
+            this.udf08(null);
+            this.udf09(null);
+            this.udf10(null);
         }
     };
     return user;
@@ -737,6 +851,26 @@ var userTenant = /** @class */ (function () {
         }
     };
     return userTenant;
+}());
+var versionInfo = /** @class */ (function () {
+    function versionInfo() {
+        this.released = ko.observable(null);
+        this.runningSince = ko.observable(0);
+        this.version = ko.observable(null);
+    }
+    versionInfo.prototype.Load = function (data) {
+        if (data != null) {
+            this.released(data.released);
+            this.runningSince(data.runningSince);
+            this.version(data.version);
+        }
+        else {
+            this.released(null);
+            this.runningSince(0);
+            this.version(null);
+        }
+    };
+    return versionInfo;
 }());
 var workSchedule = /** @class */ (function () {
     function workSchedule() {

@@ -10,7 +10,7 @@ public interface IDataAccess
     string ConnectionString(bool full = false);
     string ConnectionStringReport(string input);
     string CookieRead(string cookieName);
-    void CookieWrite(string cookieName, string value);
+    void CookieWrite(string cookieName, string value, string cookieDomain = "");
     Task<DataObjects.User> CreateNewUserFromEmailAddress(Guid TenantId, string EmailAddress);
     bool DatabaseExists { get; }
     bool DatabaseOpen { get; }
@@ -62,6 +62,7 @@ public interface IDataAccess
     List<DataObjects.OptionPair> GetTenantLanguage(Guid TenantId);
     Task<List<DataObjects.Tenant>> GetTenants();
     DataObjects.TenantSettings GetTenantSettings(Guid TenantId);
+    Task<List<DataObjects.udfLabel>> GetUDFLabels(Guid TenantId, bool includeFilterOptions = true);
     Task<DataObjects.User> GetUser(Guid TenantId, string UserName);
     Task<DataObjects.User> GetUser(Guid UserId, bool ValidateMainAdminAccess = false);
     Task<DataObjects.User> GetUserByEmailAddress(Guid TenantId, string EmailAddress, bool AddIfNotFound = true);
@@ -85,9 +86,11 @@ public interface IDataAccess
     List<string> MessageToListOfString(string message);
     double NowFromUnixEpoch();
     string QueryStringValue(string valueName);
+    string Released { get; }
     string Replace(string input, string replaceText, string withText);
     string Request(string parameter);
     Task<DataObjects.BooleanResponse> ResetUserPassword(DataObjects.UserPasswordReset reset, DataObjects.User currentUser);
+    double RunningSince { get; }
     Task<DataObjects.Department> SaveDepartment(DataObjects.Department department);
     Task<DataObjects.DepartmentGroup> SaveDepartmentGroup(DataObjects.DepartmentGroup departmentGroup);
     Task<List<DataObjects.Department>> SaveDepartments(List<DataObjects.Department> departments);
@@ -98,6 +101,7 @@ public interface IDataAccess
     DataObjects.BooleanResponse SaveSetting(string SettingName, DataObjects.SettingType SettingType, dynamic? Value, Guid? TenantId = null, Guid? UserId = null, string? Description = "");
     Task<DataObjects.Tenant> SaveTenant(DataObjects.Tenant tenant);
     void SaveTenantSettings(Guid TenantId, DataObjects.TenantSettings settings);
+    Task<DataObjects.BooleanResponse> SaveUDFLabels(Guid TenantId, List<DataObjects.udfLabel> labels);
     Task<DataObjects.User> SaveUser(DataObjects.User user);
     Task<DataObjects.User> SaveUserByUsername(DataObjects.User user, bool CreateIfNotFound);
     Task<List<DataObjects.User>> SaveUsers(List<DataObjects.User> users);
@@ -110,6 +114,7 @@ public interface IDataAccess
     DataObjects.SignalRUpdateType SignalRUpdateTypeFromString(string updateType);
     string SignalRUpdateTypeToString(DataObjects.SignalRUpdateType updateType);
     string StringOrEmpty(string? input);
+    Task<DataObjects.User> UnlockUserAccount(Guid UserId);
     Task UpdateUserLastLoginTime(Guid UserId);
     string UrlDecode(string? input);
     string UrlEncode(string? input);
@@ -119,5 +124,6 @@ public interface IDataAccess
     Task<DataObjects.BooleanResponse> ValidateSelectedUserAccount(Guid TenantId, Guid UserId);
     bool ValidateSourceJWT(Guid TenantId, string Source, string JWT);
     string Version { get; }
+    DataObjects.VersionInfo VersionInfo { get; }
 
 }
