@@ -17,10 +17,8 @@ namespace HelloWorld.Web.Controllers
         public IActionResult Index()
         {
             HelloWorld.DataAccess da = new DataAccess("Server=localhost;Database=HelloWorld;Trusted_Connection=True;MultipleActiveResultSets=true;");
-
-            var results = da.GetSources();
-
-            ViewBag.Sources = results;
+            // da.EnsureDeleted();
+            da.EnsureCreated();
 
             return View();
         }

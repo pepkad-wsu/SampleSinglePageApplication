@@ -12,37 +12,39 @@ namespace MyApp // Note: actual namespace depends on the project name.
 
             HelloWorld.DataAccess da = new DataAccess("Server=localhost;Database=HelloWorld;Trusted_Connection=True;MultipleActiveResultSets=true;");
 
+            da.EnsureCreated();
+
             var before = da.GetSources();
 
-            var newSource = new DataObjects.Source
-            {
-                SourceCategory = "a",
-                SourceId = Guid.Empty,
-                SourceName = "name",
-                SourceTemplate = "template",
-                SourceType = DataObjects.SourceType.FirstType,
-                //TenantId = new Guid("216672e3-2566-4cd5-aba8-76b568b4cf47"),
-                TenantId = null,
-            };
+            //var newSource = new DataObjects.Source
+            //{
+            //    SourceCategory = "a",
+            //    SourceId = Guid.Empty,
+            //    SourceName = "name",
+            //    SourceTemplate = "template",
+            //    SourceType = DataObjects.SourceType.FirstType,
+            //    //TenantId = new Guid("216672e3-2566-4cd5-aba8-76b568b4cf47"),
+            //    TenantId = null,
+            //};
 
-            var result = await da.SaveSource(newSource);
-            var aftersave = da.GetSources();
+            //var result = await da.SaveSource(newSource);
+            //var aftersave = da.GetSources();
 
-            await da.DeleteSource(newSource.SourceId);
+            //await da.DeleteSource(newSource.SourceId);
 
-            var afterdelete = da.GetSources();
+            //var afterdelete = da.GetSources();
 
-            if (!result.ActionResponse.Result)
-            {
-                foreach (var messages in result.ActionResponse.Messages)
-                {
-                    Console.WriteLine(messages);
-                }
-            }
+            //if (!result.ActionResponse.Result)
+            //{
+            //    foreach (var messages in result.ActionResponse.Messages)
+            //    {
+            //        Console.WriteLine(messages);
+            //    }
+            //}
 
-            Console.WriteLine("Before Count: " + before.Count());
-            Console.WriteLine("After Save Count: " + aftersave.Count());
-            Console.WriteLine("After Delete Count: " + afterdelete.Count());
+            //Console.WriteLine("Before Count: " + before.Count());
+            //Console.WriteLine("After Save Count: " + aftersave.Count());
+            //Console.WriteLine("After Delete Count: " + afterdelete.Count());
 
         }
     }
