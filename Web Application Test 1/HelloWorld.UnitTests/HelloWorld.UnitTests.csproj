@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <Nullable>enable</Nullable>
+
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="6.0.5" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.11.0" />
+    <PackageReference Include="MSTest.TestAdapter" Version="2.2.7" />
+    <PackageReference Include="MSTest.TestFramework" Version="2.2.7" />
+    <PackageReference Include="coverlet.collector" Version="3.1.0" />
+    <PackageReference Include="ThrowawayDb" Version="1.5.0" />
+    <PackageReference Include="ThrowawayDb.Postgres" Version="1.4.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\HelloWorld.DataAccess\HelloWorld.DataAccess.csproj" />
+    <ProjectReference Include="..\HelloWorld.DataObjects\HelloWorld.DataObjects.csproj" />
+    <ProjectReference Include="..\HelloWorld.EFModels\HelloWorld.EFModels.csproj" />
+  </ItemGroup>
+
+</Project>
