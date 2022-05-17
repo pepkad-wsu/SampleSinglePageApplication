@@ -1,9 +1,9 @@
 ﻿using HelloWorld;
 using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics;
-using Web_Application_Test_1.Models;
+using HelloWorld.Web.Models;
 
-namespace Web_Application_Test_1.Controllers
+namespace HelloWorld.Web.Controllers
 {
     public class HomeController : Controller
     {

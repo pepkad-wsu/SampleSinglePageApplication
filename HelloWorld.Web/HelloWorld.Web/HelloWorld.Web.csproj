@@ -4,7 +4,7 @@
     <TargetFramework>net6.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <RootNamespace>Web_Application_Test_1</RootNamespace>
+    <RootNamespace>HelloWorld.Web</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>

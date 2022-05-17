@@ -1,4 +1,4 @@
-﻿namespace Web_Application_Test_1.Data
+﻿namespace HelloWorld.Web.Data
 {
     public class ApplicationDbContext
     {

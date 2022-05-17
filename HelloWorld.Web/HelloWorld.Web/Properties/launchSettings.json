@@ -8,7 +8,7 @@
     }
   },
   "profiles": {
-    "Web_Application_Test_1": {
+    "HelloWorld.Web": {
       "commandName": "Project",
       "dotnetRunMessages": true,
       "launchBrowser": true,

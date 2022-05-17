@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace Web_Application_Test_1.Models
+namespace HelloWorld.Web.Models
 {
     public class Category
     {
