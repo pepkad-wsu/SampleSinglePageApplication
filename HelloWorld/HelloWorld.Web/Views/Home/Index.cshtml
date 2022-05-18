@@ -8,17 +8,16 @@
         <button data-bind="click: () => {ListSources();}">Load the sources!</button>
     </div>
 
-    <!-- If we haven't finished show a loading indicator-->
-    <div   style="display: none;"  data-bind="visible: Error">
+    <!-- A section to display any error messages -->
+    <div style="display: none;"  data-bind="visible: Error">
         <p>
-            <!-- note that you can do a knockout foreach in a comment too, the syntax is slightly different -->
-            <!-- spinner stolen from: https://getbootstrap.com/docs/4.2/components/spinners/-->
             <ol data-bind="foreach: ErrorMessages">
                 <li><span data-bind="text: $data"></span></li>
             </ol>
         </p>
     </div>
 
+    <!-- The list of sources-->
     <div  style="display: none;"  data-bind="visible: View() == 'source-list'">
         <!--
             Don't show this section unless we have finished loading the contents of the page
@@ -82,6 +81,7 @@
         </div>
     </div>
 
+    <!-- Editing a source -->
     <div style="display: none;" data-bind="visible: View() == 'source-edit'">
         <h1>Edit Source</h1>
         <div data-bind="if: Source() != null">
@@ -119,5 +119,4 @@
             </div>
         </div>
     </div>
-
 </div>
