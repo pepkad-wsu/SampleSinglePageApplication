@@ -31,9 +31,9 @@ namespace HelloWorld.UnitTests
                 TenantId = null,
             };
 
-            var result = await da.SaveSource(newSource);
-            var after = da.GetSources();
-            int count = after.Count;
+            await da.SaveSource(newSource);
+            var after = await da.GetSources();
+            int count = after.Sources.Count;
 
             Assert.AreEqual(1, count);
         }

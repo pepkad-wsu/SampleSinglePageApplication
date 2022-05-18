@@ -11,7 +11,28 @@ public class DataObjects
     {
         public List<string> Messages { get; set; } = new List<string>();
         public bool Result { get; set; }
+
+        public void LogException(Exception ex, string SourceDescription = "")
+        {
+            var exception = ex;
+            var count = 1;
+            Messages.Add($"#EXCEPTION ({SourceDescription}) START");
+            while(exception != null)
+            {
+                Messages.Add($"\t{count}: {exception.Message}");
+                exception = exception.InnerException;
+            }
+            Messages.Add($"#EXCEPTION ({SourceDescription}) END");
+        }
     }
+
+    public class GetSourcesResult : ActionResponseObject
+    {
+
+        public List<Source> Sources { get; set; } = new List<Source>();
+    }
+
+
 
     public class Tenant : ActionResponseObject
     {
@@ -20,10 +41,8 @@ public class DataObjects
         public string Name { get; set; } = null!;
         public string TenantCode { get; set; } = null!;
         public bool Enabled { get; set; }
-
-
-        public bool HasFinishedLoading { get; set; }
     }
+
 
     public class Source : ActionResponseObject
     {

@@ -49,9 +49,7 @@
         $(document).ready(function()
         {
             window.mainModel = new MainModel();
-            console.log("Done");
             ko.applyBindings(window.mainModel, document.getElementById('main-model'));
-            window.mainModel.finishedLoading(true);
         });
 
     </script>

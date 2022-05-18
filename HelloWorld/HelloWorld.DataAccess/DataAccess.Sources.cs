@@ -5,15 +5,19 @@ namespace HelloWorld;
 
 public partial class DataAccess
 {
-
     public async Task<DataObjects.BooleanResponse> DeleteSource (Guid SourceId)
     {
         DataObjects.BooleanResponse output = new DataObjects.BooleanResponse();
 
         try
         {
-            data.Sources.RemoveRange(data.Sources.Where(x => x.SourceId == SourceId));
-            await data.SaveChangesAsync();
+            var rec = data.Sources.FirstOrDefault(x => x.SourceId == SourceId);
+            if(rec != null)
+            {
+                data.Sources.Remove(rec);
+                await data.SaveChangesAsync();
+                output.Result = true;
+            }
         }
         catch (Exception ex)
         {
@@ -23,9 +27,36 @@ public partial class DataAccess
         return output;
     }
 
-    public List<DataObjects.Source> GetSources(Guid? tenantId = null)
+
+    public async Task<DataObjects.Source> GetSource(Guid sourceId, Guid? tenantId = null)
     {
-        List<DataObjects.Source> output = new List<DataObjects.Source>();
+        DataObjects.Source output = new DataObjects.Source();
+
+        DataObjects.GetSourcesResult result = await GetSources(tenantId, new List<Guid> { sourceId });
+
+        if (result != null && result.ActionResponse.Result)
+        {
+            var source = result.Sources.SingleOrDefault();
+            if (source != null) { 
+                output = source; 
+                output.ActionResponse.Result = true;
+            }
+            else
+            {
+                output.ActionResponse.Messages.Add("Lookup successful, single or default failed.");
+            }
+        }
+        else
+        {
+            output.ActionResponse.Messages.Add("Lookup failed.");
+        }
+
+        return output;
+    }
+
+    public async Task<DataObjects.GetSourcesResult> GetSources(Guid? tenantId = null, List<Guid> SourceIds = null)
+    {
+        DataObjects.GetSourcesResult output = new DataObjects.GetSourcesResult();
 
         // get the sql queuery for sources
         IQueryable<EFModels.Source> sourceList = data.Sources.Include(o => o.Tenant);
@@ -35,9 +66,15 @@ public partial class DataAccess
         {
             sourceList = sourceList.Where(x => x.TenantId == tenantId);
         }
+        // filter by source ids also
+        if (SourceIds != null)
+        {
+            sourceList = sourceList.Where(x => SourceIds.Contains(x.SourceId));
+        }
+
 
         // execute the sql statement and map it into data objects.
-        output = sourceList.ToList().Select(o => new DataObjects.Source
+        output.Sources = (await sourceList.ToListAsync()).Select(o => new DataObjects.Source
         {
             SourceCategory = o.SourceCategory,
             SourceId = o.SourceId,
@@ -47,26 +84,24 @@ public partial class DataAccess
             SourceType = SourceTypeFromString("" + o.SourceType),
         }).ToList();
 
-
         // make a list of the tenant ids we need
-        var tenantIds = output.Select(o => o.TenantId).Distinct().ToList();
+        var tenantIds = output.Sources.Select(o => o.TenantId).Distinct().ToList();
 
         // make a sql query filtering on only the tenants we need
-        var tenants = data.Tenants.Where(o => tenantIds.Any(id => id == o.TenantId)).ToList();
+        var tenants = await data.Tenants.Where(o => tenantIds.Any(id => id == o.TenantId)).ToListAsync();
 
-        foreach(var source in output)
+        foreach(var source in output.Sources)
         {
             var newTenant = tenants.Select(o => new DataObjects.Tenant
             {
                 TenantId = o.TenantId,
                 Enabled = o.Enabled,
-                HasFinishedLoading = false,
                 Name = o.Name,
                 TenantCode = o.TenantCode
             }).SingleOrDefault(o => o.TenantId == source.TenantId);
             source.Tenant = newTenant;
-
         }
+
 
         return output;
     }
@@ -111,17 +146,16 @@ public partial class DataAccess
             }
             await data.SaveChangesAsync();
             output.ActionResponse.Result = true;
-            output.ActionResponse.Messages.Add(newRecord ? "New Tenant Added" : "Tenant Updated");
+            output.ActionResponse.Messages.Add(newRecord ? "New Source Added" : "Source Updated");
         }
         catch (Exception ex)
         {
-            output.ActionResponse.Messages.Add("Error Saving Tenant '" + output.TenantId.ToString() + "' - " + ex.Message);
+            output.ActionResponse.Messages.Add("Error Saving Source '" + output.SourceId.ToString() + "' - " + ex.Message);
         }
 
 
         return output;
     }
-
 
     private DataObjects.SourceType SourceTypeFromString(string knownCallerType)
     {
@@ -137,6 +171,10 @@ public partial class DataAccess
 
                 case "SECONDTYPE":
                     output = DataObjects.SourceType.SecondType;
+                    break;
+
+                case "THIRDTYPE":
+                    output = DataObjects.SourceType.ThirdType;
                     break;
             }
         }
@@ -156,6 +194,10 @@ public partial class DataAccess
 
             case DataObjects.SourceType.SecondType:
                 output = "SecondType";
+                break;
+
+            case DataObjects.SourceType.ThirdType:
+                output = "ThirdType";
                 break;
         }
 

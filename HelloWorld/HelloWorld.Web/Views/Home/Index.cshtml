@@ -1,16 +1,123 @@
 ﻿@{
     ViewData["Title"] = "Home Page";
 }
+<div>
+    <div class="text-center">
+        <h1 class="display-4">Welcome</h1>
+        <p>Learn about <a href="https://docs.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+        <button data-bind="click: () => {ListSources();}">Load the sources!</button>
+    </div>
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://docs.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+    <!-- If we haven't finished show a loading indicator-->
+    <div   style="display: none;"  data-bind="visible: Error">
+        <p>
+            <!-- note that you can do a knockout foreach in a comment too, the syntax is slightly different -->
+            <!-- spinner stolen from: https://getbootstrap.com/docs/4.2/components/spinners/-->
+            <ol data-bind="foreach: ErrorMessages">
+                <li><span data-bind="text: $data"></span></li>
+            </ol>
+        </p>
+    </div>
+
+    <div  style="display: none;"  data-bind="visible: View() == 'source-list'">
+        <!--
+            Don't show this section unless we have finished loading the contents of the page
+            To do this we set the style as display:none which hides it.
+            Then the visible binding will remove it after we finish loading.
+
+            Also check if we actually have any sources to display, if we don't don't even bother showing this.
+        -->
+        <div style="display: none;" data-bind="visible: Loaded">
+            <p>
+                <h1>List of all sources in our database</h1>
+                <div data-bind="visible:AllSources() != null && AllSources().length > 0">
+
+                    <table>
+                        <thead>
+                            <tr>
+                                <th></th>
+                                <th>Id</th>
+                                <th>Name</th>
+                                <th>Type</th>
+                                <th>Category</th>
+                                <th>Template</th>
+                                <th>Tenant Id</th>
+                                <th>Tenant Name</th>
+                                <th>Tenant Code</th>
+                            </tr>
+                        </thead>
+                        <!-- Use knockout to foreach over our list of sources and write each out as a row in a table -->
+                        <tbody data-bind="foreach: AllSources">
+                            <tr>
+                                <td><span><button data-bind="click: () => {$parent.EditSource('source-edit', $data.sourceId());}">Edit</button></span></td>
+                                <td><span data-bind="text: sourceId"></span></td>
+                                <td><span data-bind="text: sourceName"></span></td>
+                                <td><span data-bind="text: sourceType"></span></td>
+                                <td><span data-bind="text: sourceCategory"></span></td>
+                                <td><span data-bind="text: sourceTemplate"></span></td>
+
+                                <!--
+                                     You can use knockout a html comment in places you cant use html to wrap it properly
+
+                                     So below is not just a comment but it is actually code that checks if the tenent
+                                     object is null and conditionally displays the results.  Without this check it would
+                                     knockout throw a null error exception when there is no tenant associated with the source.
+                                -->
+                                <!-- ko if: tenant() != null -->
+                                <td><span data-bind="text: tenant().tenantId"></span></td>
+                                <td><span data-bind="text: tenant().name"></span></td>
+                                <td><span data-bind="text: tenant().tenantCode"></span></td>
+                                <!-- /ko -->
+                                <!-- ko if: tenant() == null -->
+                                <td><span>-</span></td>
+                                <td><span>-</span></td>
+                                <td><span>-</span></td>
+                                <!-- /ko -->
+                            </tr>
+                        </tbody>
+                    </table>
+
+                </div>
+            </p>
+        </div>
+    </div>
+
+    <div style="display: none;" data-bind="visible: View() == 'source-edit'">
+        <h1>Edit Source</h1>
+        <div data-bind="if: Source() != null">
+            <div class="form-group">
+                <label for="sourceName">Name</label>
+                <input data-bind="value: Source().sourceName" type="text" class="form-control" id="sourceName" placeholder="Enter Name">
+            </div>
+
+            <div class="form-group">
+                <label for="sourceType">Type</label>
+                <input data-bind="value: Source().sourceType" type="text" class="form-control" id="sourceType" placeholder="Enter Type">
+            </div>
+
+            <div class="form-group">
+                <label for="sourceCategory">Category</label>
+                <input data-bind="value: Source().sourceCategory" type="text" class="form-control" id="sourceCategory" placeholder="Enter Category">
+            </div>
+
+            <div class="form-group">
+                <label for="sourceTemplate">Template</label>
+                <input data-bind="value: Source().sourceTemplate" type="text" class="form-control" id="sourceTemplate" placeholder="Enter Template">
+            </div>
+
+            <button type="submit" class="btn btn-primary" data-bind="click: () => {SaveSource();}">Save</button>
+            <button type="reset" class="btn btn-secondary" data-bind="click: () => {ListSources();}">Cancel</button>
+        </div>
+    </div>
+
+    <!-- If we haven't finished show a loading indicator-->
+    <div  data-bind="hidden: Loaded">
+        <div class="text-center">
+            <label for="SourceLoading">Loading...</label>
+            <div id="SourceLoading" class="spinner-border" role="status">
+                <span class="sr-only"></span>
+            </div>
+        </div>
+    </div>
+
 </div>
-
-<p>
-    <label>
-        loaded:
-    </label>
-    <span data-bind="text: Loaded">
-    </span>
-</p>
