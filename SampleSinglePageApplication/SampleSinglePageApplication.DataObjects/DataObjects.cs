@@ -1,5 +1,5 @@
 ﻿namespace SampleSinglePageApplication;
-public class DataObjects
+public partial class DataObjects
 {
     public enum SignalRUpdateType
     {

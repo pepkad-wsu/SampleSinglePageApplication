@@ -55,6 +55,7 @@ public interface IDataAccess
     T? GetSetting<T>(string SettingName, DataObjects.SettingType SettingType, Guid? TenantId = null, Guid? UserId = null);
     DataObjects.TenantSettings GetSettings(Guid TenantId, bool FullSettings = false);
     string GetSourceJWT(Guid TenantId, string Source);
+    Task<List<DataObjects.Record>> GetRecords(Guid tenantId);
     DataObjects.Tenant? GetTenant(Guid TenantId);
     Task<DataObjects.Tenant> GetTenantFull(Guid TenantId);
     Task<DataObjects.Tenant> GetTenantFromCode(string tenantCode);
