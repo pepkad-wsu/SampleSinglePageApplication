@@ -20,6 +20,7 @@ namespace SampleSinglePageApplication.EFModels.EFModels
         public virtual DbSet<Department> Departments { get; set; } = null!;
         public virtual DbSet<DepartmentGroup> DepartmentGroups { get; set; } = null!;
         public virtual DbSet<FileStorage> FileStorages { get; set; } = null!;
+        public virtual DbSet<Record> Records { get; set; } = null!;
         public virtual DbSet<Setting> Settings { get; set; } = null!;
         public virtual DbSet<Tenant> Tenants { get; set; } = null!;
         public virtual DbSet<UDFLabel> UDFLabels { get; set; } = null!;
@@ -85,6 +86,19 @@ namespace SampleSinglePageApplication.EFModels.EFModels
                     .WithMany(p => p.FileStorages)
                     .HasForeignKey(d => d.UserId)
                     .HasConstraintName("FK_FileStorage_Users");
+            });
+
+            modelBuilder.Entity<Record>(entity =>
+            {
+                entity.Property(e => e.RecordId).ValueGeneratedNever();
+
+                entity.Property(e => e.RedcordName).HasMaxLength(100);
+
+                entity.HasOne(d => d.User)
+                    .WithMany(p => p.Records)
+                    .HasForeignKey(d => d.UserId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_Records_Users");
             });
 
             modelBuilder.Entity<Setting>(entity =>

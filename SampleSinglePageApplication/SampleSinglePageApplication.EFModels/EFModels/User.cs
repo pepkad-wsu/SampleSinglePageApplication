@@ -8,6 +8,7 @@ namespace SampleSinglePageApplication.EFModels.EFModels
         public User()
         {
             FileStorages = new HashSet<FileStorage>();
+            Records = new HashSet<Record>();
         }
 
         public Guid UserId { get; set; }
@@ -41,5 +42,6 @@ namespace SampleSinglePageApplication.EFModels.EFModels
 
         public virtual Department? Department { get; set; }
         public virtual ICollection<FileStorage> FileStorages { get; set; }
+        public virtual ICollection<Record> Records { get; set; }
     }
 }
