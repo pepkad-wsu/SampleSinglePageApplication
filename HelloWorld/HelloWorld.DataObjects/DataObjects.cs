@@ -1,4 +1,5 @@
 ﻿namespace HelloWorld;
+namespace HelloWorld;
 
 public class DataObjects
 {
@@ -58,8 +59,11 @@ public class DataObjects
 
     public enum SourceType
     {
+        [Description("FirstType")]
         FirstType,
+        [Description("SecondType")]
         SecondType,
+        [Description("ThirdType")]
         ThirdType
     }
 
