@@ -1,4 +1,5 @@
-﻿namespace HelloWorld;
+﻿using System.ComponentModel;
+
 namespace HelloWorld;
 
 public class DataObjects
