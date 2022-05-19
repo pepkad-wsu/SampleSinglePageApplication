@@ -172,7 +172,7 @@ public class DataMigrations
             "   [UserId] [uniqueidentifier] NOT NULL," + Environment.NewLine +
             "   CONSTRAINT [PK_Records_1] PRIMARY KEY CLUSTERED ([RecordId] ASC)" + Environment.NewLine +
             "   WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF)" + Environment.NewLine +
-            "   ON [PRIMARY]) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]);");
+            "   ON [PRIMARY]) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]");
 
         m2.Add(
             "IF NOT EXISTS(SELECT * FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS WHERE CONSTRAINT_NAME = 'FK_Records_Users')" + Environment.NewLine +
