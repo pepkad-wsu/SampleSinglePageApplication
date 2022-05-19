@@ -32,7 +32,6 @@
 
   <ItemGroup>
     <TypeScriptCompile Include="tsconfig.json" />
-    <TypeScriptCompile Include="wwwroot\js\ViewModel.ts" />
   </ItemGroup>
 
   <ItemGroup>

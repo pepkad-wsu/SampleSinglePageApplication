@@ -28,6 +28,14 @@ namespace HelloWorld.Web.Controllers
             return View();
         }
 
+        public IActionResult Record()
+        {
+            HelloWorld.DataAccess da = new DataAccess("Server=localhost;Database=HelloWorld;Trusted_Connection=True;MultipleActiveResultSets=true;");
+            da.EnsureCreated();
+
+            return View();
+        }
+
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
         public IActionResult Error()
         {

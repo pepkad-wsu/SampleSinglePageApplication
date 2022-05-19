@@ -276,6 +276,7 @@ class MainModel {
             models.push("ProfileModel");
             models.push("Page1Model");
             models.push("Page2Model");
+            models.push("RecordsModel");
 
             // Depending on the user type various models will be loaded (other than this MainModel).
 
@@ -542,6 +543,9 @@ class MainModel {
                     break;
                 case "refresh":
                     output = '<i class="fas fa-sync-alt"></i>';
+                    break;
+                case "records":
+                    output = '<i class="fa-solid fa-alien-8bit" ></i>';
                     break;
                 case "resetuserpassword":
                 case "updatepassword":

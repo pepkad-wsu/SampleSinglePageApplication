@@ -23,12 +23,15 @@
                         <li class="nav-item">
                             <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
                         </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Record">Record</a>
+                        </li>
                     </ul>
                 </div>
             </div>
         </nav>
     </header>
-    <div id="main-model" class="container">
+    <div class="container">
         <main role="main" class="pb-3">
             @RenderBody()
         </main>
@@ -42,14 +45,23 @@
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
-    <script src="~/js/ViewModel.js" asp-append-version="true"></script>
+    <script src="~/js/Utilties.js" asp-append-version="true"></script>
+    <script src="~/js/SourceModel.js" asp-append-version="true"></script>
+    <script src="~/js/RecordModel.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
 
     <script type="text/javascript">
         $(document).ready(function()
         {
             window.mainModel = new MainModel();
-            ko.applyBindings(window.mainModel, document.getElementById('main-model'));
+            window.recordModel = new RecordModel();
+            try {
+                ko.applyBindings(window.mainModel, document.getElementById('main-model'));
+                ko.applyBindings(window.recordModel, document.getElementById('record-model'));
+            }
+            catch {
+
+            }
         });
 
     </script>

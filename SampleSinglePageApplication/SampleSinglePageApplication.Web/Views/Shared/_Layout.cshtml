@@ -256,6 +256,7 @@
                             @if (loggedIn) {
                                 <li class="nav-item"><a href="#" class="nav-link" data-bind="click:function(){ Nav('Page1'); }, css:{ active: CurrentView() == 'page1'}"><i class="fa-regular fa-face-smile"></i>Page 1</a></li>
                                 <li class="nav-item"><a href="#" class="nav-link" data-bind="click:function(){ Nav('Page2'); }, css:{ active: CurrentView() == 'page2'}"><i class="fa-regular fa-face-laugh"></i>Page 2</a></li>
+                                <li class="nav-item"><a href="#" class="nav-link" data-bind="click:function(){ Nav('Records'); }, css:{ active: CurrentView() == 'records'}"><i data-bind="html:Icon('Records')"></i>Records</a></li>
                                 @if(adminUser){
                                     <li class="nav-item dropdown">
                                         <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false" data-bind="css:{ active: CurrentViewAdmin() == true}">
@@ -366,6 +367,7 @@
             IgnoreBody();
                 @await Html.PartialAsync("_partialPage1")
                 @await Html.PartialAsync("_partialPage2")
+                @await Html.PartialAsync("_partialRecords")
                 @await Html.PartialAsync("_partialHome")
                 @await Html.PartialAsync("_partialProfile")
                 @if (adminUser) {
@@ -443,6 +445,9 @@
 
             window.page2Model = new Page2Model();
             ko.applyBindings(window.page2Model, document.getElementById('view-page2'));
+
+            window.recordsModel = new RecordsModel();
+            ko.applyBindings(window.recordsModel, document.getElementById('view-records'));
 
             if(window.adminUser){
                 window.settingsModel = new SettingsModel();

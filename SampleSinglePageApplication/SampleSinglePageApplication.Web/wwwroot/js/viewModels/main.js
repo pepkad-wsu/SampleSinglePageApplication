@@ -274,6 +274,7 @@ var MainModel = /** @class */ (function () {
             models.push("ProfileModel");
             models.push("Page1Model");
             models.push("Page2Model");
+            models.push("RecordsModel");
             // Depending on the user type various models will be loaded (other than this MainModel).
             if (this.User().admin()) {
                 models.push("LanguageModel");
@@ -473,6 +474,9 @@ var MainModel = /** @class */ (function () {
                     break;
                 case "refresh":
                     output = '<i class="fas fa-sync-alt"></i>';
+                    break;
+                case "records":
+                    output = '<i class="fa-solid fa-alien-8bit" ></i>';
                     break;
                 case "resetuserpassword":
                 case "updatepassword":
