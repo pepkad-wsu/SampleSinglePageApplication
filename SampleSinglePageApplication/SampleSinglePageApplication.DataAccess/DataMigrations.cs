@@ -157,13 +157,42 @@ public class DataMigrations
             "  ALTER TABLE[dbo].[Users] CHECK CONSTRAINT[FK_Users_Departments]" + Environment.NewLine +
             "END");
 
+        var m2 = new List<string>();
+        m2.Add(
+            "SET ANSI_NULLS ON;" + Environment.NewLine +
+            "SET QUOTED_IDENTIFIER ON;" + Environment.NewLine +
+            "IF NOT EXISTS (SELECT * FROM sys.tables WHERE name='Records')" + Environment.NewLine +
+            "CREATE TABLE [dbo].[Records](" + Environment.NewLine +
+            "   [RecordId] [uniqueidentifier] NOT NULL," + Environment.NewLine +
+            "   [RedcordName] [nvarchar](100) NOT NULL," + Environment.NewLine +
+            "   [RecordNumber] [int] NULL," + Environment.NewLine +
+            "   [RecordBoolean] [bit] NULL," + Environment.NewLine +
+            "   [RecordText] [nvarchar](max) NULL," + Environment.NewLine +
+            "   [TenantId] [uniqueidentifier] NULL," + Environment.NewLine +
+            "   [UserId] [uniqueidentifier] NOT NULL," + Environment.NewLine +
+            "   CONSTRAINT [PK_Records_1] PRIMARY KEY CLUSTERED ([RecordId] ASC)" + Environment.NewLine +
+            "   WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF)" + Environment.NewLine +
+            "   ON [PRIMARY]) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]);");
+
+        m2.Add(
+            "IF NOT EXISTS(SELECT * FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS WHERE CONSTRAINT_NAME = 'FK_Records_Users')" + Environment.NewLine +
+            "BEGIN ALTER TABLE[dbo].[Records]  WITH CHECK ADD CONSTRAINT[FK_Records_Users] FOREIGN KEY([UserId])" + Environment.NewLine +
+            "REFERENCES[dbo].[Users]([UserId])" + Environment.NewLine +
+            "ALTER TABLE[dbo].Records CHECK CONSTRAINT[FK_Records_Users]" + Environment.NewLine +
+            "END");
+
         output.Add(new DataObjects.DataMigration {
             MigrationId = 1,
             MigrationDate = DateTime.Now,
             Migration = m1
         });
 
-
+        output.Add(new DataObjects.DataMigration
+        {
+            MigrationId = 2,
+            MigrationDate = DateTime.Now,
+            Migration = m2
+        });
 
         return output;
     }
