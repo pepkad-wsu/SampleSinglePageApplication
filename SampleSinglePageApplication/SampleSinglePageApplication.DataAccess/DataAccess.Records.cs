@@ -5,12 +5,28 @@ public partial class DataAccess
     {
         List<DataObjects.Record> output = new List<DataObjects.Record>();
 
-        output.Add(new DataObjects.Record
+        var recs = await data.Records.Where(x => x.TenantId == tenantId).ToListAsync();
+        if (recs != null && recs.Any())
         {
-            RecordId = Guid.NewGuid(),
-            RedcordName = "todo",
-            TenantId = tenantId
-        });
+            foreach (var rec in recs)
+            {
+                if (rec != null)
+                {
+                    output.Add(new DataObjects.Record
+                    {
+                        RecordId = Guid.NewGuid(),
+                        RedcordName = "todo",
+                        TenantId = tenantId,
+                        RecordBoolean = true,
+                        RecordNumber = 1,
+                        RecordText = "Text for the record",
+                        ActionResponse = GetNewActionResponse(true),
+                        UserId = tenantId,
+                        Username = "name"
+                    });
+                }
+            }
+        }
 
         return output;
     }

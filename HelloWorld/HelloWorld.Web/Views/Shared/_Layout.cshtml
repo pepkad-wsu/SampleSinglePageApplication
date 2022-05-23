@@ -47,17 +47,14 @@
     <script src="~/js/site.js" asp-append-version="true"></script>
     <script src="~/js/Utilties.js" asp-append-version="true"></script>
     <script src="~/js/SourceModel.js" asp-append-version="true"></script>
-    <script src="~/js/RecordModel.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
 
     <script type="text/javascript">
         $(document).ready(function()
         {
             window.mainModel = new MainModel();
-            window.recordModel = new RecordModel();
             try {
                 ko.applyBindings(window.mainModel, document.getElementById('main-model'));
-                ko.applyBindings(window.recordModel, document.getElementById('record-model'));
             }
             catch {
 

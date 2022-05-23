@@ -4,6 +4,15 @@
         <div data-bind="css:{fixed: MainModel().StickyMenus() == true}">
             <i class="sticky-menu-icon" data-bind="html:MainModel().StickyIcon(), click:function(){MainModel().ToggleStickyMenus()}"></i>
             <h1 class="display-7"><i data-bind="html:MainModel().Icon('Records')"></i>Record Page</h1>
+
+            <div data-bind="visible:Records() == null || Records().length == 0, html:MainModel().Language('LoadingWait')"></div>
+
+            <div data-bind="visible:Records() != null && Records().length > 0" class="padbottom-5">
+                <button type="button" class="btn btn-success" data-bind="click:function(){ MainModel().Nav('NewRecord') }">
+                    <i data-bind="html:MainModel().IconAndText('AddRecord')"></i>
+                </button>
+            </div>
+
         </div>
     </div>
 </div>
