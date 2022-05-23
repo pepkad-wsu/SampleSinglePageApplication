@@ -520,6 +520,32 @@ var simplePost = /** @class */ (function () {
     };
     return simplePost;
 }());
+var record = /** @class */ (function (_super) {
+    __extends(record, _super);
+    function record() {
+        var _this = _super !== null && _super.apply(this, arguments) || this;
+        _this.recordId = ko.observable(null);
+        _this.name = ko.observable(null);
+        _this.number = ko.observable(0);
+        _this.boolean = ko.observable(false);
+        _this.text = ko.observable(null);
+        _this.tenantId = ko.observable(null);
+        _this.userId = ko.observable(null);
+        return _this;
+    }
+    record.prototype.Load = function (data) {
+        if (data != null) {
+            this.actionResponse().Load(data.actionResponse);
+            this.recordId(data.recordId);
+            this.name(data.name);
+            this.boolean(data.boolean);
+            this.text(data.text);
+            this.tenantId(data.tenantId);
+            this.userId(data.userId);
+        }
+    };
+    return record;
+}(actionResponseObject));
 var tenant = /** @class */ (function (_super) {
     __extends(tenant, _super);
     function tenant() {

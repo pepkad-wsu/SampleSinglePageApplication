@@ -495,6 +495,28 @@ class simplePost {
     }
 }
 
+class record extends actionResponseObject {
+    recordId: KnockoutObservable<string> = ko.observable(null);
+    name: KnockoutObservable<string> = ko.observable(null);
+    number: KnockoutObservable<number> = ko.observable(0);
+    boolean: KnockoutObservable<boolean> = ko.observable(false);
+    text: KnockoutObservable<string> = ko.observable(null);
+    tenantId: KnockoutObservable<string> = ko.observable(null);
+    userId: KnockoutObservable<string> = ko.observable(null);
+
+    Load(data: server.record) {
+        if (data != null) {
+            this.actionResponse().Load(data.actionResponse);
+            this.recordId(data.recordId);
+            this.name(data.name);
+            this.boolean(data.boolean);
+            this.text(data.text);
+            this.tenantId(data.tenantId);
+            this.userId(data.userId);
+        }
+    }
+}
+
 class tenant extends actionResponseObject {
     tenantId: KnockoutObservable<string> = ko.observable(null);
     name: KnockoutObservable<string> = ko.observable(null);

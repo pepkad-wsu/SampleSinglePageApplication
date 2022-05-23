@@ -350,22 +350,6 @@ namespace SampleSinglePageApplication.Web.Controllers
             return Ok(output);
         }
 
-        [HttpGet]
-        [Route("~/api/Data/GetRecords/{id}")]
-        public async Task<ActionResult<List<DataObjects.Record>?>> GetRecords(Guid tenantId)
-        {
-            List<DataObjects.Record>? output = new List<DataObjects.Record>();
-
-            if (CurrentUser.AppAdmin)
-            {
-                output = await da.GetRecords(tenantId);
-                return Ok(output);
-            }
-            else
-            {
-                return Unauthorized("Access Denied");
-            }
-        }
 
         [HttpGet]
         [Route("~/api/Data/GetSetting/")]

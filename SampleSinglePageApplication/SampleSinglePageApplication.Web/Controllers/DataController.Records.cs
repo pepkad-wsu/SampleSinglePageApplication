@@ -11,13 +11,13 @@ namespace SampleSinglePageApplication.Web.Controllers
     {
         [HttpGet]
         [Route("~/api/Data/GetRecords")]
-        public async Task<ActionResult<List<DataObjects.Record>>> GetRecords()
+        public async Task<ActionResult<List<DataObjects.Record>?>> GetRecords()
         {
-            List<DataObjects.Record> output = new List<DataObjects.Record>();
+            List<DataObjects.Record>? output = new List<DataObjects.Record>();
 
-            if (CurrentUser.Enabled)
+            if (CurrentUser.AppAdmin)
             {
-                output = await da.GetRecords(CurrentUser.TenantId);
+                output = await da.GetRecords();
                 return Ok(output);
             }
             else

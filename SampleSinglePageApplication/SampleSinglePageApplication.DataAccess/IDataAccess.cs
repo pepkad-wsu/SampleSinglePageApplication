@@ -51,7 +51,7 @@ public interface IDataAccess
     Task<DataObjects.MailServerConfig> GetMailServerConfig();
     DataObjects.BooleanResponse GetNewActionResponse(bool result = false, string? message = null);
     string GetNewEncryptionKey();
-    Task<List<DataObjects.Record>> GetRecords(Guid tenantId);
+    Task<List<DataObjects.Record>> GetRecords();
     Task<DataObjects.Setting> GetSetting(string SettingName);
     T? GetSetting<T>(string SettingName, DataObjects.SettingType SettingType, Guid? TenantId = null, Guid? UserId = null);
     DataObjects.TenantSettings GetSettings(Guid TenantId, bool FullSettings = false);

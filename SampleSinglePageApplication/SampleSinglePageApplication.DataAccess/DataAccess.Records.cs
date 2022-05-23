@@ -1,11 +1,11 @@
 ﻿namespace SampleSinglePageApplication;
 public partial class DataAccess
 {
-    public async Task<List<DataObjects.Record>> GetRecords(Guid tenantId)
+    public async Task<List<DataObjects.Record>> GetRecords()
     {
         List<DataObjects.Record> output = new List<DataObjects.Record>();
 
-        var recs = await data.Records.Where(x => x.TenantId == tenantId).ToListAsync();
+        var recs = await data.Records.ToListAsync();
         if (recs != null && recs.Any())
         {
             foreach (var rec in recs)
@@ -14,15 +14,15 @@ public partial class DataAccess
                 {
                     output.Add(new DataObjects.Record
                     {
-                        RecordId = Guid.NewGuid(),
-                        RedcordName = "todo",
-                        TenantId = tenantId,
-                        RecordBoolean = true,
-                        RecordNumber = 1,
-                        RecordText = "Text for the record",
                         ActionResponse = GetNewActionResponse(true),
-                        UserId = tenantId,
-                        Username = "name"
+                        RecordId = rec.RecordId,
+                        RedcordName = rec.RedcordName,
+                        TenantId = rec.TenantId,
+                        RecordBoolean = rec.RecordBoolean,
+                        RecordNumber = rec.RecordNumber,
+                        RecordText = rec.RecordText,
+                        UserId = rec.User.UserId,
+                        Username = rec.User.Username
                     });
                 }
             }

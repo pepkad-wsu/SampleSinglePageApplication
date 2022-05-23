@@ -390,6 +390,7 @@ class MainModel {
                 case "language":
                 case "newdepartment":
                 case "newdepartmentgroup":
+                case "newrecord":
                 case "newtenant":
                 case "newuser":
                 case "settings":
@@ -459,6 +460,9 @@ class MainModel {
                     output = '<i class="fas fa-user-plus"></i>';
                     break;
                 case "addnewdepartmentgroup":
+                case "addrecord":
+                    output = '<i class="fas fa-plus-square"></i>';
+                    break;
                 case "addtenant":
                     output = '<i class="fas fa-plus-square"></i>';
                     break;
@@ -531,6 +535,9 @@ class MainModel {
                 case "manageprofile":
                 case "manageprofileinfo":
                     output = '<i class="fa-light fa-id-badge"></i>';
+                    break;
+                case "newrecord":
+                    output = '<i class="fas fa-users-cog"></i>';
                     break;
                 case "newtenant":
                     output = '<i class="fas fa-users-cog"></i>';

@@ -162,6 +162,16 @@
         items: string[];
     }
 
+    interface record extends actionResponseObject {
+        recordId: string;
+        name: string;
+        number: number;
+        boolean: boolean;
+        text: string
+        tenantId: string;
+        userId: string;
+    }
+
     interface tenant extends actionResponseObject {
         tenantId: string;
         name: string;

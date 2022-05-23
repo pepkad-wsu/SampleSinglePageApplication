@@ -12,7 +12,31 @@
                     <i data-bind="html:MainModel().IconAndText('AddRecord')"></i>
                 </button>
             </div>
+        </div>
 
+        <div data-bind="visible:Records() != null && Records().length > 0">
+            <table class="table">
+                <thead>
+                    <tr class="table-dark">
+                        <th style="width:1%;" class="no-pad-right"></th>
+                        <th style="width:330px;" data-bind="html:MainModel().Language('RecordId')"></th>
+                        <th style="width:auto;" data-bind="html:MainModel().Language('RecordName')"></th>
+                        <th style="width:1%;" class="center" data-bind="html:MainModel().Language('RecordText', '', true)"></th>
+                        <th style="width:1%;" data-bind="html:MainModel().Language('Boolean')"></th>
+                    </tr>
+                </thead>
+                <tbody data-bind="foreach:Records">
+                    <tr>
+                        <td class="no-pad-right">
+
+                        </td>
+                        <td data-bind="text:$data.recordId"></td>
+                        <td data-bind="text:$data.name"></td>
+                        <td data-bind="text:$data.text" class="center"></td>
+                        <td data-bind="html:tsUtilities.BooleanToCheckbox($data.boolean())" class="center"></td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
     </div>
 </div>
