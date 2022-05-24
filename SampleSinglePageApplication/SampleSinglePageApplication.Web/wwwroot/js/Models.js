@@ -524,13 +524,13 @@ var record = /** @class */ (function (_super) {
     __extends(record, _super);
     function record() {
         var _this = _super !== null && _super.apply(this, arguments) || this;
-        _this.recordId = ko.observable(null);
-        _this.name = ko.observable(null);
+        _this.recordId = ko.observable("");
+        _this.name = ko.observable("");
         _this.number = ko.observable(0);
         _this.boolean = ko.observable(false);
-        _this.text = ko.observable(null);
-        _this.tenantId = ko.observable(null);
-        _this.userId = ko.observable(null);
+        _this.text = ko.observable("");
+        _this.tenantId = ko.observable("");
+        _this.userId = ko.observable("");
         return _this;
     }
     record.prototype.Load = function (data) {

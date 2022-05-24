@@ -496,13 +496,13 @@ class simplePost {
 }
 
 class record extends actionResponseObject {
-    recordId: KnockoutObservable<string> = ko.observable(null);
-    name: KnockoutObservable<string> = ko.observable(null);
+    recordId: KnockoutObservable<string> = ko.observable("");
+    name: KnockoutObservable<string> = ko.observable("");
     number: KnockoutObservable<number> = ko.observable(0);
     boolean: KnockoutObservable<boolean> = ko.observable(false);
-    text: KnockoutObservable<string> = ko.observable(null);
-    tenantId: KnockoutObservable<string> = ko.observable(null);
-    userId: KnockoutObservable<string> = ko.observable(null);
+    text: KnockoutObservable<string> = ko.observable("");
+    tenantId: KnockoutObservable<string> = ko.observable("");
+    userId: KnockoutObservable<string> = ko.observable("");
 
     Load(data: server.record) {
         if (data != null) {
