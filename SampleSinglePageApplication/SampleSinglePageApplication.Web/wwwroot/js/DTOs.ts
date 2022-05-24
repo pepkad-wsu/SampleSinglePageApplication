@@ -164,10 +164,10 @@
 
     interface record extends actionResponseObject {
         recordId: string;
-        name: string;
-        number: number;
-        boolean: boolean;
-        text: string
+        recordName: string;
+        recordNumber: number;
+        recordBoolean: boolean;
+        recordText: string;
         tenantId: string;
         userId: string;
     }

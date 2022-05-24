@@ -13,6 +13,7 @@ var RecordsModel = /** @class */ (function () {
         var _this = this;
         console.log("records page loaded");
         var success = function (data) {
+            console.log("data records call: ", data);
             var records = [];
             if (data != null) {
                 data.forEach(function (e) {

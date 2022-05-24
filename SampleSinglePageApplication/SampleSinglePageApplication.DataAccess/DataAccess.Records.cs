@@ -16,7 +16,7 @@ public partial class DataAccess
                     {
                         ActionResponse = GetNewActionResponse(true),
                         RecordId = rec.RecordId,
-                        RedcordName = rec.RedcordName,
+                        RecordName = rec.RedcordName,
                         TenantId = rec.TenantId,
                         RecordBoolean = rec.RecordBoolean,
                         RecordNumber = rec.RecordNumber,

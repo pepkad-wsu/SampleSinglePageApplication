@@ -505,12 +505,13 @@ class record extends actionResponseObject {
     userId: KnockoutObservable<string> = ko.observable("");
 
     Load(data: server.record) {
+        console.log("load: ", data);
         if (data != null) {
             this.actionResponse().Load(data.actionResponse);
             this.recordId(data.recordId);
-            this.name(data.name);
-            this.boolean(data.boolean);
-            this.text(data.text);
+            this.name(data.recordName);
+            this.boolean(data.recordBoolean);
+            this.text(data.recordText);
             this.tenantId(data.tenantId);
             this.userId(data.userId);
         }

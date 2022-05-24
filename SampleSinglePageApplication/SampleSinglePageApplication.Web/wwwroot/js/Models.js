@@ -534,12 +534,13 @@ var record = /** @class */ (function (_super) {
         return _this;
     }
     record.prototype.Load = function (data) {
+        console.log("load: ", data);
         if (data != null) {
             this.actionResponse().Load(data.actionResponse);
             this.recordId(data.recordId);
-            this.name(data.name);
-            this.boolean(data.boolean);
-            this.text(data.text);
+            this.name(data.recordName);
+            this.boolean(data.recordBoolean);
+            this.text(data.recordText);
             this.tenantId(data.tenantId);
             this.userId(data.userId);
         }

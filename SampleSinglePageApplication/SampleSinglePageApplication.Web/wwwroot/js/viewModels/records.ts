@@ -13,6 +13,7 @@
     GetRecords(): void {
         console.log("records page loaded");
         let success: Function = (data: server.record[]) => {
+            console.log("data records call: ", data);
             let records: record[] = [];
             if (data != null) {
                 data.forEach(function (e) {
