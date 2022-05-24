@@ -16,11 +16,11 @@ public partial class DataAccess
                     {
                         ActionResponse = GetNewActionResponse(true),
                         RecordId = rec.RecordId,
-                        RecordName = rec.RedcordName,
+                        Name = rec.RedcordName,
                         TenantId = rec.TenantId,
-                        RecordBoolean = rec.RecordBoolean,
-                        RecordNumber = rec.RecordNumber,
-                        RecordText = rec.RecordText,
+                        Boolean = rec.RecordBoolean,
+                        Number = rec.RecordNumber,
+                        Text = rec.RecordText,
                         UserId = rec.User.UserId,
                         Username = rec.User.Username
                     });

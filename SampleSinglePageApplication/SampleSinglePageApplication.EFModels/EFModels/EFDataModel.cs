@@ -92,7 +92,7 @@ namespace SampleSinglePageApplication.EFModels.EFModels
             {
                 entity.Property(e => e.RecordId).ValueGeneratedNever();
 
-                entity.Property(e => e.RedcordName).HasMaxLength(100);
+                entity.Property(e => e.Name).HasMaxLength(100);
 
                 entity.HasOne(d => d.User)
                     .WithMany(p => p.Records)

@@ -509,9 +509,9 @@ class record extends actionResponseObject {
         if (data != null) {
             this.actionResponse().Load(data.actionResponse);
             this.recordId(data.recordId);
-            this.name(data.recordName);
-            this.boolean(data.recordBoolean);
-            this.text(data.recordText);
+            this.name(data.name);
+            this.boolean(data.boolean);
+            this.text(data.text);
             this.tenantId(data.tenantId);
             this.userId(data.userId);
         }

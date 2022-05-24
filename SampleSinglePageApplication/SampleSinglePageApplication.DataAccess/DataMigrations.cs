@@ -164,10 +164,10 @@ public class DataMigrations
             "IF NOT EXISTS (SELECT * FROM sys.tables WHERE name='Records')" + Environment.NewLine +
             "CREATE TABLE [dbo].[Records](" + Environment.NewLine +
             "   [RecordId] [uniqueidentifier] NOT NULL," + Environment.NewLine +
-            "   [RedcordName] [nvarchar](100) NOT NULL," + Environment.NewLine +
-            "   [RecordNumber] [int] NULL," + Environment.NewLine +
-            "   [RecordBoolean] [bit] NULL," + Environment.NewLine +
-            "   [RecordText] [nvarchar](max) NULL," + Environment.NewLine +
+            "   [Name] [nvarchar](100) NOT NULL," + Environment.NewLine +
+            "   [Number] [int] NULL," + Environment.NewLine +
+            "   [Boolean] [bit] NULL," + Environment.NewLine +
+            "   [Text] [nvarchar](max) NULL," + Environment.NewLine +
             "   [TenantId] [uniqueidentifier] NULL," + Environment.NewLine +
             "   [UserId] [uniqueidentifier] NOT NULL," + Environment.NewLine +
             "   CONSTRAINT [PK_Records_1] PRIMARY KEY CLUSTERED ([RecordId] ASC)" + Environment.NewLine +
