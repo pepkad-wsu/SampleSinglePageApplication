@@ -1,4 +1,5 @@
 ﻿class RecordsModel {
+    AllowDelete: KnockoutObservable<boolean> = ko.observable(false);
     Loading: KnockoutObservable<boolean> = ko.observable(false);
     MainModel: KnockoutObservable<MainModel> = ko.observable(window.mainModel);
     Record: KnockoutObservable<record> = ko.observable(new record);
@@ -8,6 +9,43 @@
         this.MainModel().View.subscribe(() => {
             this.ViewChanged();
         });
+    }
+
+     /**
+     * Called when the URL view is "EditRecord" to load the record and show the edit record interface.
+     */
+    EditRecord(): void {
+        let recordId: string = this.MainModel().Id();
+
+        this.AllowDelete(false);
+
+        this.Record(new record);
+
+        if (tsUtilities.HasValue(recordId)) {
+            this.MainModel().Message_Loading();
+
+            let success: Function = (data: server.record) => {
+                this.Loading(false);
+                this.MainModel().Message_Hide();
+                if (data != null) {
+                    if (data.actionResponse.result) {
+                        this.Record().Load(data);
+
+                        if (this.Record().recordId() != this.MainModel().Guid1() &&
+                            this.Record().recordId() != this.MainModel().Guid2()) {
+                            this.AllowDelete(true);
+                        }
+                    } else {
+                        this.MainModel().Nav("Records");
+                    }
+                } else {
+                    this.MainModel().Nav("Records");
+                }
+            };
+
+            this.Loading(true);
+            tsUtilities.AjaxData(window.baseURL + "api/Data/GetRecord/" + recordId, null, success);
+        }
     }
 
     GetRecords(): void {
@@ -33,6 +71,9 @@
      */
     ViewChanged() {
         switch (this.MainModel().CurrentView()) {
+            case "editrecord":
+                this.EditRecord();
+                break;
             case "records":
                 this.GetRecords();
                 break;

@@ -1,6 +1,7 @@
 var RecordsModel = /** @class */ (function () {
     function RecordsModel() {
         var _this = this;
+        this.AllowDelete = ko.observable(false);
         this.Loading = ko.observable(false);
         this.MainModel = ko.observable(window.mainModel);
         this.Record = ko.observable(new record);
@@ -9,6 +10,39 @@ var RecordsModel = /** @class */ (function () {
             _this.ViewChanged();
         });
     }
+    /**
+    * Called when the URL view is "EditRecord" to load the record and show the edit record interface.
+    */
+    RecordsModel.prototype.EditRecord = function () {
+        var _this = this;
+        var recordId = this.MainModel().Id();
+        this.AllowDelete(false);
+        this.Record(new record);
+        if (tsUtilities.HasValue(recordId)) {
+            this.MainModel().Message_Loading();
+            var success = function (data) {
+                _this.Loading(false);
+                _this.MainModel().Message_Hide();
+                if (data != null) {
+                    if (data.actionResponse.result) {
+                        _this.Record().Load(data);
+                        if (_this.Record().recordId() != _this.MainModel().Guid1() &&
+                            _this.Record().recordId() != _this.MainModel().Guid2()) {
+                            _this.AllowDelete(true);
+                        }
+                    }
+                    else {
+                        _this.MainModel().Nav("Records");
+                    }
+                }
+                else {
+                    _this.MainModel().Nav("Records");
+                }
+            };
+            this.Loading(true);
+            tsUtilities.AjaxData(window.baseURL + "api/Data/GetRecord/" + recordId, null, success);
+        }
+    };
     RecordsModel.prototype.GetRecords = function () {
         var _this = this;
         console.log("records page loaded");
@@ -31,6 +65,9 @@ var RecordsModel = /** @class */ (function () {
      */
     RecordsModel.prototype.ViewChanged = function () {
         switch (this.MainModel().CurrentView()) {
+            case "editrecord":
+                this.EditRecord();
+                break;
             case "records":
                 this.GetRecords();
                 break;

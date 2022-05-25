@@ -31,7 +31,10 @@
                 <tbody data-bind="foreach:Records">
                     <tr>
                         <td class="no-pad-right">
-
+                            <button type="button" class="btn btn-sm btn-primary nowrap" 
+                                data-bind="click:function(){ $root.MainModel().Nav('EditRecord', $data.recordId()) },
+                                    html:$root.MainModel().IconAndText('Edit')">
+                            </button>
                         </td>
                         <td><span data-bind="text: recordId"></span></td>
                         <td><span data-bind="text: name"></span></td>
@@ -46,4 +49,29 @@
             </table>
         </div>
     </div>
+
+    <!-- Editing a source -->
+    <div style="display: none;" data-bind="visible: View() == 'record-edit'">
+        <h1>Edit Record</h1>
+        <div data-bind="if: Record() != null">
+            <div class="form-group">
+                <label for="name">Name</label>
+                <input data-bind="value: Record().name" type="text" class="form-control" id="name" placeholder="Enter Name">
+            </div>
+
+            <div class="form-group">
+                <label for="number">Number</label>
+                <input data-bind="value: Record().number" type="text" class="form-control" id="number" placeholder="Enter Number">
+            </div>
+
+            <div class="form-group">
+                <label for="text">Text</label>
+                <input data-bind="value: Record().text" type="text" class="form-control" id="text" placeholder="Enter Text">
+            </div>
+
+            <button type="submit" class="btn btn-success" data-bind="click: () => {SaveRecord();}" >Save</button>
+            <button type="reset" class="btn btn-danger" data-bind="click: () => {ListRecords();}">Cancel</button>
+        </div>
+    </div>
+    
 </div>
