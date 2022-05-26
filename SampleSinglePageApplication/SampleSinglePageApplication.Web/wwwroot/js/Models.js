@@ -538,6 +538,7 @@ var record = /** @class */ (function (_super) {
             this.actionResponse().Load(data.actionResponse);
             this.recordId(data.recordId);
             this.name(data.name);
+            this.number(data.number);
             this.boolean(data.boolean);
             this.text(data.text);
             this.tenantId(data.tenantId);

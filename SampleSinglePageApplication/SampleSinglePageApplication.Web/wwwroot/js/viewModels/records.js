@@ -26,10 +26,6 @@ var RecordsModel = /** @class */ (function () {
                 if (data != null) {
                     if (data.actionResponse.result) {
                         _this.Record().Load(data);
-                        if (_this.Record().recordId() != _this.MainModel().Guid1() &&
-                            _this.Record().recordId() != _this.MainModel().Guid2()) {
-                            _this.AllowDelete(true);
-                        }
                     }
                     else {
                         _this.MainModel().Nav("Records");

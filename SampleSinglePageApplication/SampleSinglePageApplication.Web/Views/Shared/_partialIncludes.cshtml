@@ -1,6 +1,6 @@
 ﻿@{
     string unique = "v=" + Guid.NewGuid().ToString().Replace("-", "");
-}<link rel="stylesheet" href="~/lib/bootstrap/css/bootstrap.min.css" />
+}<link rel="stylesheet" href="~/lib/bootstrap/css/bootstrap.min.css?@Html.Raw(unique)" />
     <script src="https://kit.fontawesome.com/da9cb2f29a.js" crossorigin="anonymous"></script>
     <link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/themes/smoothness/jquery-ui.css" type="text/css" />
     <link rel="stylesheet" href="~/js/DateTimePicker/jquery-ui-timepicker-addon.css" />

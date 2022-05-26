@@ -30,11 +30,6 @@
                 if (data != null) {
                     if (data.actionResponse.result) {
                         this.Record().Load(data);
-
-                        if (this.Record().recordId() != this.MainModel().Guid1() &&
-                            this.Record().recordId() != this.MainModel().Guid2()) {
-                            this.AllowDelete(true);
-                        }
                     } else {
                         this.MainModel().Nav("Records");
                     }

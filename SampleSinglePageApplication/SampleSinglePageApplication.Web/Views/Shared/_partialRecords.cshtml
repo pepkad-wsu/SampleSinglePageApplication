@@ -8,8 +8,8 @@
             <div data-bind="visible:Records() == null || Records().length == 0, html:MainModel().Language('LoadingWait')"></div>
 
             <div data-bind="visible:Records() != null && Records().length > 0" class="padbottom-5">
-                <button type="button" class="btn btn-success" data-bind="click:function(){ MainModel().Nav('NewRecord') }">
-                    <i data-bind="html:MainModel().IconAndText('AddRecord')"></i>
+                <button type="button" class="btn btn-success" data-bind="click:function(){ MainModel().Nav('newrecord') }">
+                    <i data-bind="html:MainModel().IconAndText('addrecord')"></i>
                 </button>
             </div>
         </div>
@@ -51,7 +51,7 @@
     </div>
 
     <!-- Editing a source -->
-    <div style="display: none;" data-bind="visible: ViewChanged() == 'editrecord'">
+    <div style="display: none;" data-bind="visible: MainModel().CurrentView() == 'editrecord'">
         <h1>Edit Record</h1>
         <div data-bind="if: Record() != null">
             <div class="form-group">
