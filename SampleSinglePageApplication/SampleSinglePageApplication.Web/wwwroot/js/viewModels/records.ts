@@ -61,6 +61,43 @@
         tsUtilities.AjaxData(window.baseURL + "api/Data/GetRecords", null, success);
     }
 
+    SaveRecord(newRecord: boolean): void {
+        this.MainModel().Message_Hide();
+
+        let errors: string[] = [];
+        let focus: string = "";
+
+        let labelPrefix: string = newRecord ? "new-" : "edit-";
+
+        if (!tsUtilities.HasValue(this.Record().name())) {
+            errors.push("Name is Required");
+            if (focus == "") { focus = labelPrefix + "tenant-name"; }
+        }
+
+        if (errors.length > 0) {
+            this.MainModel().Message_Errors(errors);
+            tsUtilities.DelayedFocus(focus);
+            return;
+        } else {
+            this.MainModel().Message_Saving();
+
+            let success: Function = (data: server.tenant) => {
+                this.MainModel().Message_Hide();
+                if (data != null) {
+                    if (data.actionResponse.result) {
+                        this.MainModel().Nav("Records");
+                    } else {
+                        this.MainModel().Message_Errors(data.actionResponse.messages);
+                    }
+                } else {
+                    this.MainModel().Message_Error("An unknown error occurred attempting to save this tenant.");
+                }
+            };
+
+            tsUtilities.AjaxData(window.baseURL + "api/Data/SaveTenant", ko.toJSON(this.Record), success);
+        }
+    }
+
     /**
      * Called when the view changes in the MainModel to do any necessary work in this viewModel.
      */

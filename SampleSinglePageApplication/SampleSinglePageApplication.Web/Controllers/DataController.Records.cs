@@ -46,5 +46,20 @@ namespace SampleSinglePageApplication.Web.Controllers
                 return Unauthorized("Access Denied");
             }
         }
+
+        [HttpPost]
+        [Route("~/api/Data/SaveRecord")]
+        public async Task<ActionResult<DataObjects.Record>> SaveRecord(DataObjects.Record record)
+        {
+            if (CurrentUser.AppAdmin)
+            {
+                var output = await da.SaveRecord(record);
+                return Ok(output);
+            }
+            else
+            {
+                return Unauthorized("Access Denied");
+            }
+        }
     }
 }

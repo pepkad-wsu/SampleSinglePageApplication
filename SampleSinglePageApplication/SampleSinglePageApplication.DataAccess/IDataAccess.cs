@@ -100,6 +100,7 @@ public interface IDataAccess
     Task<DataObjects.FileStorage> SaveFileStorage(DataObjects.FileStorage fileStorage);
     Task<List<DataObjects.FileStorage>> SaveFileStorages(List<DataObjects.FileStorage> fileStorages);
     Task<DataObjects.BooleanResponse> SaveLanguage(Guid TenantId, List<DataObjects.OptionPair> language);
+    Task<DataObjects.Record> SaveRecord(DataObjects.Record record);
     Task<DataObjects.Setting> SaveSetting(DataObjects.Setting setting, Guid? TenantId = null, Guid? UserId = null);
     DataObjects.BooleanResponse SaveSetting(string SettingName, DataObjects.SettingType SettingType, dynamic? Value, Guid? TenantId = null, Guid? UserId = null, string? Description = "");
     Task<DataObjects.Tenant> SaveTenant(DataObjects.Tenant tenant);
