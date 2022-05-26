@@ -534,7 +534,6 @@ var record = /** @class */ (function (_super) {
         return _this;
     }
     record.prototype.Load = function (data) {
-        console.log("load: ", data);
         if (data != null) {
             this.actionResponse().Load(data.actionResponse);
             this.recordId(data.recordId);

@@ -32,7 +32,7 @@
                     <tr>
                         <td class="no-pad-right">
                             <button type="button" class="btn btn-sm btn-primary nowrap" 
-                                data-bind="click:function(){ $root.MainModel().Nav('EditRecord', $data.recordId()) },
+                                data-bind="click:function(){ $root.MainModel().Nav('editrecord', $data.recordId()) },
                                     html:$root.MainModel().IconAndText('Edit')">
                             </button>
                         </td>
@@ -51,7 +51,7 @@
     </div>
 
     <!-- Editing a source -->
-    <div style="display: none;" data-bind="visible: View() == 'record-edit'">
+    <div style="display: none;" data-bind="visible: ViewChanged() == 'editrecord'">
         <h1>Edit Record</h1>
         <div data-bind="if: Record() != null">
             <div class="form-group">
