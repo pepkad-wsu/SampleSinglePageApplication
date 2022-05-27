@@ -138,6 +138,7 @@
     }
 
     interface signalRUpdate {
+        recordId: string;
         tenantId: string;
         requestId: string;
         itemId: string;

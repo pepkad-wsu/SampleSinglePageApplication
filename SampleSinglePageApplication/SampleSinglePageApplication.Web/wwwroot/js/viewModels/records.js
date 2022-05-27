@@ -9,6 +9,9 @@ var RecordsModel = /** @class */ (function () {
         this.MainModel().View.subscribe(function () {
             _this.ViewChanged();
         });
+        this.MainModel().SignalRUpdate.subscribe(function () {
+            _this.SignalrUpdate();
+        });
     }
     /**
     * Called when the URL view is "EditRecord" to load the record and show the edit record interface.
@@ -65,7 +68,7 @@ var RecordsModel = /** @class */ (function () {
         if (!tsUtilities.HasValue(this.Record().name())) {
             errors.push("Name is Required");
             if (focus == "") {
-                focus = labelPrefix + "tenant-name";
+                focus = labelPrefix + "record-name";
             }
         }
         if (errors.length > 0) {
@@ -86,10 +89,54 @@ var RecordsModel = /** @class */ (function () {
                     }
                 }
                 else {
-                    _this.MainModel().Message_Error("An unknown error occurred attempting to save this tenant.");
+                    _this.MainModel().Message_Error("An unknown error occurred attempting to save this record.");
                 }
             };
-            tsUtilities.AjaxData(window.baseURL + "api/Data/SaveTenant", ko.toJSON(this.Record), success);
+            var newData = {
+                actionResponse: {
+                    messages: this.Record().actionResponse().messages(),
+                    result: this.Record().actionResponse().result()
+                },
+                recordId: this.Record().recordId(),
+                name: this.Record().name(),
+                number: this.Record().number(),
+                boolean: this.Record().boolean(),
+                text: this.Record().text(),
+                tenantId: this.Record().tenantId(),
+                userId: this.Record().userId()
+            };
+            //tsUtilities.AjaxData(window.baseURL + "api/Data/SaveRecord", ko.toJSON(this.Record), success);
+            tsUtilities.AjaxData(window.baseURL + "api/Data/SaveRecord", newData, success);
+        }
+    };
+    /**
+     * This model subscribes to the SignalR updates from the MainModel to update record data when records are changed.
+     */
+    RecordsModel.prototype.SignalrUpdate = function () {
+        //console.log("In Records, SignalR Update", JSON.parse(ko.toJSON(this.MainModel().SignalRUpdate)));
+        switch (this.MainModel().SignalRUpdate().updateTypeString().toLowerCase()) {
+            case "setting":
+                switch (this.MainModel().SignalRUpdate().message().toLowerCase()) {
+                    case "recordsaved":
+                        // Update the item in the Records list.
+                        var recordId_1 = this.MainModel().SignalRUpdate().recordId();
+                        var t = ko.utils.arrayFirst(this.Records(), function (item) {
+                            return item.recordId() == recordId_1;
+                        });
+                        if (t != null) {
+                            t.Load(JSON.parse(this.MainModel().SignalRUpdate().object()));
+                        }
+                        else {
+                            var newRecord = new record();
+                            newRecord.Load(JSON.parse(ko.toJSON(this.MainModel().SignalRUpdate().object)));
+                            this.Records.push(newRecord);
+                            this.Records().sort(function (l, r) {
+                                return l.name() > r.name() ? 1 : -1;
+                            });
+                        }
+                        break;
+                }
+                break;
         }
     };
     /**

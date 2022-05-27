@@ -69,7 +69,7 @@
                 <input data-bind="value: Record().text" type="text" class="form-control" id="text" placeholder="Enter Text">
             </div>
 
-            <button type="submit" class="btn btn-success" data-bind="click: () => {SaveRecord();}" >Save</button>
+            <button type="submit" class="btn btn-success" data-bind="click: () => {SaveRecord(false);}" >Save</button>
             <button type="reset" class="btn btn-danger" data-bind="click: () => {ListRecords();}">Cancel</button>
         </div>
     </div>

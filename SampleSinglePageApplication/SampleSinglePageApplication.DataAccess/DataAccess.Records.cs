@@ -93,7 +93,7 @@ public partial class DataAccess
             }
             await data.SaveChangesAsync();
             output.ActionResponse.Result = true;
-            output.ActionResponse.Messages.Add(newRecord ? "New Tenant Added" : "Tenant Updated");
+            output.ActionResponse.Messages.Add(newRecord ? "New Record Added" : "Record Updated");
 
             // CLEANUP
             //if (newRecord)

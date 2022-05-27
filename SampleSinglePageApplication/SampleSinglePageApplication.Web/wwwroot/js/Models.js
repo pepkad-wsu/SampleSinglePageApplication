@@ -440,6 +440,7 @@ var optionPair = /** @class */ (function () {
 }());
 var signalRUpdate = /** @class */ (function () {
     function signalRUpdate() {
+        this.recordId = ko.observable(null);
         this.tenantId = ko.observable(null);
         this.requestId = ko.observable(null);
         this.itemId = ko.observable(null);
@@ -450,6 +451,7 @@ var signalRUpdate = /** @class */ (function () {
     }
     signalRUpdate.prototype.Load = function (data) {
         if (data != null) {
+            this.recordId(data.recordId);
             this.tenantId(data.tenantId);
             this.requestId(data.requestId);
             this.itemId(data.itemId);
@@ -459,6 +461,7 @@ var signalRUpdate = /** @class */ (function () {
             this.object(data.object);
         }
         else {
+            this.recordId(null);
             this.tenantId(null);
             this.requestId(null);
             this.itemId(null);

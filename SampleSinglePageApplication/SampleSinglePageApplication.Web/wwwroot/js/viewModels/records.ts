@@ -9,6 +9,10 @@
         this.MainModel().View.subscribe(() => {
             this.ViewChanged();
         });
+
+        this.MainModel().SignalRUpdate.subscribe(() => {
+            this.SignalrUpdate();
+        });
     }
 
      /**
@@ -71,7 +75,7 @@
 
         if (!tsUtilities.HasValue(this.Record().name())) {
             errors.push("Name is Required");
-            if (focus == "") { focus = labelPrefix + "tenant-name"; }
+            if (focus == "") { focus = labelPrefix + "record-name"; }
         }
 
         if (errors.length > 0) {
@@ -81,7 +85,7 @@
         } else {
             this.MainModel().Message_Saving();
 
-            let success: Function = (data: server.tenant) => {
+            let success: Function = (data: server.record) => {
                 this.MainModel().Message_Hide();
                 if (data != null) {
                     if (data.actionResponse.result) {
@@ -90,11 +94,57 @@
                         this.MainModel().Message_Errors(data.actionResponse.messages);
                     }
                 } else {
-                    this.MainModel().Message_Error("An unknown error occurred attempting to save this tenant.");
+                    this.MainModel().Message_Error("An unknown error occurred attempting to save this record.");
                 }
             };
 
-            tsUtilities.AjaxData(window.baseURL + "api/Data/SaveTenant", ko.toJSON(this.Record), success);
+            let newData: server.record = {
+                actionResponse: {
+                    messages: this.Record().actionResponse().messages(),
+                    result: this.Record().actionResponse().result()
+                },
+                recordId: this.Record().recordId(),
+                name: this.Record().name(),
+                number: this.Record().number(),
+                boolean: this.Record().boolean(),
+                text: this.Record().text(),
+                tenantId: this.Record().tenantId(),
+                userId: this.Record().userId()
+            };
+
+            //tsUtilities.AjaxData(window.baseURL + "api/Data/SaveRecord", ko.toJSON(this.Record), success);
+            tsUtilities.AjaxData(window.baseURL + "api/Data/SaveRecord", newData, success);
+        }
+    }
+
+    /**
+     * This model subscribes to the SignalR updates from the MainModel to update record data when records are changed.
+     */
+    SignalrUpdate(): void {
+        //console.log("In Records, SignalR Update", JSON.parse(ko.toJSON(this.MainModel().SignalRUpdate)));
+        switch (this.MainModel().SignalRUpdate().updateTypeString().toLowerCase()) {
+            case "setting":
+                switch (this.MainModel().SignalRUpdate().message().toLowerCase()) {
+                    case "recordsaved":
+                        // Update the item in the Records list.
+                        let recordId: string = this.MainModel().SignalRUpdate().recordId();
+                        let t: record = ko.utils.arrayFirst(this.Records(), function (item) {
+                            return item.recordId() == recordId;
+                        });
+                        if (t != null) {
+                            t.Load(JSON.parse(this.MainModel().SignalRUpdate().object()));
+                        } else {
+                            let newRecord: record = new record();
+                            newRecord.Load(JSON.parse(ko.toJSON(this.MainModel().SignalRUpdate().object)));
+                            this.Records.push(newRecord);
+                            this.Records().sort(function (l, r) {
+                                return l.name() > r.name() ? 1 : -1;
+                            });
+                        }
+                        break;
+                }
+
+                break;
         }
     }
 

@@ -422,6 +422,7 @@ class optionPair {
 }
 
 class signalRUpdate {
+    recordId: KnockoutObservable<string> = ko.observable(null);
     tenantId: KnockoutObservable<string> = ko.observable(null);
     requestId: KnockoutObservable<string> = ko.observable(null);
     itemId: KnockoutObservable<string> = ko.observable(null);
@@ -432,6 +433,7 @@ class signalRUpdate {
 
     Load(data: server.signalRUpdate) {
         if (data != null) {
+            this.recordId(data.recordId);
             this.tenantId(data.tenantId);
             this.requestId(data.requestId);
             this.itemId(data.itemId);
@@ -440,6 +442,7 @@ class signalRUpdate {
             this.message(data.message);
             this.object(data.object);
         } else {
+            this.recordId(null);
             this.tenantId(null);
             this.requestId(null);
             this.itemId(null);
