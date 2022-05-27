@@ -11,7 +11,5 @@ public partial class DataObjects
         public string? Text { get; set; }
         public Guid? TenantId { get; set; }
         public Guid UserId { get; set; }
-
-        public string Username { get; set; } = null!;
     }
 }

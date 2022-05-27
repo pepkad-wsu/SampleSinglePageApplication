@@ -18,7 +18,6 @@ public partial class DataAccess
                 Number = rec.Number,
                 Text = rec.Text,
                 UserId = rec.User.UserId,
-                Username = rec.User.Username
             };
         }
 
@@ -46,7 +45,6 @@ public partial class DataAccess
                         Number = rec.Number,
                         Text = rec.Text,
                         UserId = rec.User.UserId,
-                        Username = rec.User.Username
                     });
                 }
             }

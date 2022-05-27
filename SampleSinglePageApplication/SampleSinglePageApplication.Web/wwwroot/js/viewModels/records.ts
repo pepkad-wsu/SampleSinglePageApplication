@@ -112,8 +112,10 @@
                 userId: this.Record().userId()
             };
 
+            console.log(newData);
+
             //tsUtilities.AjaxData(window.baseURL + "api/Data/SaveRecord", ko.toJSON(this.Record), success);
-            tsUtilities.AjaxData(window.baseURL + "api/Data/SaveRecord", newData, success);
+            tsUtilities.AjaxData(window.baseURL + "api/Data/SaveRecord", ko.toJSON(newData), success);
         }
     }
 
