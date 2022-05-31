@@ -3,6 +3,7 @@
     <div data-bind="visible:MainModel().CurrentView() == 'login'">
         <div class="row">
             <div class="col-sm-4"></div>
+            <div style="display:none"><input id="loaded", data-bind="enable:Loaded"/></div>
             <div class="col-sm-4">
                 <h1 class="display-7"><i data-bind="html:MainModel().IconAndText('LoginTitle')"></i></h1>
                 <p data-bind="html:MainModel().Language('LoginIntro')"></p>

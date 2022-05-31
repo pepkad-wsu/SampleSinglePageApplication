@@ -1,4 +1,5 @@
 ﻿class LoginModel {
+    Loaded: KnockoutObservable<boolean> = ko.observable(false);
     Authenticate: KnockoutObservable<authenticate> = ko.observable(new authenticate);
     HideCancelButton: KnockoutObservable<boolean> = ko.observable(false);
     LoginError: KnockoutObservable<string> = ko.observable("");

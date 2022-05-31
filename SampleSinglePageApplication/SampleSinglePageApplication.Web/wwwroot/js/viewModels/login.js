@@ -1,6 +1,7 @@
 var LoginModel = /** @class */ (function () {
     function LoginModel() {
         var _this = this;
+        this.Loaded = ko.observable(false);
         this.Authenticate = ko.observable(new authenticate);
         this.HideCancelButton = ko.observable(false);
         this.LoginError = ko.observable("");
