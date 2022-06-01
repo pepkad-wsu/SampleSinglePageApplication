@@ -40,9 +40,9 @@
                             <input type="password" class="form-control" id="local-password" name="local-password" data-bind="value:Authenticate().password" />
                         </div>
 
-                        <button type="button" class="btn btn-dark" data-bind="click:LocalLoginCancel, html:MainModel().IconAndText('Cancel')"></button>
+                        <button type="button" class="btn btn-dark" id="cancel-button" data-bind="click:LocalLoginCancel, html:MainModel().IconAndText('Cancel')"></button>
 
-                        <button type="submit" class="btn btn-primary" data-bind="click:LocalLogin, html:MainModel().IconAndText('Login')"></button>
+                        <button type="submit" class="btn btn-primary" id="login-button" data-bind="click:LocalLogin, html:MainModel().IconAndText('Login')"></button>
                     </form>
                 </div>
 
