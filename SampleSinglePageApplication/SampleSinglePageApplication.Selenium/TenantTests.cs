@@ -6,10 +6,8 @@ using WebDriverManager.DriverConfigs.Impl;
 
 namespace SampleSinglePageApplication.Selenium
 {
-    public class Locators
+    public class TenantTests
     {
-        // Xpath, Css, id, classname, name, tagname
-
         IWebDriver driver;
 
         [SetUp]
@@ -18,34 +16,28 @@ namespace SampleSinglePageApplication.Selenium
             new WebDriverManager.DriverManager().SetUpDriver(new ChromeConfig());
             driver = new ChromeDriver();
 
-            driver.Manage().Timeouts().ImplicitWait = System.TimeSpan.FromSeconds(1);
+            driver.Manage().Timeouts().ImplicitWait = System.TimeSpan.FromSeconds(3);
 
             driver.Manage().Window.Maximize();
             driver.Url = "https://localhost:7118/";
-        }
-
-        [Test]
-        public void LocatorIdentification()
-        {
-            //.GetAttribute("id");
-            //.Clear();
-            //while (!driver.FindElement(By.Id("loaded")).Enabled)
-            //{
-            //    await Task.Delay(10);
-            //}
 
             driver.FindElement(By.Id("local-username")).SendKeys("admin");
             driver.FindElement(By.Id("local-password")).SendKeys("admin");
             driver.FindElement(By.Id("login-button")).Click();
-
-            Assert.AreEqual(driver.FindElements(By.Id("view-home")).Count, 1);
         }
 
+        [Test]
+        public void LocatorAddTenant()
+        {
+            TestContext.Progress.WriteLine("Am I here?");
+            string dropdownText = driver.FindElement(By.Id("navBarToggler")).FindElement(By.CssSelector("a[class='dropdown-item'][3]/i/span[1]")).Text;
+            TestContext.Progress.WriteLine(dropdownText);
+        }
 
         [TearDown]
-        public void CloseBrowser()
+        public void CloseBrowserOnPass()
         {
-
+            //driver.Close();
         }
     }
 }
