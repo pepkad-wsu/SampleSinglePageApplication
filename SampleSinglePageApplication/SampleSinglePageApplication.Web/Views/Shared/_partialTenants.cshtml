@@ -8,7 +8,7 @@
             <div data-bind="visible:Tenants() == null || Tenants().length == 0, html:MainModel().Language('LoadingWait')"></div>
 
             <div data-bind="visible:Tenants() != null && Tenants().length > 0" class="padbottom-5">
-                <button type="button" class="btn btn-success" data-bind="click:function(){ MainModel().Nav('NewTenant') }">
+                <button id="add-tenant-btn" type="button" class="btn btn-success" data-bind="click:function(){ MainModel().Nav('NewTenant') }">
                     <i data-bind="html:MainModel().IconAndText('AddTenant')"></i>
                 </button>
             </div>
@@ -25,7 +25,7 @@
                         <th style="width:1%;" data-bind="html:MainModel().Language('Enabled')"></th>
                     </tr>
                 </thead>
-                <tbody data-bind="foreach:Tenants">
+                <tbody id="tenants-list" data-bind="foreach:Tenants">
                     <tr>
                         <td class="no-pad-right">
                             <button type="button" class="btn btn-sm btn-primary nowrap" 
@@ -43,7 +43,7 @@
         </div>
     </div>
 
-    <div data-bind="visible:Loading() == false && MainModel().CurrentView() == 'newtenant'">
+    <div id="newtenant-form" data-bind="visible:Loading() == false && MainModel().CurrentView() == 'newtenant'">
         <div class="padbottom" data-bind="css:{fixed: MainModel().StickyMenus() == true}">
             <i class="sticky-menu-icon" data-bind="html:MainModel().StickyIcon(), click:function(){MainModel().ToggleStickyMenus()}"></i>
             <h1 class="display-7"><i data-bind="html:MainModel().IconAndText('NewTenant')"></i></h1>

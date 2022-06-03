@@ -1,6 +1,7 @@
 ﻿using NUnit.Framework;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
+using System.Threading;
 using System.Threading.Tasks;
 using WebDriverManager.DriverConfigs.Impl;
 
@@ -29,9 +30,47 @@ namespace SampleSinglePageApplication.Selenium
         [Test]
         public void LocatorAddTenant()
         {
-            TestContext.Progress.WriteLine("Am I here?");
-            string dropdownText = driver.FindElement(By.Id("navBarToggler")).FindElement(By.CssSelector("a[class='dropdown-item'][3]/i/span[1]")).Text;
-            TestContext.Progress.WriteLine(dropdownText);
+            bool pass = false;
+
+            // Locate to Tenants Page
+            var navItems = driver.FindElements(By.ClassName("nav-item"));
+            navItems[3].Click();
+            navItems[3].FindElements(By.ClassName("dropdown-item"))[3].Click();
+
+            // Locate to Add Tenant
+            driver.FindElement(By.Id("add-tenant-btn")).Click();
+
+            // Fill out Add Tenant form and click the save button.
+            var newTenantForm = driver.FindElement(By.Id("newtenant-form"));
+            var formControls = newTenantForm.FindElements(By.ClassName("form-control"));
+            formControls[0].SendKeys("Throwaway Tenant");
+            formControls[1].SendKeys("Throwaway Tenant");
+
+            var buttons = newTenantForm.FindElements(By.TagName("button"));
+            buttons[1].Click();
+
+            // This is a naive test, just roll with it.
+            // Now lets iterate through the list of tenants and look for our new tenant.
+            //var tenantRows = tenantsList.FindElements(By.TagName("tr"));
+            //for (int i = 0; i < tenantRows.Count; i++)
+            //{
+            //    var dataCells = tenantRows[i].FindElements(By.TagName("td"));
+            //    TestContext.Progress.WriteLine("Name: " + dataCells[2].Text + ", Code: " + dataCells[3].Text);
+            //    if (dataCells[2].Text == "Throwaway Tenant" && dataCells[3].Text == "Throwaway Tenant")
+            //    {
+            //        pass = true;
+            //        i = tenantRows.Count;
+            //    }
+            //}
+
+            //if (pass)
+            //{
+            //    Assert.Pass();
+            //}
+            //else
+            //{
+            //    Assert.Fail();
+            //}
         }
 
         [TearDown]
