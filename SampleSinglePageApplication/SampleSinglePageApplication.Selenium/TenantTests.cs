@@ -17,7 +17,13 @@ namespace SampleSinglePageApplication.Selenium
             new WebDriverManager.DriverManager().SetUpDriver(new ChromeConfig());
             driver = new ChromeDriver();
 
-            driver.Manage().Timeouts().ImplicitWait = System.TimeSpan.FromSeconds(3);
+            /*
+             * The driver not being able to find an element will cause the test to fail. However, the following line will allow
+             * the driver to keep trying for 5 seconds to see if it can find the element. Time is saved if the element is found
+             * before the implicit wait time is over.
+             */
+
+            driver.Manage().Timeouts().ImplicitWait = System.TimeSpan.FromSeconds(5);
 
             driver.Manage().Window.Maximize();
             driver.Url = "https://localhost:7118/";
@@ -49,28 +55,36 @@ namespace SampleSinglePageApplication.Selenium
             var buttons = newTenantForm.FindElements(By.TagName("button"));
             buttons[1].Click();
 
-            // This is a naive test, just roll with it.
+            // This is a naive test, not sure if this is the best strategy.
             // Now lets iterate through the list of tenants and look for our new tenant.
-            //var tenantRows = tenantsList.FindElements(By.TagName("tr"));
-            //for (int i = 0; i < tenantRows.Count; i++)
-            //{
-            //    var dataCells = tenantRows[i].FindElements(By.TagName("td"));
-            //    TestContext.Progress.WriteLine("Name: " + dataCells[2].Text + ", Code: " + dataCells[3].Text);
-            //    if (dataCells[2].Text == "Throwaway Tenant" && dataCells[3].Text == "Throwaway Tenant")
-            //    {
-            //        pass = true;
-            //        i = tenantRows.Count;
-            //    }
-            //}
+            // But first add a short delay for knockout to update the page.
+            Thread.Sleep(500);
+            var tenantsList = driver.FindElement(By.Id("tenants-list"));
+            var tenantRows = tenantsList.FindElements(By.TagName("tr"));
+            int newTenantIndex = -1;
+            for (int i = 0; i < tenantRows.Count; i++)
+            {
+                var dataCells = tenantRows[i].FindElements(By.TagName("td"));
+                TestContext.Progress.WriteLine("Name: " + dataCells[2].Text + ", Code: " + dataCells[3].Text);
+                if (dataCells[2].Text == "Throwaway Tenant" && dataCells[3].Text == "Throwaway Tenant")
+                {
+                    pass = true;
+                    newTenantIndex = i;
+                    i = tenantRows.Count;
+                }
+            }
 
-            //if (pass)
-            //{
-            //    Assert.Pass();
-            //}
-            //else
-            //{
-            //    Assert.Fail();
-            //}
+            if (!pass)
+            {
+                Assert.Fail();
+                return;
+            }
+
+            // Now let's delete the new tenant we created.
+            tenantRows[newTenantIndex].FindElement(By.TagName("button")).Click();
+            driver.FindElement(By.Id("delete-tenant-button")).Click();
+            driver.FindElement(By.Id("confirm-delete-tenant")).SendKeys("CONFIRM");
+            driver.FindElement(By.Id("confirm-delete-tenant-button")).Click();
         }
 
         [TearDown]

@@ -93,7 +93,7 @@
                     <i data-bind="html:MainModel().IconAndText('Save')"></i>
                 </button>
                 <!-- ko if: AllowDelete() == true -->
-                <button type="button" class="btn btn-danger" data-bind="click:function(){ MainModel().Nav('DeleteTenant', Tenant().tenantId()) }">
+                <button id="delete-tenant-button" type="button" class="btn btn-danger" data-bind="click:function(){ MainModel().Nav('DeleteTenant', Tenant().tenantId()) }">
                     <i data-bind="html:MainModel().IconAndText('DeleteTenant')"></i>
                 </button>
                 <!-- /ko -->
@@ -325,7 +325,7 @@
                 <input type="text" class="form-control" id="confirm-delete-tenant" />
             </div>
 
-            <button type="button" class="btn btn-danger" data-bind="click:ConfirmDeleteTenant">
+            <button type="button" class="btn btn-danger" id="confirm-delete-tenant-button" data-bind="click:ConfirmDeleteTenant">
                 <i data-bind="html:MainModel().IconAndText('ConfirmDeleteTenant')"></i>
             </button>
         </div>
