@@ -10,6 +10,7 @@ namespace SampleSinglePageApplication.Selenium
     public class TenantTests
     {
         IWebDriver driver;
+        const string _connectionString = "Data Source=(local);Initial Catalog=SampleSinglePageApplication;Persist Security Info=True;Trusted_Connection=True;MultipleActiveResultSets=True";
 
         [SetUp]
         public void StartBrowser()
@@ -34,7 +35,7 @@ namespace SampleSinglePageApplication.Selenium
         }
 
         [Test]
-        public void LocatorAddTenant()
+        public async Task LocatorAddTenant()
         {
             bool pass = false;
 
@@ -58,7 +59,7 @@ namespace SampleSinglePageApplication.Selenium
             // This is a naive test, not sure if this is the best strategy.
             // Now lets iterate through the list of tenants and look for our new tenant.
             // But first add a short delay for knockout to update the page.
-            Thread.Sleep(500);
+            Thread.Sleep(1000);
             var tenantsList = driver.FindElement(By.Id("tenants-list"));
             var tenantRows = tenantsList.FindElements(By.TagName("tr"));
             int newTenantIndex = -1;
@@ -85,6 +86,10 @@ namespace SampleSinglePageApplication.Selenium
             driver.FindElement(By.Id("delete-tenant-button")).Click();
             driver.FindElement(By.Id("confirm-delete-tenant")).SendKeys("CONFIRM");
             driver.FindElement(By.Id("confirm-delete-tenant-button")).Click();
+
+            //SampleSinglePageApplication.GlobalSettings.DatabaseConnection = _connectionString;
+            //DataAccess da = new DataAccess(_connectionString);
+            //await da.DeleteTenant(); // TODO
         }
 
         [TearDown]

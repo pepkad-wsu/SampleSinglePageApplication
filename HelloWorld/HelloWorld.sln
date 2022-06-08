@@ -15,6 +15,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HelloWorld.UnitTests", "Hel
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HelloWorld.Web", "HelloWorld.Web\HelloWorld.Web.csproj", "{62D36006-20CD-40F8-9015-830F0A1CEDA7}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HelloWorld.Selenium", "HelloWorld.Selenium\HelloWorld.Selenium.csproj", "{8C0F6494-8920-4B67-8C60-F2440D8BF726}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -45,6 +47,10 @@ Global
 		{62D36006-20CD-40F8-9015-830F0A1CEDA7}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{62D36006-20CD-40F8-9015-830F0A1CEDA7}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{62D36006-20CD-40F8-9015-830F0A1CEDA7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8C0F6494-8920-4B67-8C60-F2440D8BF726}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8C0F6494-8920-4B67-8C60-F2440D8BF726}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8C0F6494-8920-4B67-8C60-F2440D8BF726}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8C0F6494-8920-4B67-8C60-F2440D8BF726}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
