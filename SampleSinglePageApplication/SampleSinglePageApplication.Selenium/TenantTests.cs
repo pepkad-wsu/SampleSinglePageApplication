@@ -32,17 +32,19 @@ namespace SampleSinglePageApplication.Selenium
             driver.FindElement(By.Id("local-username")).SendKeys("admin");
             driver.FindElement(By.Id("local-password")).SendKeys("admin");
             driver.FindElement(By.Id("login-button")).Click();
+
+            // Locate to Tenants Page
+            var navItems = driver.FindElements(By.ClassName("nav-item"));
+            navItems[3].Click();
+            navItems[3].FindElements(By.ClassName("dropdown-item"))[3].Click();
         }
 
         [Test]
         public async Task LocatorAddTenant()
         {
             bool pass = false;
-
-            // Locate to Tenants Page
-            var navItems = driver.FindElements(By.ClassName("nav-item"));
-            navItems[3].Click();
-            navItems[3].FindElements(By.ClassName("dropdown-item"))[3].Click();
+            string tenantName = "Throwaway Tenant";
+            string tenantCode = "Throwaway Tenant";
 
             // Locate to Add Tenant
             driver.FindElement(By.Id("add-tenant-btn")).Click();
@@ -50,8 +52,8 @@ namespace SampleSinglePageApplication.Selenium
             // Fill out Add Tenant form and click the save button.
             var newTenantForm = driver.FindElement(By.Id("newtenant-form"));
             var formControls = newTenantForm.FindElements(By.ClassName("form-control"));
-            formControls[0].SendKeys("Throwaway Tenant");
-            formControls[1].SendKeys("Throwaway Tenant");
+            formControls[0].SendKeys(tenantName);
+            formControls[1].SendKeys(tenantCode);
 
             var buttons = newTenantForm.FindElements(By.TagName("button"));
             buttons[1].Click();
@@ -67,7 +69,7 @@ namespace SampleSinglePageApplication.Selenium
             {
                 var dataCells = tenantRows[i].FindElements(By.TagName("td"));
                 TestContext.Progress.WriteLine("Name: " + dataCells[2].Text + ", Code: " + dataCells[3].Text);
-                if (dataCells[2].Text == "Throwaway Tenant" && dataCells[3].Text == "Throwaway Tenant")
+                if (dataCells[2].Text == tenantName && dataCells[3].Text == tenantCode)
                 {
                     pass = true;
                     newTenantIndex = i;
@@ -90,6 +92,24 @@ namespace SampleSinglePageApplication.Selenium
             //SampleSinglePageApplication.GlobalSettings.DatabaseConnection = _connectionString;
             //DataAccess da = new DataAccess(_connectionString);
             //await da.DeleteTenant(); // TODO
+        }
+
+        [Test]
+        public async Task LocatorDeleteTenant()
+        {
+            string tenantName = "Throwaway Tenant Name";
+            string tenantCode = "Throwaway Tenant Code";
+
+            DataObjects.Tenant tenant = new DataObjects.Tenant
+            {
+                TenantId = System.Guid.NewGuid(),
+                Name = tenantName,
+                TenantCode = tenantCode
+            };
+
+            SampleSinglePageApplication.GlobalSettings.DatabaseConnection = _connectionString;
+            DataAccess da = new DataAccess(_connectionString);
+            await da.SaveTenant(tenant);
         }
 
         [TearDown]

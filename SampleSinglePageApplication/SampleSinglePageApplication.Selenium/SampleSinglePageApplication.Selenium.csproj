@@ -18,4 +18,11 @@
     <PackageReference Include="WebDriverManager" Version="2.13.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\SampleSinglePageApplication.DataAccess\SampleSinglePageApplication.DataAccess.csproj" />
+    <ProjectReference Include="..\SampleSinglePageApplication.DataObjects\SampleSinglePageApplication.DataObjects.csproj" />
+    <ProjectReference Include="..\SampleSinglePageApplication.EFModels\SampleSinglePageApplication.EFModels.csproj" />
+    <ProjectReference Include="..\SampleSinglePageApplication.Utilities\SampleSinglePageApplication.Utilities.csproj" />
+  </ItemGroup>
+
 </Project>
