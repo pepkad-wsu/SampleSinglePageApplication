@@ -22,6 +22,7 @@ namespace SampleSinglePageApplication.EFModels.EFModels
         public virtual DbSet<FileStorage> FileStorages { get; set; } = null!;
         public virtual DbSet<Record> Records { get; set; } = null!;
         public virtual DbSet<Setting> Settings { get; set; } = null!;
+        public virtual DbSet<Source> Sources { get; set; } = null!;
         public virtual DbSet<Tenant> Tenants { get; set; } = null!;
         public virtual DbSet<UDFLabel> UDFLabels { get; set; } = null!;
         public virtual DbSet<User> Users { get; set; } = null!;
@@ -106,6 +107,17 @@ namespace SampleSinglePageApplication.EFModels.EFModels
                 entity.Property(e => e.SettingName).HasMaxLength(100);
 
                 entity.Property(e => e.SettingType).HasMaxLength(100);
+            });
+
+            modelBuilder.Entity<Source>(entity =>
+            {
+                entity.HasNoKey();
+
+                entity.Property(e => e.Date).HasColumnType("datetime");
+
+                entity.Property(e => e.Name).HasMaxLength(100);
+
+                entity.Property(e => e.Type).HasMaxLength(200);
             });
 
             modelBuilder.Entity<Tenant>(entity =>
