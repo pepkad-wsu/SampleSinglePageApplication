@@ -521,6 +521,17 @@ class record extends actionResponseObject {
     }
 }
 
+class source extends actionResponseObject {
+    sourceId: KnockoutObservable<string> = ko.observable("");
+    name: KnockoutObservable<string> = ko.observable("");
+    number: KnockoutObservable<number> = ko.observable(0);
+    boolean: KnockoutObservable<boolean> = ko.observable(false);
+    type: KnockoutObservable<string> = ko.observable("");
+    date: KnockoutObservable<string> = ko.observable("");
+    tenantId: KnockoutObservable<string> = ko.observable("");
+    userId: KnockoutObservable<string> = ko.observable("");
+}
+
 class tenant extends actionResponseObject {
     tenantId: KnockoutObservable<string> = ko.observable(null);
     name: KnockoutObservable<string> = ko.observable(null);

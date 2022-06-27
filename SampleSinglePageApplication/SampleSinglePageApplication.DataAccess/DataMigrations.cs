@@ -181,6 +181,31 @@ public class DataMigrations
             "ALTER TABLE[dbo].Records CHECK CONSTRAINT[FK_Records_Users]" + Environment.NewLine +
             "END");
 
+        var m3 = new List<string>();
+        m3.Add(
+            "SET ANSI_NULLS ON;" + Environment.NewLine +
+            "SET QUOTED_IDENTIFIER ON;" + Environment.NewLine +
+            "IF NOT EXISTS (SELECT * FROM sys.tables WHERE name='Sources')" + Environment.NewLine +
+            "CREATE TABLE [dbo].[Sources](" + Environment.NewLine +
+            "   [SourceId] [uniqueidentifier] NOT NULL," + Environment.NewLine +
+	        "   [Name] [nvarchar](100) NOT NULL," + Environment.NewLine +
+	        "   [Number] [int] NULL," + Environment.NewLine +
+	        "   [Boolean] [bit] NULL," + Environment.NewLine +
+            "   [Type] [nvarchar](200) NULL," + Environment.NewLine +
+            "   [Date] [datetime] NULL," + Environment.NewLine +
+	        "   [TenantId] [uniqueidentifier] NULL," + Environment.NewLine +
+	        "   [UserId] [uniqueidentifier] NOT NULL" + Environment.NewLine +
+            "   CONSTRAINT [PK_Sources] PRIMARY KEY CLUSTERED ([SourceId] ASC)" + Environment.NewLine +
+            "   WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF)" + Environment.NewLine +
+            "   ON [PRIMARY]");
+
+        m3.Add(
+            "IF NOT EXISTS(SELECT * FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS WHERE CONSTRAINT_NAME = 'FK_Sources_Users')" + Environment.NewLine +
+            "BEGIN ALTER TABLE[dbo].[Sources]  WITH CHECK ADD CONSTRAINT[FK_Sources_Users] FOREIGN KEY([UserId])" + Environment.NewLine +
+            "REFERENCES[dbo].[Users]([UserId])" + Environment.NewLine +
+            "ALTER TABLE[dbo].Records CHECK CONSTRAINT[FK_Sources_Users]" + Environment.NewLine +
+            "END");
+
         output.Add(new DataObjects.DataMigration {
             MigrationId = 1,
             MigrationDate = DateTime.Now,
@@ -192,6 +217,13 @@ public class DataMigrations
             MigrationId = 2,
             MigrationDate = DateTime.Now,
             Migration = m2
+        });
+
+        output.Add(new DataObjects.DataMigration
+        {
+            MigrationId = 3,
+            MigrationDate = DateTime.Now,
+            Migration = m3
         });
 
         return output;

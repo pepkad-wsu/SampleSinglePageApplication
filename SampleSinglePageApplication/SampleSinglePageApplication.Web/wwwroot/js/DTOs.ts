@@ -173,6 +173,17 @@
         userId: string;
     }
 
+    interface source extends actionResponseObject {
+        sourceId: string;
+        name: string;
+        number: number;
+        boolean: boolean;
+        type: string;
+        date: string;
+        tenantId: string;
+        userId: string;
+    }
+
     interface tenant extends actionResponseObject {
         tenantId: string;
         name: string;

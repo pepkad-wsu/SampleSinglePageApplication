@@ -550,6 +550,22 @@ var record = /** @class */ (function (_super) {
     };
     return record;
 }(actionResponseObject));
+var source = /** @class */ (function (_super) {
+    __extends(source, _super);
+    function source() {
+        var _this = _super !== null && _super.apply(this, arguments) || this;
+        _this.sourceId = ko.observable("");
+        _this.name = ko.observable("");
+        _this.number = ko.observable(0);
+        _this.boolean = ko.observable(false);
+        _this.type = ko.observable("");
+        _this.date = ko.observable("");
+        _this.tenantId = ko.observable("");
+        _this.userId = ko.observable("");
+        return _this;
+    }
+    return source;
+}(actionResponseObject));
 var tenant = /** @class */ (function (_super) {
     __extends(tenant, _super);
     function tenant() {
