@@ -530,6 +530,20 @@ class source extends actionResponseObject {
     date: KnockoutObservable<string> = ko.observable("");
     tenantId: KnockoutObservable<string> = ko.observable("");
     userId: KnockoutObservable<string> = ko.observable("");
+
+    Load(data: server.source) {
+        if (data != null) {
+            this.actionResponse().Load(data.actionResponse);
+            this.sourceId(data.sourceId);
+            this.name(data.name);
+            this.number(data.number);
+            this.boolean(data.boolean);
+            this.type(data.type);
+            this.date(data.date);
+            this.tenantId(data.tenantId);
+            this.userId(data.userId);
+        }
+    }
 }
 
 class tenant extends actionResponseObject {

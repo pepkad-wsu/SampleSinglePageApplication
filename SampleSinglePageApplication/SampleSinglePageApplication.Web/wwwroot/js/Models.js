@@ -564,6 +564,19 @@ var source = /** @class */ (function (_super) {
         _this.userId = ko.observable("");
         return _this;
     }
+    source.prototype.Load = function (data) {
+        if (data != null) {
+            this.actionResponse().Load(data.actionResponse);
+            this.sourceId(data.sourceId);
+            this.name(data.name);
+            this.number(data.number);
+            this.boolean(data.boolean);
+            this.type(data.type);
+            this.date(data.date);
+            this.tenantId(data.tenantId);
+            this.userId(data.userId);
+        }
+    };
     return source;
 }(actionResponseObject));
 var tenant = /** @class */ (function (_super) {
