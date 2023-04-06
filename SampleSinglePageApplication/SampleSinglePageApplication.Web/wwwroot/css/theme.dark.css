@@ -1,0 +1,259 @@
+body.dark-theme {
+    background-color: #333;
+    color: #fff;
+}
+
+body.dark-theme .table {
+    color:#fff;
+}
+
+body.dark-theme div.fixed:not([id=status-message-area]) {
+    background-color: rgba(51, 51, 51, 0.5);
+}
+
+body.dark-theme table thead tr th,
+body.dark-theme table tbody tr td {
+    color: #fff;
+}
+
+body.dark-theme #tab2 table thead tr th,
+body.dark-theme #tab2 table tbody tr td {
+    color:revert;
+}
+
+body.dark-theme table tbody tr th.td-white,
+body.dark-theme table tbody tr td.td-white {
+    color: #000;
+}
+
+body.dark-theme select.form-select {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='rgba%28255, 255, 255, 1.0%29' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e");
+}
+
+body.dark-theme h1 {
+    color: #fff;
+}
+
+body.dark-theme div.card {
+    border: solid 1px #000;
+}
+
+body.dark-theme div.card:not([class*="top-item"]) {
+    background-color: #000;
+}
+
+body.dark-theme div.card:not([class*="top-item"]) div.card-body {
+    background-color: #444;
+}
+
+body.dark-theme div.card:not([class*="top-item"]) div.card-body th {
+    color: #fff;
+}
+
+body.dark-theme div.card:not([class*="top-item"]) div.card-body td,
+body.dark-theme div.card:not([class*="top-item"]) label {
+    color: #fff;
+}
+
+body.dark-theme input:not([type=checkbox]),
+body.dark-theme textarea,
+body.dark-theme select,
+body.dark-theme select.form-select {
+    background-color: #555;
+    color: #fff;
+}
+
+body.dark-theme .dropdown-menu {
+    background-color: #000;
+    color: #fff;
+}
+
+body.dark-theme .dropdown-menu li a:hover {
+    color:#000;
+}
+
+body.dark-theme .dropdown-item.active {
+    background: #fff;
+    color: #000;
+}
+
+body.dark-theme nav a.nav-link.active {
+    background-color: #fff;
+    border-radius: 5px;
+    color: #000 !important;
+}
+
+body.dark-theme div.card-body input:not([class*="missing-required"]):not([type=checkbox]),
+body.dark-theme div.card-body textarea:not([class*="missing-required"]),
+body.dark-theme div.card-body select:not([class*="missing-required"]) {
+    background-color: #333;
+    color: #fff;
+}
+
+body.dark-theme input::placeholder,
+body.dark-theme div.card-body input::placeholder {
+    color: #aaa;
+}
+
+body.dark-theme .missing-required::placeholder {
+    color:#000;
+}
+
+body.dark-theme footer {
+    background-color: #333;
+    color: #fff;
+}
+
+body.dark-theme div.card table.table tr.sep-row td {
+    border-style: solid;
+    border-color: #666;
+}
+
+body.dark-theme table.table tbody tr.action-row:hover {
+    background-color: #333;
+}
+
+body.dark-theme nav.navbar {
+    background-color: #000;
+    color: #fff;
+}
+
+body.dark-theme a.navbar-brand,
+body.dark-theme a.nav-link {
+    color: #fff;
+}
+
+body.dark-theme a.navbar-brand:hover,
+body.dark-theme a.nav-link:hover {
+    color: #ccc;
+}
+
+body.dark-theme a.nav-link.disabled {
+    color:#888;
+}
+
+body.dark-theme .navbar-toggler-icon {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%28255, 255, 255, 0.55%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+}
+
+body.dark-theme code {
+    color: yellow;
+}
+
+body.dark-theme a {
+    color: #fff;
+}
+
+body.dark-theme a:hover {
+    color: #ccc;
+}
+
+body.dark-theme .form-select option:disabled {
+    color: #fffffe;
+    font-weight:bold;
+}
+
+body.dark-theme ul.ui-autocomplete {
+    background: #555;
+}
+
+body.dark-theme ul.ui-autocomplete li a {
+    text-decoration:none;
+    color:#fff;
+}
+
+body.dark-theme ul.ui-autocomplete li a:hover,
+body.dark-theme ul.ui-autocomplete li a.ui-state-active {
+    color:#000;
+}
+
+body.dark-theme .card.top-item {
+    background-color: #000;
+    color: #fff;
+}
+
+body.dark-theme .card.top-item .card-body {
+    background-color: #1b6ec2;
+}
+
+body.dark-theme div.card.top-item input,
+body.dark-theme div.card.top-item textarea,
+body.dark-theme div.card.top-item select,
+body.dark-theme div.card.top-item select.form-select {
+    background-color: #fff;
+    color: #000;
+}
+
+body.dark-theme div.card.top-item .form-select option:disabled {
+    color: #000;
+    font-weight: bold;
+}
+
+body.dark-theme div.card.top-item select.form-select {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='rgba%280, 0, 0, 1.0%29' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e");
+}
+
+body.dark-theme select.missing-required,
+body.dark-theme select:focus.missing-required,
+body.dark-theme input.missing-required,
+body.dark-theme input:focus.missing-required {
+    background-color: palevioletred !important;
+    border-color: darkred !important;
+    color: #fff !important;
+}
+
+body.dark-theme select.duplicate-option,
+body.dark-theme select:focus.duplicate-option,
+body.dark-theme input.duplicate-option,
+body.dark-theme input:focus.duplicate-option {
+    background-color: red !important;
+    border-color: darkred !important;
+    color: #fff !important;
+}
+
+body.dark-theme #freeform-form-rendered,
+body.dark-theme #freeform-form-rendered input:not([type=checkbox]),
+body.dark-theme #freeform-form-rendered textarea,
+body.dark-theme #freeform-form-rendered select,
+body.dark-theme #freeform-form-rendered select.form-select,
+body.dark-theme #freeform-form-rendered div.card.top-item input,
+body.dark-theme #freeform-form-rendered div.card.top-item textarea,
+body.dark-theme #freeform-form-rendered div.card.top-item select,
+body.dark-theme #freeform-form-rendered div.card.top-item select.form-select {
+    background-color:unset;
+    color:unset;
+}
+
+body.dark-theme .input-group button.btn-outline-secondary,
+body.dark-theme .input-group-text {
+    background-color:#222;
+    color:#fff;
+}
+
+body.dark-theme .dropzone {
+    background:#555;
+}
+
+body.dark-theme .dz-message {
+    color:#fff;
+}
+
+body.dark-theme .modal-content {
+    background-color:#333;
+}
+
+body.dark-theme #floatingmenu {
+    background-color:#222;
+}
+
+body.dark-theme table.ui-datepicker-calendar thead tr th {
+    color:#555;
+}
+
+body.dark-theme hr.dropdown-divider {
+    border-top: 1px solid #333;
+}
+
+body.dark-theme .ui-widget-content {
+    color:#fff;
+}

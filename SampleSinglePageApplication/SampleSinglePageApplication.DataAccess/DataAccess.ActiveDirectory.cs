@@ -1,206 +1,224 @@
 ﻿namespace SampleSinglePageApplication;
 public partial class DataAccess
 {
-    public DataObjects.ActiveDirectoryUserInfo? GetActiveDirectoryInfo(Guid UserId, string ldapRoot, string ldapQueryUsername = "", string ldapQueryPassword = "", string ldapLocationAttribute = "")
+    private DataObjects.ActiveDirectoryUserInfo? AuthenticateWithLDAP(Guid TenantId, string Username, string Password)
     {
-        var output = GetActiveDirectoryInfo(UserId.ToString(), DataObjects.UserLookupType.Guid, ldapRoot, ldapQueryUsername, ldapQueryPassword, ldapLocationAttribute);
+        DataObjects.ActiveDirectoryUserInfo? output = null;
+
+        var settings = GetTenantSettings(TenantId);
+        var ldapLookupRoot = settings.LdapLookupRoot;
+        var ldapLookupSearchBase = settings.LdapLookupSearchBase;
+        var ldapLookupLocationAttribute = settings.LdapLookupLocationAttribute;
+        int ldapLookupPort = settings.LdapLookupPort;
+
+        if (Username.Contains("@")) {
+            output = GetActiveDirectoryInfo(Username, DataObjects.UserLookupType.Email, ldapLookupRoot, ldapLookupSearchBase,
+                ldapLookupPort, Username, Password, ldapLookupLocationAttribute);
+        } else {
+            output = GetActiveDirectoryInfo(Username, DataObjects.UserLookupType.Username, ldapLookupRoot, ldapLookupSearchBase,
+                ldapLookupPort, Username, Password, ldapLookupLocationAttribute);
+        }
+
         return output;
     }
 
-    public DataObjects.ActiveDirectoryUserInfo? GetActiveDirectoryInfo(string Lookup, DataObjects.UserLookupType Type, string ldapRoot, string ldapQueryUsername = "", string ldapQueryPassword = "", string ldapLocationAttribute = "")
+    public DataObjects.ActiveDirectoryUserInfo? GetActiveDirectoryInfo(Guid TenantId, string Lookup, DataObjects.UserLookupType Type)
     {
-#pragma warning disable CA1416 // Validate platform compatibility
-        if (String.IsNullOrWhiteSpace(ldapLocationAttribute)) {
-            ldapLocationAttribute = "physicalDeliveryOfficeName";
+        // Get the LDAP settings from the tenant
+        var settings = GetTenantSettings(TenantId);
+        var ldapLookupRoot = settings.LdapLookupRoot;
+        var ldapLookupUsername = settings.LdapLookupUsername;
+        var ldapLookupPassword = settings.LdapLookupPassword;
+        var ldapLookupSearchBase = settings.LdapLookupSearchBase;
+        var ldapLookupLocationAttribute = settings.LdapLookupLocationAttribute;
+        int ldapLookupPort = settings.LdapLookupPort;
+
+        var output = GetActiveDirectoryInfo(Lookup, Type, ldapLookupRoot, ldapLookupSearchBase,
+            ldapLookupPort, ldapLookupUsername, ldapLookupPassword, ldapLookupLocationAttribute);
+
+        return output;
+    }
+
+    private DataObjects.ActiveDirectoryUserInfo? GetActiveDirectoryInfo(string Lookup, DataObjects.UserLookupType Type,
+        string? LdapRoot, string? SearchBase, int? LdapPort, string? LdapQueryUsername, string? LdapQueryPassword, string? LdapLocationAttribute)
+    {
+        if (String.IsNullOrWhiteSpace(LdapLocationAttribute)) {
+            LdapLocationAttribute = "physicalDeliveryOfficeName";
         }
 
         DataObjects.ActiveDirectoryUserInfo? output = null;
-        System.DirectoryServices.DirectoryEntry? entry = null;
-        if (String.IsNullOrWhiteSpace(ldapQueryUsername) || String.IsNullOrWhiteSpace(ldapQueryPassword)) {
-            entry = new System.DirectoryServices.DirectoryEntry("LDAP://" + ldapRoot);
-        } else {
-            entry = new System.DirectoryServices.DirectoryEntry("LDAP://" + ldapRoot, ldapQueryUsername, ldapQueryPassword);
-        }
 
         string searchFilter = String.Empty;
         switch (Type) {
             case DataObjects.UserLookupType.Email:
-                searchFilter = "mail=" + Lookup;
+                searchFilter = "(&(objectClass=user)(objectCategory=person)(mail=" + Lookup + "))";
                 break;
 
             case DataObjects.UserLookupType.EmployeeId:
                 searchFilter = "(&(objectClass=user)(objectCategory=person)(employeeid=" + Lookup + "))";
                 break;
 
-            case DataObjects.UserLookupType.Guid:
-                searchFilter = "objectGUID=" + Utilities.GetBinaryStringFromGuid(new Guid(Lookup));
-                break;
-
             case DataObjects.UserLookupType.Username:
-                searchFilter = "SAMAccountName=" + Lookup;
+                searchFilter = "(&(objectClass=user)(objectCategory=person)(samaccountname=" + Lookup + "))";
                 break;
         }
 
-        if (entry != null) {
-            try {
-                object obj = entry.NativeObject;
-                System.DirectoryServices.DirectorySearcher search = new System.DirectoryServices.DirectorySearcher(entry);
-                search.Filter = searchFilter;
-                search.PropertiesToLoad.Add("givenName");
-                search.PropertiesToLoad.Add("sn");
-                search.PropertiesToLoad.Add("mail");
-                search.PropertiesToLoad.Add("department");
-                search.PropertiesToLoad.Add("SAMAccountName");
-                search.PropertiesToLoad.Add("telephoneNumber");
-                search.PropertiesToLoad.Add("employeeID");
-                search.PropertiesToLoad.Add("title");
-                search.PropertiesToLoad.Add(ldapLocationAttribute);
-                search.PropertiesToLoad.Add("objectGUID");
-                var result = search.FindOne();
-                if (result != null) {
-                    output = new DataObjects.ActiveDirectoryUserInfo();
-                    output.UserId = Guid.Empty;
-
-                    try { output.Department = result.Properties["Department"][0].ToString(); } catch { }
-                    try { output.Username = result.Properties["SAMAccountName"][0].ToString(); } catch { }
-                    try { output.FirstName = result.Properties["givenName"][0].ToString(); } catch { }
-                    try { output.LastName = result.Properties["sn"][0].ToString(); } catch { }
-                    try { output.Email = result.Properties["mail"][0].ToString(); } catch { }
-                    try { output.Phone = result.Properties["telephoneNumber"][0].ToString(); } catch { }
-                    try { output.EmployeeId = result.Properties["employeeID"][0].ToString(); } catch { }
-                    try { output.Title = result.Properties["title"][0].ToString(); } catch { }
-                    try { output.Location = result.Properties[ldapLocationAttribute][0].ToString(); } catch { }
-                    try { output.UserId = new Guid((byte[])result.Properties["objectGUID"][0]); } catch { }
-                }
-            } catch { }
+        // Make sure all required parameters are included. If not, just return the null object.
+        if (String.IsNullOrWhiteSpace(Lookup) || String.IsNullOrWhiteSpace(searchFilter) || String.IsNullOrWhiteSpace(LdapRoot) ||
+            String.IsNullOrWhiteSpace(SearchBase) || String.IsNullOrWhiteSpace(LdapQueryUsername) || String.IsNullOrEmpty(LdapQueryPassword)) {
+            return output;
         }
 
-#pragma warning restore CA1416 // Validate platform compatibility
-        return output;
-    }
-
-    public DataObjects.ActiveDirectoryUserInfo? GetActiveDirectoryInfo(string Username, string ldapRoot, string ldapQueryUsername = "", string ldapQueryPassword = "", string ldapLocationAttribute = "")
-    {
-        var output = GetActiveDirectoryInfo(Username, DataObjects.UserLookupType.Username, ldapRoot, ldapQueryUsername, ldapQueryPassword, ldapLocationAttribute);
-        return output;
-    }
-
-    public DataObjects.ActiveDirectoryUserInfo? GetActiveDirectoryInfoFromEmailAddress(string EmailAddress, string ldapRoot, string ldapQueryUsername = "", string ldapQueryPassword = "", string ldapLocationAttribute = "")
-    {
-        var output = GetActiveDirectoryInfo(EmailAddress, DataObjects.UserLookupType.Email, ldapRoot, ldapQueryUsername, ldapQueryPassword, ldapLocationAttribute);
-        return output;
-    }
-
-    public DataObjects.ActiveDirectoryUserInfo? GetActiveDirectoryInfoFromEmployeeId(string EmployeeId, string ldapRoot, string ldapQueryUsername = "", string ldapQueryPassword = "", string ldapLocationAttribute = "", string bioDemoUsername = "", string bioDemoPassword = "", string bioDemoUrl = "")
-    {
-        DataObjects.ActiveDirectoryUserInfo? output = null;
-
-        // Try the BioDemo client before going to Active Directory.
-        if (!String.IsNullOrWhiteSpace(bioDemoUsername) && !String.IsNullOrWhiteSpace(bioDemoPassword) && !String.IsNullOrWhiteSpace(bioDemoUrl)) {
-            BioDemoClient client = new BioDemoClient(bioDemoUsername, bioDemoPassword, bioDemoUrl);
-
-            int wsuId = 0;
-            try {
-                wsuId = Convert.ToInt32(EmployeeId);
-            } catch {
-                wsuId = 0;
-            }
-            if (wsuId > 0) {
-                var bioDemoUser = client.GetBioDemoByWsuId(wsuId);
-                if (bioDemoUser != null && bioDemoUser.WsuId > 0) {
-                    // A user was returned.
-                    output = new DataObjects.ActiveDirectoryUserInfo {
-                        Email = !String.IsNullOrWhiteSpace(bioDemoUser.OfficeEmail) ? bioDemoUser.OfficeEmail : bioDemoUser.PreferredEmail,
-                        EmployeeId = bioDemoUser.WsuId.ToString().PadLeft(9, '0'),
-                        FirstName = bioDemoUser.FirstName,
-                        LastName = bioDemoUser.LastName,
-                        Phone = !String.IsNullOrWhiteSpace(bioDemoUser.PreferredPhone) ? bioDemoUser.PreferredPhone : "",
-                        Username = bioDemoUser.NID
-                    };
-                    return output;
-                }
-            }
+        int ldapPort = LdapPort.HasValue ? (int)LdapPort : Novell.Directory.Ldap.LdapConnection.DefaultPort;
+        if (ldapPort < 1) {
+            ldapPort = Novell.Directory.Ldap.LdapConnection.DefaultPort;
         }
 
-        output = GetActiveDirectoryInfo(EmployeeId, DataObjects.UserLookupType.EmployeeId, ldapRoot, ldapQueryUsername, ldapQueryPassword, ldapLocationAttribute);
-        return output;
-    }
+        var ldapConn = new Novell.Directory.Ldap.LdapConnection();
+        ldapConn.Connect(LdapRoot, ldapPort);
 
-    public List<DataObjects.ActiveDirectorySearchResults>? GetActiveDirectorySearchResults(string SearchText, int MaxResults, List<string> excludeEmails, string ldapRoot, string ldapQueryUsername = "", string ldapQueryPassword = "", string ldapLocationAttribute = "")
-    {
-#pragma warning disable CA1416 // Validate platform compatibility
-        if (String.IsNullOrWhiteSpace(ldapLocationAttribute)) {
-            ldapLocationAttribute = "physicalDeliveryOfficeName";
-        }
-
-        List<DataObjects.ActiveDirectorySearchResults>? output = null;
-        System.DirectoryServices.DirectoryEntry? entry = null;
-        if (String.IsNullOrWhiteSpace(ldapQueryUsername) || String.IsNullOrWhiteSpace(ldapQueryPassword)) {
-            entry = new System.DirectoryServices.DirectoryEntry("LDAP://" + ldapRoot);
-        } else {
-            entry = new System.DirectoryServices.DirectoryEntry("LDAP://" + ldapRoot, ldapQueryUsername, ldapQueryPassword);
-        }
         try {
-            object obj = entry.NativeObject;
-            System.DirectoryServices.DirectorySearcher search = new System.DirectoryServices.DirectorySearcher(entry);
-            search.Filter = "(&(objectClass=user)(objectCategory=person)(anr=" + SearchText + "))";
-            search.PropertiesToLoad.Add("givenName");
-            search.PropertiesToLoad.Add("sn");
-            search.PropertiesToLoad.Add("mail");
-            search.PropertiesToLoad.Add("objectGUID");
-            search.PropertiesToLoad.Add("Department");
-            search.PropertiesToLoad.Add(ldapLocationAttribute);
-            var results = search.FindAll();
-            if (results != null) {
-                output = new List<DataObjects.ActiveDirectorySearchResults>();
-                foreach (System.DirectoryServices.SearchResult result in results) {
-                    if (output.Count() <= MaxResults) {
-                        var u = new DataObjects.ActiveDirectorySearchResults();
+            ldapConn.Bind(LdapQueryUsername, LdapQueryPassword);
+        } catch {
+            return output;
+        }
 
-                        try { u.LastName = result.Properties["sn"][0].ToString(); } catch { }
-                        try { u.FirstName = result.Properties["givenName"][0].ToString(); } catch { }
-                        try { u.Email = result.Properties["mail"][0].ToString(); } catch { }
+        string[] attributes = new string[] {
+            "sAMAccountName", "employeeid", "givenName", "sn", "mail",
+            "title", "telephoneNumber", "department",
+            "name", LdapLocationAttribute, "objectGUID"
+        };
 
-                        if (!String.IsNullOrWhiteSpace(u.LastName) && !String.IsNullOrWhiteSpace(u.FirstName) && !String.IsNullOrWhiteSpace(u.Email) && !excludeEmails.Contains(u.Email.ToLower())) {
-                            try { u.Department = result.Properties["Department"][0].ToString(); } catch { }
-                            try { u.Location = result.Properties[ldapLocationAttribute][0].ToString(); } catch { }
-                            try { u.UserId = new Guid((byte[])result.Properties["objectGUID"][0]); } catch { }
-                            output.Add(u);
+        try {
+            var searchResults = ldapConn.Search(SearchBase, 2, searchFilter, attributes, false);
+
+            if (searchResults != null) {
+                foreach (var result in searchResults) {
+                    if (output == null) {
+                        // Only use the first result.
+                        var user = new DataObjects.ActiveDirectoryUserInfo();
+
+                        // First, get the GUID
+                        Guid objectGUID = Guid.Empty;
+                        try {
+                            var bytes = result.GetAttribute("objectGUID").ByteValue;
+                            if (bytes != null) {
+                                objectGUID = new Guid(bytes);
+                            }
+                        } catch { }
+
+                        if (objectGUID != Guid.Empty) {
+                            user.UserId = objectGUID;
                         }
+
+                        // Try to add each remaining property. If properties are missing they throw
+                        // an error, so try/catch each attribute.
+                        try { user.Department = result.GetAttribute("department").StringValue; } catch { }
+                        try { user.Username = result.GetAttribute("sAMAccountName").StringValue; } catch { }
+                        try { user.FirstName = result.GetAttribute("givenName").StringValue; } catch { }
+                        try { user.LastName = result.GetAttribute("sn").StringValue; } catch { }
+                        try { user.Email = result.GetAttribute("mail").StringValue; } catch { }
+                        try { user.Phone = result.GetAttribute("telephoneNumber").StringValue; } catch { }
+                        try { user.EmployeeId = result.GetAttribute("employeeid").StringValue; } catch { }
+                        try { user.Title = result.GetAttribute("title").StringValue; } catch { }
+                        try { user.Location = result.GetAttribute(LdapLocationAttribute).StringValue; } catch { }
+
+                        output = user;
                     }
                 }
-                if (output.Count() > 0) {
-                    output = output.OrderBy(x => x.LastName).ThenBy(x => x.FirstName).ToList();
+            }
+        } catch { }
+
+        return output;
+    }
+
+    private List<DataObjects.ActiveDirectoryUserInfo>? GetActiveDirectorySearchResults(Guid TenantId, string SearchText,
+        int MaxResults,
+        List<string>? excludeEmails)
+    {
+        // Get the LDAP settings from the tenant
+        var settings = GetTenantSettings(TenantId);
+        var ldapLookupRoot = settings.LdapLookupRoot;
+        var ldapLookupUsername = settings.LdapLookupUsername;
+        var ldapLookupPassword = settings.LdapLookupPassword;
+        var ldapLookupSearchBase = settings.LdapLookupSearchBase;
+        var ldapLookupLocationAttribute = settings.LdapLookupLocationAttribute;
+        int ldapLookupPort = settings.LdapLookupPort;
+
+        List<DataObjects.ActiveDirectoryUserInfo>? output = null;
+
+        // Make sure the required values are set.
+        if (String.IsNullOrWhiteSpace(SearchText) || String.IsNullOrWhiteSpace(ldapLookupRoot) || String.IsNullOrWhiteSpace(ldapLookupSearchBase) ||
+            String.IsNullOrWhiteSpace(ldapLookupUsername) || String.IsNullOrWhiteSpace(ldapLookupPassword)) {
+            return output;
+        }
+
+        if (String.IsNullOrWhiteSpace(ldapLookupLocationAttribute)) {
+            ldapLookupLocationAttribute = "physicalDeliveryOfficeName";
+        }
+
+        int ldapPort = ldapLookupPort > 0 ? ldapLookupPort : Novell.Directory.Ldap.LdapConnection.DefaultPort;
+        if (ldapPort < 1) {
+            ldapPort = Novell.Directory.Ldap.LdapConnection.DefaultPort;
+        }
+
+        var ldapConn = new Novell.Directory.Ldap.LdapConnection();
+        ldapConn.Connect(ldapLookupRoot, ldapPort);
+
+        try {
+            ldapConn.Bind(ldapLookupUsername, ldapLookupPassword);
+        } catch {
+            return output;
+        }
+
+        string[] attributes = new string[] {
+            "sAMAccountName", "employeeid", "givenName", "sn", "mail",
+            "title", "telephoneNumber", "department",
+            "name", ldapLookupLocationAttribute, "objectGUID"
+        };
+
+        string searchFilter = "(&(objectClass=user)(objectCategory=person)(anr=" + SearchText + "))";
+
+        try {
+            var searchResults = ldapConn.Search(ldapLookupSearchBase, 2, searchFilter, attributes, false);
+
+            if (searchResults != null) {
+                foreach (var result in searchResults) {
+                    var user = new DataObjects.ActiveDirectoryUserInfo();
+
+                    // First, get the GUID
+                    Guid objectGUID = Guid.Empty;
+                    try {
+                        var bytes = result.GetAttribute("objectGUID").ByteValue;
+                        if (bytes != null) {
+                            objectGUID = new Guid(bytes);
+                        }
+                    } catch { }
+
+                    if (objectGUID != Guid.Empty) {
+                        user.UserId = objectGUID;
+                    }
+
+                    // Try to add each remaining property. If properties are missing they throw
+                    // an error, so try/catch each attribute.
+                    try { user.Department = result.GetAttribute("department").StringValue; } catch { }
+                    try { user.Username = result.GetAttribute("sAMAccountName").StringValue; } catch { }
+                    try { user.FirstName = result.GetAttribute("givenName").StringValue; } catch { }
+                    try { user.LastName = result.GetAttribute("sn").StringValue; } catch { }
+                    try { user.Email = result.GetAttribute("mail").StringValue; } catch { }
+                    try { user.Phone = result.GetAttribute("telephoneNumber").StringValue; } catch { }
+                    try { user.EmployeeId = result.GetAttribute("employeeid").StringValue; } catch { }
+                    try { user.Title = result.GetAttribute("title").StringValue; } catch { }
+                    try { user.Location = result.GetAttribute(ldapLookupLocationAttribute).StringValue; } catch { }
+
+                    if (output == null) {
+                        output = new List<DataObjects.ActiveDirectoryUserInfo>();
+                    }
+                    output.Add(user);
                 }
             }
-        } catch (Exception ex) {
-            if (!String.IsNullOrWhiteSpace(ex.Message)) {
-
-            }
-        }
-#pragma warning restore CA1416 // Validate platform compatibility
-        return output;
-    }
-
-    public string GetLdapOptionalLocationAttribute()
-    {
-        string output = _ldapOptionalLocationAttribute;
-
-        if (String.IsNullOrWhiteSpace(output)) {
-            var setting = GetSetting<string>("ldapLocationAttribute", DataObjects.SettingType.Text);
-            if (!String.IsNullOrEmpty(setting)) {
-                output = setting;
-            }
-
-            if (String.IsNullOrWhiteSpace(output)) {
-                output = "physicalDeliveryOfficeName";
-            }
-
-            _ldapOptionalLocationAttribute = output;
-        }
+        } catch { }
 
         return output;
     }
-
-
 }

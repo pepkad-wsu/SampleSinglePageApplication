@@ -1,5 +1,10 @@
-﻿interface Window {
+interface Window {
+    departmentsModel: DepartmentsModel;
+    languageModel: LanguageModel;
     mainModel: MainModel;
+    profileModel: ProfileModel;
+    settingsModel: SettingsModel;
+    tenantsModel: TenantsModel;
     udfLabelsModel: UdfLabelsModel;
     usersModel: UsersModel;
 }
@@ -24,6 +29,10 @@ enum StyleType {
 class MainModel {
     AccessDeniedMessage: KnockoutObservable<string> = ko.observable("");
     Action: KnockoutObservable<string> = ko.observable("");
+    AppOnline: KnockoutObservable<boolean> = ko.observable(true);
+    Culture: KnockoutObservable<string> = ko.observable(window.culture);
+    Cultures: KnockoutObservableArray<string> = ko.observableArray([]);
+    CultureCodes: KnockoutObservableArray<optionPair> = ko.observableArray([]);
     DefaultLanguageItems: KnockoutObservableArray<optionPair> = ko.observableArray([]);
     Extra: KnockoutObservableArray<string> = ko.observableArray([]);
     GuidEmpty: KnockoutObservable<string> = ko.observable("00000000-0000-0000-0000-000000000000");
@@ -33,18 +42,23 @@ class MainModel {
     LanguageItems: KnockoutObservableArray<optionPair> = ko.observableArray([]);
     Loaded: KnockoutObservable<boolean> = ko.observable(false);
     LoggedIn: KnockoutObservable<boolean> = ko.observable(false);
-    //MainLoader: KnockoutObservable<mainLoader> = ko.observable(new mainLoader);
     MessageText: KnockoutObservable<string> = ko.observable("");
     MessageClass: KnockoutObservable<string> = ko.observable("");
     MobileMenu: KnockoutObservable<boolean> = ko.observable(false);
+    PreferredColorScheme: KnockoutObservable<string> = ko.observable(null);
+    ShowTenantCodeFieldOnLoginForm: KnockoutObservable<boolean> = ko.observable(false);
+    ShowTenantListingWhenMissingTenantCode: KnockoutObservable<boolean> = ko.observable(false);
     SignalRUpdate: KnockoutObservable<signalRUpdate> = ko.observable(new signalRUpdate);
     StickyMenus: KnockoutObservable<boolean> = ko.observable(false);
     Tenant: KnockoutObservable<tenant> = ko.observable(new tenant);
     TenantCode: KnockoutObservable<string> = ko.observable("");
     TenantId: KnockoutObservable<string> = ko.observable("");
+    Tenants: KnockoutObservableArray<tenantList> = ko.observableArray([]);
     Theme: KnockoutObservable<string> = ko.observable("");
     Token: KnockoutObservable<string> = ko.observable("");
     User: KnockoutObservable<user> = ko.observable(new user);
+    Users: KnockoutObservableArray<user> = ko.observableArray([]);
+    UseTenantCodeInUrl: KnockoutObservable<boolean> = ko.observable(false);
     View: KnockoutObservable<string> = ko.observable("");
     VersionInfo: KnockoutObservable<versionInfo> = ko.observable(new versionInfo);
     WindowHeight: KnockoutObservable<number> = ko.observable(0);
@@ -62,24 +76,40 @@ class MainModel {
         this.messageTimerInterval = 3000;
         this.Token(window.token);
 
+        this.Culture.subscribe(() => this.CultureChanged());
+        let savedCulture: string = tsUtilities.CookieRead(window.appName + "-culture");
+        if (tsUtilities.HasValue(savedCulture)) {
+            this.Culture(savedCulture);
+        }
+
+        this.ShowTenantCodeFieldOnLoginForm(window.showTenantCodeFieldOnLoginForm);
+        this.ShowTenantListingWhenMissingTenantCode(window.showTenantListingWhenMissingTenantCode);
+        this.UseTenantCodeInUrl(window.useTenantCodeInUrl);
+
         if (window.loggedIn != undefined && window.loggedIn != null && window.loggedIn == true) {
             this.LoggedIn(true);
         }
 
+        DataLoader(window.objCultureCodes, this.CultureCodes, optionPair);
+
+        if (window.objCultures != null && window.objCultures.length > 0) {
+            this.Cultures(window.objCultures);
+        }
+
         this.LoadLanguage(window.objLanguage, window.objDefaultLanguage);
 
-        if (window.objExtra != null) {
+        if (window.objExtra != undefined && window.objExtra != null) {
             this.Extra(window.objExtra);
         }
 
         if (window.objTenant != undefined && window.objTenant != null) {
             this.Tenant().Load(window.objTenant);
-            window.objTenant = null;
         }
+
+        DataLoader(window.objTenantList, this.Tenants, tenantList);
 
         if (window.objUser != undefined && window.objUser != null) {
             this.User().Load(window.objUser);
-            window.objUser = null;
         }
 
         if (window.objVersionInfo != undefined && window.objVersionInfo != null) {
@@ -102,32 +132,41 @@ class MainModel {
             this.TenantId(window.tenantId);
         }
 
-        let theme: string = tsUtilities.CookieRead("theme");
-        if (!tsUtilities.HasValue(theme)) {
-            theme = "";
-        }
-        this.Theme(theme);
-        this.Theme.subscribe(function (v) {
-            tsUtilities.CookieWrite("theme", v);
-        });
-
-        this.CheckLoad();
-
         this.UpdateWindowSettings();
         $(window).off("resize");
         $(window).on("resize", () => {
             this.UpdateWindowSettings();
         });
 
-        let stickyMenus: string = tsUtilities.CookieRead("sticky-menus");
+        window.onpopstate = () => { this.PopStateChanged(); }
+
+        let stickyMenus: string = window.localStorage.getItem(window.appName + "-sticky-menus");
         if (!tsUtilities.HasValue(stickyMenus)) {
             stickyMenus = "0";
         }
         this.StickyMenus(stickyMenus == "1");
 
-        window.onpopstate = () => { this.PopStateChanged(); }
+        let colorScheme: string = getComputedStyle(document.body, ':after').content;
+        if (tsUtilities.HasValue(colorScheme)) {
+            this.PreferredColorScheme(colorScheme.indexOf("dark") > -1 ? "dark" : "light");
+        }
+
+        this.CheckLoad();
 
         this.CheckForUpdates();
+
+        let theme: string = window.localStorage.getItem(window.appName + "-theme");
+        if (!tsUtilities.HasValue(theme)) {
+            theme = "";
+        }
+        this.Theme(theme);
+        this.Theme.subscribe(function (v) {
+            window.localStorage.setItem(window.appName + "-theme", v);
+        });
+
+        setTimeout(() => this.ThemeWatcher(), 1000);
+
+        this.GetTenantUsers();
     }
 
     AccessDenied(message?: string): void {
@@ -141,9 +180,25 @@ class MainModel {
         this.Nav("AccessDenied");
     }
 
-    AjaxUserAutocomplete(element: string, callbackHandler: Function): void {
+    AdminUser = ko.computed((): boolean => {
+        let output: boolean = false;
+
+        if (this.User() != null) {
+            if (this.User().admin() || this.User().appAdmin()) {
+                output = true;
+            }
+        }
+
+        return output;
+    });
+
+    AjaxUserAutocomplete(element: string, callbackHandler: Function, localResultsOnly?: boolean): void {
+        if (localResultsOnly == undefined || localResultsOnly == null) {
+            localResultsOnly = false;
+        }
+
         $("#" + element).autocomplete({
-            source: this.AjaxUserSearch,
+            source: localResultsOnly ? this.AjaxUserSearchLocalOnly : this.AjaxUserSearch,
             minLength: 3,
             select: (event, ui) => {
                 event.preventDefault();
@@ -192,6 +247,33 @@ class MainModel {
         });
     }
 
+    AjaxUserSearchLocalOnly(req: any, callbackHandler: any) {
+        let lookup: ajaxLookup = new ajaxLookup();
+        lookup.Search(req.term);
+        lookup.TenantId(window.tenantId);
+
+        $.ajax({
+            url: window.baseURL + "api/Data/AjaxUserSearchLocalOnly/",
+            type: 'POST',
+            data: ko.toJSON(lookup),
+            beforeSend: setRequestHeaders,
+            contentType: "application/json; charset=utf-8",
+            success: (data: server.ajaxLookup) => {
+                let results: ajaxResults[] = [];
+                if (data != null) {
+                    if (data.results != null) {
+                        data.results.forEach(function (element) {
+                            let item: ajaxResults = new ajaxResults();
+                            item.Load(element);
+                            results.push(item);
+                        });
+                    }
+                }
+                callbackHandler(JSON.parse(ko.toJSON(results)));
+            }
+        });
+    }
+
     /**
      * Determines if the image file is an allowed image file type.
      * @param file {string} - The file name to validate.
@@ -218,24 +300,102 @@ class MainModel {
         return output;
     }
 
+    AvailableCultures = ko.computed((): optionPair[] => {
+        let output: optionPair[] = [];
+
+        if (this.CultureCodes() != null && this.CultureCodes().length > 0) {
+            let cc: string[] = this.Cultures();
+
+            output = ko.utils.arrayFilter(this.CultureCodes(), function (item) {
+                return cc.indexOf(item.id()) == -1;
+            });
+        }
+
+        return output;
+    });
+
+    BlockedModules = ko.computed((): string[] => {
+        let output: string[] = [];
+
+        if (this.Tenant() != null && this.Tenant().tenantSettings() != null && this.Tenant().tenantSettings().moduleHideElements() != null) {
+            output = this.Tenant().tenantSettings().moduleHideElements();
+        }
+
+        return output;
+    });
+
+    BlockModuleDepartments = ko.computed((): boolean => {
+        let output: boolean = false;
+
+        if (this.BlockedModules().length > 0) {
+            output = this.BlockedModules().indexOf("departments") > -1;
+        }
+
+        return output;
+    });
+
+    BlockModuleEmployeeId = ko.computed((): boolean => {
+        let output: boolean = false;
+
+        if (this.BlockedModules().length > 0) {
+            output = this.BlockedModules().indexOf("employeeid") > -1;
+        }
+
+        return output;
+    });
+
+    BlockModuleLocation = ko.computed((): boolean => {
+        let output: boolean = false;
+
+        if (this.BlockedModules().length > 0) {
+            output = this.BlockedModules().indexOf("location") > -1;
+        }
+
+        return output;
+    });
+
+    BlockModuleUDF = ko.computed((): boolean => {
+        let output: boolean = false;
+
+        if (this.BlockedModules().length > 0) {
+            output = this.BlockedModules().indexOf("udf") > -1;
+        }
+
+        return output;
+    });
+
+    BlockModuleUserGroups = ko.computed((): boolean => {
+        let output: boolean = false;
+
+        if (this.BlockedModules().length > 0) {
+            output = this.BlockedModules().indexOf("usergroups") > -1;
+        }
+
+        return output;
+    });
+
     /**
      * Observable that applies the necessary styling to the body element for theme support.
      */
     BodyClass = ko.computed((): void => {
         let output: string = "";
 
-        switch (this.Theme()) {
-            case "dark":
-                output = "dark-theme";
-                break;
+        if (this.PreferredColorScheme() != null) {
+            switch (this.Theme()) {
+                case "dark":
+                    output = "dark-theme";
+                    break;
 
-            case "medium":
-                output = "medium-theme";
-                break;
+                case "light":
+                    output = "light-theme";
+                    break;
 
-            default:
-                output = "light-theme";
-                break;
+                default:
+                    // Auto
+                    output = this.PreferredColorScheme() + "-theme";
+                    this.ThemeWatcher();
+                    break;
+            }
         }
 
         $("#body-element").removeClass();
@@ -265,29 +425,49 @@ class MainModel {
     }
 
     /**
+     * Checks the VersionInfo from the server to see if the server has restarted or been updated.
+     */
+    CheckForUpdates(): void {
+        let success: Function = (data: server.versionInfo) => {
+            let reload: boolean = false;
+
+            if (data != null) {
+                if (tsUtilities.HasValue(data.version)) {
+                    this.AppOnline(true);
+                }
+
+                if (this.VersionInfo().released() != data.released || this.VersionInfo().runningSince() != data.runningSince || this.VersionInfo().version() != data.version) {
+                    reload = true;
+                }
+            }
+
+            if (reload) {
+                this.Nav("ServerUpdated");
+            } else {
+                setTimeout(() => this.CheckForUpdates(), 10000);
+            }
+        };
+
+        let failure: Function = () => {
+            this.AppOnline(false);
+            setTimeout(() => this.CheckForUpdates(), 2000);
+        };
+
+        tsUtilities.AjaxData(window.baseURL + "api/Data/GetVersionInfo", null, success, failure);
+    }
+
+    /**
      * Make sure all required models have been loaded before performing the first navigation.
      */
     CheckLoad(): void {
+        // Get the models from the window object. Since this model is loaded first, the
+        // object might not contain any values initially. If that is the case, set a small
+        // delay to check again.
         let models: string[] = [];
-        models.push("LoginModel");
-
-        if (this.LoggedIn()) {
-            models.push("HomeModel");
-            models.push("ProfileModel");
-            models.push("Page1Model");
-            models.push("Page2Model");
-
-            // Depending on the user type various models will be loaded (other than this MainModel).
-
-            if (this.User().admin()) {
-                models.push("LanguageModel");
-                models.push("SettingsModel");
-                models.push("UdfLabelsModel");
-                models.push("UsersModel");
-                if (this.User().appAdmin()) {
-                    models.push("TenantsModel");
-                }
-            }
+        if (window.models != undefined && window.models != null && window.models.length > 0) {
+            models = window.models;
+        } else {
+            setTimeout(() => this.CheckLoad(), 500);
         }
 
         let missingModels: string[] = [];
@@ -299,6 +479,7 @@ class MainModel {
         });
 
         if (missingModels.length > 0) {
+            console.log("missingModels", missingModels);
             setTimeout(() => this.CheckLoad(), 200);
         } else {
             // Everything is loaded, but give a small delay to allow time for the other
@@ -308,33 +489,61 @@ class MainModel {
         }
     }
 
-    /**
-     * Checks the VersionInfo from the server to see if the server has restarted or been updated.
-     */
-    CheckForUpdates(): void {
-        let success: Function = (data: server.versionInfo) => {
-            let reload: boolean = false;
+    CsvToListOfString(csv: string): string[] {
+        let output: string[] = [];
 
+        if (tsUtilities.HasValue(csv)) {
+            let items: string[] = csv.split(',');
+            if (items != null && items.length > 0) {
+                items.forEach(function (e) {
+                    let value: string = $.trim(e);
+                    if (tsUtilities.HasValue(value)) {
+                        output.push(value);
+                    }
+                });
+            }
+        }
+
+        return output;
+    }
+
+    CultureChanged(): void {
+        let success: Function = (data: server.language) => {
             if (data != null) {
-                if (this.VersionInfo().released() != data.released || this.VersionInfo().runningSince() != data.runningSince || this.VersionInfo().version() != data.version) {
-                    reload = true;
+                tsUtilities.CookieWrite(window.appName + "-culture", this.Culture());
+                this.LoadLanguage(data, null);
+            }
+        };
+
+        tsUtilities.AjaxData(window.baseURL + "api/Data/GetLanguage/" + this.Culture(), null, success);
+    }
+
+    CurrentCultures = ko.computed((): optionPair[] => {
+        let output: optionPair[] = [];
+
+        if (this.Cultures() != null && this.Cultures().length > 0) {
+            for (let x: number = 0; x < this.Cultures().length; x++) {
+                let code: string = this.Cultures()[x];
+                if (tsUtilities.HasValue(code)) {
+                    let name: string = this.LanguageName(code);
+                    if (tsUtilities.HasValue(name)) {
+                        let item: optionPair = new optionPair();
+                        item.id(code);
+                        item.value(name);
+                        output.push(item);
+                    }
                 }
             }
 
-            if (reload) {
-                this.Nav("ServerUpdated");
-            } else {
-                setTimeout(() => this.CheckForUpdates(), 60000);
+            if (output.length > 0) {
+                output = output.sort(function (l, r) {
+                    return l.value() > r.value() ? 1 : -1;
+                });
             }
-        };
+        }
 
-
-        let failure: Function = () => {
-            setTimeout(() => this.CheckForUpdates(), 60000);
-        };
-
-        tsUtilities.AjaxData(window.baseURL + "api/Data/GetVersionInfo", null, success, failure);
-    }
+        return output;
+    });
 
     /**
      * The current page URL
@@ -342,7 +551,7 @@ class MainModel {
     CurrentUrl(): string {
         let url: string = window.baseURL;
 
-        if (window.useTenantCodeInUrl) {
+        if (window.useTenantCodeInUrl && this.Tenant() != null && tsUtilities.HasValue(this.Tenant().tenantCode())) {
             url += this.Tenant().tenantCode() + "/";
         }
 
@@ -380,6 +589,9 @@ class MainModel {
         let view: string = this.CurrentView();
         if (tsUtilities.HasValue(view)) {
             switch (view.toLowerCase()) {
+                // <BEGIN ADMIN MENU ITEMS>
+                // <END ADMIN MENU ITEMS>
+                case "appsettings":
                 case "departmentgroups":
                 case "departments":
                 case "editdepartment":
@@ -440,6 +652,22 @@ class MainModel {
         return output;
     }
 
+    GetTenantUsers(): void {
+        let success: Function = (data: server.user[]) => {
+            DataLoader(data, this.Users, user);
+        };
+
+        tsUtilities.AjaxData(window.baseURL + "api/Data/GetUsers/" + this.TenantId(), null, success);
+    }
+
+    HtmlEditorFocus(element: string): void {
+        if (tsUtilities.HtmlEditorExists(element)) {
+            tsUtilities.HtmlEditorFocus(element);
+        } else {
+            $("#" + element).focus();
+        }
+    }
+
     /**
      * I wanted a simpler way to manage my interface icons, so that if I decided to change an icon for an action (eg: save) I can
      * simply change it in one place and all the calls to get the icon returns the icon. Currently I'm using FontAwesome icons.
@@ -451,20 +679,36 @@ class MainModel {
 
         if (tsUtilities.HasValue(module)) {
             switch (module.toLowerCase()) {
+                // <BEGIN ICON ITEMS>
+                // <END ICON ITEMS>
                 case "accessdenied":
                     output = '<i class="fa-regular fa-shield-exclamation"></i>';
+                    break;
+                case "addmodule":
+                    output = '<i class="fa-solid fa-code"></i>';
                     break;
                 case "addnewuser":
                     output = '<i class="fas fa-user-plus"></i>';
                     break;
+                case "add":
                 case "addnewdepartmentgroup":
+                case "addlanguage":
+                case "addnewusergroup":
                 case "addtenant":
                     output = '<i class="fas fa-plus-square"></i>';
                     break;
                 case "admin":
                     output = '<i class="fa-solid fa-sliders"></i>';
                     break;
+                case "allitems":
+                case "showfilter":
+                    output = '<i class="fa-solid fa-filter-circle-xmark"></i>';
+                    break;
+                case "appsettings":
+                    output = '<i class="fa-solid fa-shield-keyhole"></i>';
+                    break;
                 case "back":
+                case "backtologin":
                     output = '<i class="fas fa-arrow-left"></i>';
                     break;
                 case "cancel":
@@ -472,13 +716,19 @@ class MainModel {
                     break;
                 case "changepassword":
                 case "passwordchanged":
+                case "useradmin":
                     output = '<i class="fa-solid fa-lock"></i>';
                     break;
                 case "clear":
                     output = '<i class="fas fa-broom"></i>';
                     break;
+                case "close":
                 case "closedialog":
                     output = '<i class="fas fa-times"></i>';
+                    break;
+                case "code":
+                case "html":
+                    output = '<i class="fa-solid fa-code"></i>';
                     break;
                 case "delete":
                 case "deletetenant":
@@ -501,7 +751,11 @@ class MainModel {
                 case "edittenant":
                     output = '<i class="fas fa-users-cog"></i>';
                     break;
+                case "forgotpassword":
+                    output = '<i class="fas fa-unlock"></i>';
+                    break;
                 case "hidefilter":
+                case "modifieditems":
                     output = '<i class="fa-solid fa-filter"></i>';
                     break;
                 case "hidehelp":
@@ -518,8 +772,23 @@ class MainModel {
                 case "loginwithlocalaccount":
                     output = '<i class="fas fa-sign-in-alt"></i>';
                     break;
+                case "loginwithcustom":
+                    output = '<i class="fa-solid fa-user-lock"></i>';
+                    break;
                 case "loginwitheitsso":
                     output = '<i class="okta-logo"></i>';
+                    break;
+                case "loginwithfacebook":
+                    output = '<i class="fa-brands fa-facebook"></i>';
+                    break;
+                case "loginwithgoogle":
+                    output = '<i class="fa-brands fa-google"></i>';
+                    break;
+                case "loginwithmicrosoftaccount":
+                    output = '<i class="fa-brands fa-microsoft"></i>';
+                    break;
+                case "loginwithopenid":
+                    output = '<i class="fa-brands fa-openid"></i>';
                     break;
                 case "logout":
                     output = '<i class="fas fa-sign-out-alt"></i>';
@@ -534,15 +803,25 @@ class MainModel {
                 case "newtenant":
                     output = '<i class="fas fa-users-cog"></i>';
                     break;
-                case "page1":
-                    output = '<i class="fa-regular fa-face-smile"></i>';
+                case "photo":
+                    output = '<i class="fa-regular fa-image"></i>';
                     break;
-                case "page2":
-                    output = '<i class="fa-regular fa-face-laugh"></i>';
+                case "samplepage":
+                    output = '<i class="fa-regular fa-file-lines"></i>';
+                    break;
+                case "recordstableiconadmin":
+                    output = '<i class="fa-solid fa-user-lock"></i>';
+                    break;
+                case "recordstableiconenabled":
+                    output = '<i class="fa-solid fa-user-check"></i>';
                     break;
                 case "refresh":
                     output = '<i class="fas fa-sync-alt"></i>';
                     break;
+                case "reset":
+                    output = '<i class="fa-solid fa-rotate-left"></i>';
+                    break;
+                case "resetpassword":
                 case "resetuserpassword":
                 case "updatepassword":
                     output = '<i class="fas fa-lock"></i>';
@@ -557,7 +836,11 @@ class MainModel {
                     output = '<i class="fa-solid fa-sliders"></i>';
                     break;
                 case "selected":
+                case "userenabled":
                     output = '<i class="fa-solid fa-circle-check"></i>';
+                    break;
+                case "usergroups":
+                    output = '<i class="fa-solid fa-people-group"></i>';
                     break;
                 case "serverupdated":
                     output = '<i class="fa-solid fa-server"></i>';
@@ -567,6 +850,9 @@ class MainModel {
                     break;
                 case "showhelp":
                     output = '<i class="fas fa-arrow-down"></i>';
+                    break;
+                case "signup":
+                    output = '<i class="fa-solid fa-signature"></i>';
                     break;
                 case "stickymenus":
                     output = '<i class="fa-solid fa-thumbtack sticky"></i>';
@@ -584,7 +870,10 @@ class MainModel {
                     output = '<i class="fa-solid fa-circle-user"></i>';
                     break;
                 case "users":
-                    output = '<i class="fas fa-users"></i>';
+                    output = '<i class="fa-solid fa-user"></i>';
+                    break;
+                case "validateconfirmationcode":
+                    output = '<i class="fa-solid fa-shield"></i>';
                     break;
             }
         }
@@ -612,6 +901,37 @@ class MainModel {
      */
     InsertAtCursor(field: string, value: string): void {
         insertAtCursor(field, value);
+    }
+
+    InvalidTenantCodeMessage = ko.computed(() => {
+        let msg: string = "<h1>" + this.Language("InvalidTenantCode") + "</h1><p>" + this.Language("InvalidTenantCodeMessage") + "</p>";
+
+        if (this.ShowTenantListingWhenMissingTenantCode()) {
+            msg += "<div class='mb-2'>" + this.Language("SelectTenant") + "</div>";
+
+            this.Tenants().forEach(function (tenant) {
+                msg += "<div><a href='" + window.baseURL + tenant.tenantCode() + "'>" + tenant.name() + "</a></div>";
+            });
+        }
+
+        $("#invalid-tenant-code-message").html(msg);
+    });
+
+    IsGuid(value: string): boolean {
+        let output: boolean = false;
+
+        if (tsUtilities.HasValue(value)) {
+            if (value.indexOf("-") > -1) {
+                let parts: string[] = value.split("-");
+                if (parts.length == 5) {
+                    if (parts[0].length == 8 && parts[1].length == 4 && parts[2].length == 4 && parts[3].length == 4 && parts[4].length == 12) {
+                        output = true;
+                    }
+                }
+            }
+        }
+
+        return output;
     }
 
     /**
@@ -656,6 +976,23 @@ class MainModel {
         return output;
     }
 
+    LanguageName(code: string): string {
+        let output: string = "";
+
+        if (tsUtilities.HasValue(code)) {
+            if (this.CultureCodes() != null && this.CultureCodes().length > 0) {
+                let cc: optionPair = ko.utils.arrayFirst(this.CultureCodes(), function (item) {
+                    return item.id().toLowerCase() == code.toLowerCase();
+                });
+                if (cc != null) {
+                    output = cc.value();
+                }
+            }
+        }
+
+        return output;
+    }
+
     /**
      * Gets the language text for a given language item and marked it as a required field.
      * @param item {string} - The unique id of the language item.
@@ -667,6 +1004,20 @@ class MainModel {
         let output: string = this.Language(item, defaultValue, removeSpaces, replaceValues);
 
         return "<span class='required'>* " + output + "</span>";
+    }
+
+    LinesInText(text: string): number {
+        let output: number = 1;
+
+        if (tsUtilities.HasValue(text)) {
+            output = text.split(/\r\n|\r|\n/).length;
+        }
+
+        if (output < 3) {
+            output = 3;
+        }
+
+        return output;
     }
 
     ListItemNameFromId(itemId: string): string {
@@ -684,15 +1035,31 @@ class MainModel {
         return output;
     }
 
+    ListOfStringsToCSV(list: string[]): string {
+        let output: string = "";
+
+        if (list != null && list.length > 0) {
+            list.forEach(function (e) {
+                let item: string = $.trim(e);
+                if (tsUtilities.HasValue(item)) {
+                    if (output != "") { output += ", "; }
+                    output += item;
+                }
+            });
+        }
+
+        return output;
+    }
+
     /**
      * Called when the page loads to load the language and default language. Also called when SignalR recieves language updates.
-     * @param language {server.optionPair[]} - An array of optionPair values for the tenant language.
+     * @param language {server.language} - An array of optionPair values for the tenant language.
      * @param defaults {server.optionPair[]} - An array of optionPair values for the default language.
      */
-    LoadLanguage(language: server.optionPair[], defaults: server.optionPair[]) {
-        if (language != undefined && language != null) {
+    LoadLanguage(language: server.language, defaults: server.optionPair[]) {
+        if (language != undefined && language != null && language.phrases != null && language.phrases.length > 0) {
             let options: optionPair[] = [];
-            language.forEach(function (e) {
+            language.phrases.forEach(function (e) {
                 let item: optionPair = new optionPair();
                 item.Load(e);
                 options.push(item);
@@ -709,7 +1076,6 @@ class MainModel {
             })
             this.DefaultLanguageItems(defaultOptions);
         }
-
     }
 
     /**
@@ -719,6 +1085,15 @@ class MainModel {
         // Hide the interface
         $("#main-model").hide();
         $("#page-view-model-area").hide();
+
+        // Remove the local token cookies
+        tsUtilities.CookieWrite("Token-" + this.TenantId(), "");
+
+        if (this.User() != null && this.User().userTenants() != null && this.User().userTenants().length > 0) {
+            this.User().userTenants().forEach(function (tenant) {
+                tsUtilities.CookieWrite("Token-" + tenant.tenantId(), "");
+            });
+        }
 
         // Redirect to the local logout page
         let returnUrl: string = window.baseURL;
@@ -940,7 +1315,13 @@ class MainModel {
         }
 
         if (!tsUtilities.HasValue(action)) {
-            action = this.LoggedIn() ? "" : "Login";
+            if (!this.LoggedIn()) {
+                if (window.useTenantCodeInUrl && !tsUtilities.HasValue(window.tenantCode)) {
+                    action = "MissingTenantCode";
+                } else {
+                    action = "Login";
+                }
+            }
         }
 
         // If we have a requested URL cookie then clear that cookie and redirect to that page.
@@ -963,7 +1344,7 @@ class MainModel {
         }
 
         let url: string = window.baseURL;
-        if (window.useTenantCodeInUrl) {
+        if (window.useTenantCodeInUrl && this.Tenant() != null && tsUtilities.HasValue(this.Tenant().tenantCode())) {
             url += this.Tenant().tenantCode() + "/";
         }
 
@@ -1000,11 +1381,13 @@ class MainModel {
             switch (action.toLowerCase()) {
                 case "accessdenied":
                 case "login":
-                case "otherpages":
-                case "thatcanbe":
-                case "accessedwhen":
-                case "notloggedin":
+                case "missingtenantcode":
                 case "serverupdated":
+
+                case "other pages":
+                case "that can be":
+                case "accessed when":
+                case "not logged in":
                     allowAnonymousAccess = true;
                     break;
 
@@ -1012,7 +1395,9 @@ class MainModel {
                     tsUtilities.CookieWrite("requested-url", url);
 
                     if (window.useTenantCodeInUrl) {
-                        window.location.href = window.baseURL + this.TenantCode() + "/Login";
+                        if (tsUtilities.HasValue(this.TenantCode())) {
+                            window.location.href = window.baseURL + this.TenantCode() + "/Login";
+                        }
                     } else {
                         window.location.href = window.baseURL + "Login";
                     }
@@ -1025,17 +1410,28 @@ class MainModel {
         if (!allowAnonymousAccess) {
             // This is where you would test various actions to make sure the user has access.
             switch (action.toLowerCase()) {
-                case "changepassword":
-                    if (this.User().preventPasswordChange()) {
-                        accessDenied = true;
-                    }
+                case "appsettings":
+                case "tenants":
+                    accessDenied = !this.User().appAdmin();
                     break;
 
+                case "changepassword":
+                    accessDenied = this.User().preventPasswordChange();
+                    break;
+
+                case "departments":
+                    accessDenied = !this.User().admin() && !this.BlockModuleDepartments();
+                    break;
+
+                case "language":
+                case "settings":
                 case "udflabels":
                 case "users":
-                    if (!this.User().admin()) {
-                        accessDenied = true;
-                    }
+                    accessDenied = !this.User().admin();
+                    break;
+
+                case "usergroups":
+                    accessDenied = !this.User().admin() && !this.BlockModuleUserGroups();
                     break;
             }
         }
@@ -1099,6 +1495,16 @@ class MainModel {
         }
     }
 
+    Parse(item: any): string {
+        let output: string = "";
+
+        if (item != null) {
+            output = JSON.parse(ko.toJSON(item));
+        }
+
+        return output;
+    }
+
     /**
      * The method that gets called when the window.onpopstate event fires so navigation can be updated.
      */
@@ -1148,6 +1554,25 @@ class MainModel {
         } else {
             this.Nav(action, id, true);
         }
+    }
+
+    /**
+     * Gets a value from the querystring
+     * @param {string} name - The key for the value to get.
+     * @returns {string} - The value or an emtpy string.
+     */
+    QuerystringValue(name: string): string {
+        let output: string = "";
+
+        name = name.replace(/[\[\]]/g, '\\$&');
+        var regex = new RegExp('[?&]' + name + '(=([^&#]*)|&|#|$)'), results = regex.exec(window.location.href);
+        if (results) {
+            if (results[2]) {
+                output = decodeURIComponent(results[2].replace(/\+/g, ' '));
+            }
+        }
+        
+        return output;
     }
 
     /**
@@ -1299,6 +1724,7 @@ class MainModel {
 
         let updateType: string = this.SignalRUpdate().updateTypeString();
         let message: string = this.SignalRUpdate().message();
+        let itemId: string = this.SignalRUpdate().itemId();
 
         switch (updateType.toLowerCase()) {
             case "setting":
@@ -1323,7 +1749,16 @@ class MainModel {
                         break;
 
                     case "language":
-                        this.LoadLanguage(JSON.parse(update.object), null);
+                        // Only load if the culture matches the current user's culture
+                        let l: language = new language();
+                        l.Load(JSON.parse(update.object));
+                        if (l != undefined && l != null && tsUtilities.HasValue(l.culture())) {
+                            if (navigator != null && tsUtilities.HasValue(navigator.language)) {
+                                if (l.culture().toLowerCase() == navigator.language.toLowerCase()) {
+                                    this.LoadLanguage(JSON.parse(update.object), null);
+                                }
+                            }
+                        }
                         break;
 
                     case "saveddepartment":
@@ -1387,10 +1822,22 @@ class MainModel {
                     case "tenantsaved":
                         this.TenantSaved(update.object);
                         break;
+
+                    case "usetenantcodeinurl":
+                        let useTenantCodeInUrl = itemId == "1";
+                        if (window.useTenantCodeInUrl != useTenantCodeInUrl) {
+                            window.location.href = window.baseURL;
+                        }
+                        break;
                 }
 
                 break;
         }
+    }
+
+    Spacer(width: number): string {
+        let output: string = '<img src="' + window.baseURL + 'images/spacer.png" width="' + width.toString() + '" height="1" />';
+        return output;
     }
 
     /**
@@ -1458,16 +1905,32 @@ class MainModel {
         }
     }
 
+    ThemeWatcher(): void {
+        let colorScheme: string = getComputedStyle(document.body, ':after').content;
+
+        if (tsUtilities.HasValue(colorScheme)) {
+            this.PreferredColorScheme(colorScheme.indexOf("dark") > -1 ? "dark" : "light");
+        }
+
+        // If we are in auto-mode then constantly watch for system changes.
+        // Some OS's will automatically move from light mode to dark mode later in the day.
+        // This will allow the page to automatically switch between modes when the
+        // system changes.
+        if (this.Theme() == "") {
+            setTimeout(() => this.ThemeWatcher(), 1000);
+        }
+    }
+
     /**
      * Toggles the sticky state of the top fixed menus
      */
     ToggleStickyMenus(): void {
         if (this.StickyMenus()) {
             this.StickyMenus(false);
-            tsUtilities.CookieWrite("sticky-menus", "0");
+            window.localStorage.setItem(window.appName + "-sticky-menus", "0");
         } else {
             this.StickyMenus(true);
-            tsUtilities.CookieWrite("sticky-menus", "1");
+            window.localStorage.setItem(window.appName + "-sticky-menus", "1");
         }
     }
 
@@ -1586,7 +2049,6 @@ class MainModel {
      * @param dataObject {any} - The object that contains the UDF fields (eg: a User object).
      */
     UDFFieldsRender(element: string, module: string, dataObject: any): void {
-        //console.log("UDFFieldsRender", element, module, dataObject);
         let output: string = "";
 
         if (this.Loaded() == true) {
@@ -1928,6 +2390,38 @@ class MainModel {
         return output;
     }
 
+    UpdatePagedRecordsetColumnIcons(data: filter): filter {
+        let output: filter = data;
+
+        if (output.columns() != null && output.columns().length > 0) {
+            for (let x: number = 0; x < output.columns().length; x++) {
+                let column: filterColumn = output.columns()[x];
+                if (tsUtilities.HasValue(column.booleanIcon())) {
+                    let booleanIcon: string = this.Icon(column.booleanIcon());
+                    if (tsUtilities.HasValue(booleanIcon)) {
+                        column.booleanIcon(booleanIcon);
+                    }
+                }
+
+                if (tsUtilities.HasValue(column.label()) && column.label().toLowerCase().indexOf("icon:") > -1) {
+                    let label: string = column.label().toLowerCase().replace("icon:", "");
+                    let icon: string = this.Icon(label);
+                    if (tsUtilities.HasValue(icon)) {
+                        column.label(icon);
+                        if (!tsUtilities.HasValue(column.booleanIcon())) {
+                            column.booleanIcon(icon);
+                        }
+                    } else {
+                        column.label(column.label().substring(5));
+                    }
+                }
+
+            }
+        }
+
+        return output;
+    }
+
     /**
      * Called on load and when the window resizes to keep track of whether the mobile menu is visible or not, as well as the window width and height.
      */
@@ -1935,6 +2429,34 @@ class MainModel {
         this.MobileMenu($("#menu-bar-toggler").is(":visible"));
         this.WindowHeight($(window).height());
         this.WindowWidth($(window).width());
+    }
+
+    UserDisplayName(userId: string, includeEmail?: boolean): string {
+        let output: string = "";
+
+        if (includeEmail == undefined || includeEmail == null) {
+            includeEmail = false;
+        }
+
+        if (this.Users() != null && this.Users().length > 0) {
+            let u: user = ko.utils.arrayFirst(this.Users(), function (item) {
+                return item.userId() == userId;
+            });
+            if (u != null) {
+                if (tsUtilities.HasValue(u.firstName())) {
+                    output += u.firstName();
+                    if (tsUtilities.HasValue(u.lastName())) {
+                        output += " " + u.lastName();
+                    }
+                }
+                if (includeEmail && tsUtilities.HasValue(u.email())) {
+                    if (output != "") { output += " "; }
+                    output += "[" + u.email() + "]";
+                }
+            }
+        }
+
+        return output;
     }
 
     /**
@@ -1945,7 +2467,6 @@ class MainModel {
         let success: Function = (data: server.fileStorage) => {
             if (data != null) {
                 if (data.actionResponse.result) {
-                    //console.log("View File", data);
                     let ext: string = "";
                     if (tsUtilities.HasValue(data.extension)) {
                         ext = data.extension.replace(".", "").toLowerCase();
@@ -1958,7 +2479,22 @@ class MainModel {
                             this.ViewImage(window.baseURL + "File/View/" + fileId);
                             break;
 
+                        case "txt":
+                            $.colorbox({
+                                href: window.baseURL + "File/View/" + fileId,
+                                title: data.fileName,
+                                maxWidth: "95%",
+                                maxHeight: "95%",
+                                width: "95%",
+                                height: "75%",
+                                scalePhotos: true,
+                                photo: false,
+                                transition: "none",
+                                className: "colorbox-text"
+                            });
+                            break;
                         default:
+                            window.open(window.baseURL + "File/View/" + fileId);
                             break;
                     }
 
@@ -1981,7 +2517,8 @@ class MainModel {
         $.colorbox({
             href: url,
             photo: true,
-            maxWidth: "95%"
+            maxWidth: "95%",
+            transition: "none"
         });
     }
 }

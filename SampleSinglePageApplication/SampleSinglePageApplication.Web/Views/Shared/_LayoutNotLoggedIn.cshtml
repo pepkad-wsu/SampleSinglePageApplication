@@ -1,17 +1,21 @@
 ﻿@using SampleSinglePageApplication;
 @inject IHttpContextAccessor context;
-@inject SampleSinglePageApplication.IDataAccess data;
+@inject IDataAccess data;
 @{
+    string title = ViewBag.Title;
+    if (String.IsNullOrEmpty(title)) {
+        title = "Error";
+    }
 }
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>TITLE</title>
+    <title>@Html.Raw(title)</title>
     @await Html.PartialAsync("_partialIncludes")
 </head>
-<body>
+<body class="not-logged-in">
     @RenderBody()
 </body>
 </html>

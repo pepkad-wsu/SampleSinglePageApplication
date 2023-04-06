@@ -1,0 +1,57 @@
+body.light-theme {
+    background-color:#fff;
+    color:#000;
+}
+
+body.light-theme div.card table.table tr.sep-row td {
+    border-style: solid;
+    border-color: #ddd;
+}
+
+body.light-theme div.card-header .btn-primary {
+    background-color: rgb(5, 80, 220);
+}
+
+body.light-theme nav.navbar {
+    background-color: #fff;
+    color: #000;
+}
+
+body.light-theme a.navbar-brand,
+body.light-theme a.nav-link {
+    color: #777;
+}
+
+body.light-theme a.navbar-brand:hover,
+body.light-theme a.nav-link:hover {
+    color: #000;
+}
+
+body.light-theme a.nav-link.disabled {
+    color:#ccc;
+}
+
+body.light-theme .navbar-toggler-icon {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%280, 0, 0, 0.55%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+}
+
+body.light-theme option:disabled {
+    color: #000;
+    font-weight: bold;
+}
+
+body.light-theme ul.ui-autocomplete {
+    background: #eee;
+}
+
+body.light-theme ul.ui-autocomplete li a {
+    text-decoration:none;
+}
+
+body.light-theme .card.top-item {
+    color: #fff;
+}
+
+body.light-theme .card.top-item .card-body {
+    background-color: #1b6ec2;
+}

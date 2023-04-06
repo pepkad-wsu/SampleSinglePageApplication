@@ -1,12 +1,4 @@
 ﻿declare module server {
-    enum signalRUpdateType {
-        this = 0,
-        that = 1,
-        setting = 2,
-        unknown = 3,
-        files = 4
-    }
-
     enum settingType {
         boolean = 0,
         dateTime = 1,
@@ -21,6 +13,11 @@
 
     interface actionResponseObject {
         actionResponse: booleanResponse;
+    }
+
+    interface addModule {
+        module: string;
+        name: string;
     }
 
     interface ajaxLookup extends actionResponseObject {
@@ -40,9 +37,25 @@
         extra3: string;
     }
 
+    interface applicationSettings extends actionResponseObject {
+        applicationURL: string;
+        defaultTenantCode: string;
+        encryptionKey: string;
+        mailServer: string;
+        mailServerPassword: string;
+        mailServerPort: number;
+        mailServerUsername: string;
+        mailServerUseSSL: boolean;
+        defaultReplyToAddress: string;
+        useTenantCodeInUrl: boolean;
+        showTenantCodeFieldOnLoginForm: boolean;
+        showTenantListingWhenMissingTenantCode: boolean;
+    }
+
     interface authenticate {
         username: string;
         password: string;
+        tenantCode: string;
     }
 
     interface booleanResponse {
@@ -63,6 +76,20 @@
         departmentGroupId: string;
         tenantId: string;
         departmentGroupName: string;
+    }
+
+    interface dictionary {
+        key: string;
+        value: any;
+    }
+
+    interface externalDataSource {
+        name: string;
+        type: string;
+        connectionString: string;
+        source: string;
+        sortOrder: number;
+        active: boolean;
     }
 
     interface fileStorage extends actionResponseObject {
@@ -96,6 +123,7 @@
         tenants: string[];
         columns: filterColumn[];
         records: any[];
+        cultureCode: string;
     }
 
     interface filterColumn {
@@ -105,6 +133,8 @@
         dataElementName: string;
         dataType: string;
         sortable: boolean;
+        class: string;
+        booleanIcon: string;
     }
 
     interface filterUsers extends filter {
@@ -121,6 +151,11 @@
         udf08: string;
         udf09: string;
         udf10: string;
+    }
+
+    interface language {
+        culture: string;
+        phrases: optionPair[];
     }
 
     interface listItem extends actionResponseObject {
@@ -162,6 +197,11 @@
         items: string[];
     }
 
+    interface simpleResponse {
+        result: boolean;
+        message: string;
+    }
+
     interface tenant extends actionResponseObject {
         tenantId: string;
         name: string;
@@ -174,16 +214,36 @@
         udfLabels: udfLabel[];
     }
 
+    interface tenantList {
+        tenantId: string;
+        name: string;
+        tenantCode: string;
+    }
+
     interface tenantSettings {
         allowUsersToManageAvatars: boolean;
         allowUsersToManageBasicProfileInfo: boolean;
         allowUsersToManageBasicProfileInfoElements: string[];
+        allowUsersToResetPasswordsForLocalLogin: boolean;
+        allowUsersToSignUpForLocalLogin: boolean;
         cookieDomain: string;
+        customAuthenticationCode: string;
+        customAuthenticationName: string;
+        defaultCultureCode: string;
+        defaultReplyToAddress: string;
         eitSsoUrl: string;
         jasonWebTokenKey: string;
+        ldapLookupRoot: string;
+        ldapLookupUsername: string;
+        ldapLookupPassword: string;
+        ldapLookupSearchBase: string;
+        ldapLookupLocationAttribute: string;
+        ldapLookupPort: number;
         loginOptions: string[];
+        moduleHideElements: string[];
         workSchedule: workSchedule;
         requirePreExistingAccountToLogIn: boolean;
+        externalUserDataSources: externalDataSource[];
     }
 
     interface udfLabel extends actionResponseObject {
@@ -224,6 +284,7 @@
         lastLockoutDate: Date;
         tenants: tenant[];
         userTenants: userTenant[];
+        source: string;
         udf01: string;
         udf02: string;
         udf03: string;
@@ -234,6 +295,19 @@
         udf08: string;
         udf09: string;
         udf10: string;
+    }
+
+    interface userGroup extends actionResponseObject {
+        groupId: string;
+        tenantId: string;
+        name: string;
+        enabled: boolean;
+        users: string[];
+        settings: userGroupSettings;
+    }
+
+    interface userGroupSettings {
+        someSetting: string;
     }
 
     interface userPasswordReset extends actionResponseObject {
@@ -251,7 +325,7 @@
     }
 
     interface versionInfo {
-        released: string;
+        released: Date;
         runningSince: number;
         version: string;
     }

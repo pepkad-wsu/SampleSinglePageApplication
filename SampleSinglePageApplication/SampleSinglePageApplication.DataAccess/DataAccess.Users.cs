@@ -1,12 +1,22 @@
 ﻿namespace SampleSinglePageApplication;
 public partial class DataAccess
 {
+    private DataObjects.User CopyUser(DataObjects.User user)
+    {
+        DataObjects.User output = new DataObjects.User();
+        var dup = DuplicateObject<DataObjects.User>(user);
+        if (dup != null) {
+            output = dup;
+        }
+        return output;
+    }
+
     public async Task<DataObjects.User> CreateNewUserFromEmailAddress(Guid TenantId, string EmailAddress)
     {
         DataObjects.User output = new DataObjects.User();
         // First, make sure the user doesn't already exist
 
-        var rec = await data.Users.FirstOrDefaultAsync(x => x.TenantId == TenantId && x.Email == EmailAddress);
+        var rec = await data.Users.FirstOrDefaultAsync(x => x.TenantId == TenantId && x.Email != null && x.Email.ToLower() == EmailAddress.ToLower());
         if (rec != null) {
             // Already exists
             output = await GetUser(rec.UserId);
@@ -53,7 +63,7 @@ public partial class DataAccess
                 return output;
             }
 
-            Guid tenantId = GuidOrEmpty(rec.TenantId);
+            Guid tenantId = GuidValue(rec.TenantId);
 
             // Now, delete the main user record
             data.Users.Remove(rec);
@@ -84,7 +94,7 @@ public partial class DataAccess
         var rec = await data.FileStorages.FirstOrDefaultAsync(x => x.ItemId == null && x.UserId == UserId);
         if (rec != null) {
             data.FileStorages.Remove(rec);
-            Guid tenantId = GuidOrEmpty(rec.TenantId);
+            Guid tenantId = GuidValue(rec.TenantId);
             try {
                 await data.SaveChangesAsync();
                 output.Result = true;
@@ -139,6 +149,135 @@ public partial class DataAccess
         return output;
     }
 
+    public async Task<DataObjects.User> ForgotPassword(DataObjects.User user)
+    {
+        DataObjects.User output = new DataObjects.User();
+        output.ActionResponse = GetNewActionResponse();
+
+        var applicationURL = ApplicationURL;
+
+        if (String.IsNullOrWhiteSpace(applicationURL)) {
+            output.ActionResponse.Messages.Add("Unable to Determine Referring Website Address");
+        }
+
+        if (String.IsNullOrWhiteSpace(user.Email)) {
+            output.ActionResponse.Messages.Add("Missing Required Email Address");
+        } else if (!user.Email.IsEmailAddress()) {
+            output.ActionResponse.Messages.Add("Invalid Email Address");
+        }
+
+        if (String.IsNullOrWhiteSpace(user.Password)) {
+            output.ActionResponse.Messages.Add("Missing Required Password");
+        }
+
+        if (output.ActionResponse.Messages.Count() == 0) {
+            // Make sure this username is a valid existing user
+            var existing = await GetUser(user.TenantId, StringValue(user.Email));
+            if (existing == null || !existing.ActionResponse.Result) {
+                output.ActionResponse.Messages.Add("The email address '" + user.Email + "' is not a valid local account.");
+                return output;
+            }
+
+            // Make sure the user account is enabled
+            if (!existing.Enabled) {
+                output.ActionResponse.Messages.Add("Your account has been disabled by an admin.");
+                return output;
+            }
+
+            // Make sure this user doesn't have the flag set to prevent changing password
+            if (existing.PreventPasswordChange) {
+                output.ActionResponse.Messages.Add("Your account has been restricted by an admin to prevent password changes.");
+                return output;
+            }
+
+            string websiteName = WebsiteName(applicationURL);
+            if (String.IsNullOrWhiteSpace(websiteName)) {
+                websiteName += applicationURL;
+            }
+
+            string code = GenerateRandomCode(6);
+
+            string body = "<p>You are receiving this email because you used the Forgot Password option at <strong>" + websiteName + "</strong>.</p>" +
+                    "<p>Use the following confirmation code on that page to confirm your new password:</p>" +
+                    "<p style='font-size:2em;'>" + code + "</p>";
+
+            List<string> to = new List<string>();
+            to.Add(StringValue(user.Email));
+
+            var settings = GetTenantSettings(user.TenantId);
+
+            string from = String.Empty;
+            if (settings != null) {
+                from += settings.DefaultReplyToAddress;
+            }
+
+            var sent = SendEmail(new DataObjects.EmailMessage {
+                From = from,
+                To = to,
+                Subject = "Forgot Password at " + websiteName,
+                Body = body
+            });
+
+            if (sent.Result) {
+                output = new DataObjects.User {
+                    ActionResponse = GetNewActionResponse(true),
+                    UserId = existing.UserId,
+                    TenantId = existing.TenantId,
+                    FirstName = existing.FirstName,
+                    LastName = existing.LastName,
+                    Email = existing.Email,
+                    Username = StringValue(existing.Email),
+                    Password = user.Password,
+                    AuthToken = CompressByteArrayString(Encrypt(code))
+                };
+            } else {
+                output.ActionResponse.Messages.Add("There was an error sending an email to the address you specified.");
+            }
+        }
+
+        return output;
+    }
+
+    public async Task<DataObjects.User> ForgotPasswordConfirm(DataObjects.User user)
+    {
+        DataObjects.User output = new DataObjects.User();
+
+        if (String.IsNullOrWhiteSpace(user.Email)) {
+            output.ActionResponse.Messages.Add("Missing Required Email Address");
+        }
+
+        if (String.IsNullOrWhiteSpace(user.Password)) {
+            output.ActionResponse.Messages.Add("Missing Required Password");
+        }
+
+        if (output.ActionResponse.Messages.Count() == 0) {
+            string extended = CompressedByteArrayStringToFullString(user.AuthToken);
+            string decrypted = Decrypt(extended);
+
+            if (user.Location == decrypted) {
+                // Update the user's password
+                var currentUser = await GetUser(user.TenantId, StringValue(user.Email));
+                if (currentUser != null && currentUser.ActionResponse.Result) {
+                    currentUser.Password = Encrypt(user.Password);
+
+                    var rec = await data.Users.FirstOrDefaultAsync(x => x.UserId == currentUser.UserId);
+                    if (rec != null) {
+                        rec.Password = currentUser.Password;
+                        await data.SaveChangesAsync();
+
+                        output = currentUser;
+                    } else {
+                        output.ActionResponse.Messages.Add("Unable to confirm and update password.");
+                    }
+                }
+            } else {
+                output.ActionResponse.Messages.Add("Invalid Confirmation Code");
+            }
+        }
+
+        return output;
+    }
+
     public async Task<string> GetDisplayNameFromUserId(Guid? UserId, bool LastNameFirst = false)
     {
         string output = String.Empty;
@@ -175,31 +314,16 @@ public partial class DataAccess
     private async Task<DataObjects.User> GetExistingUser(Guid TenantId, string Lookup, DataObjects.UserLookupType Type, bool AddIfNotFound = true)
     {
         DataObjects.User output = new DataObjects.User();
-        string DepartmentName = String.Empty;
-        var ldapRoot = GetSetting<string>("activedirectoryroot", DataObjects.SettingType.Text);
-        Guid DepartmentId = Guid.Empty;
-
-        // Try and update the user info from Active Directory
-        var ldapQueryUsername = GetSetting<string>("LdapUsername", DataObjects.SettingType.EncryptedText);
-        var ldapQueryPassword = GetSetting<string>("LdapPassword", DataObjects.SettingType.EncryptedText);
-
-        if (String.IsNullOrWhiteSpace(ldapQueryUsername) || String.IsNullOrWhiteSpace(ldapQueryPassword)) {
-            ldapQueryUsername = "";
-            ldapQueryPassword = "";
-        }
-
-        string ldapOptionalLocationAttribute = GetLdapOptionalLocationAttribute();
-        DataObjects.ActiveDirectoryUserInfo? adUserInfo = GetActiveDirectoryInfo(Lookup, Type, StringOrEmpty(ldapRoot), ldapQueryUsername, ldapQueryPassword, ldapOptionalLocationAttribute);
 
         EFModels.EFModels.User? rec = null;
 
         switch (Type) {
             case DataObjects.UserLookupType.Email:
-                rec = await data.Users.FirstOrDefaultAsync(x => x.TenantId == TenantId && x.Email == Lookup);
+                rec = await data.Users.FirstOrDefaultAsync(x => x.TenantId == TenantId && x.Email != null && x.Email.ToLower() == Lookup.ToLower());
                 break;
 
             case DataObjects.UserLookupType.EmployeeId:
-                rec = await data.Users.FirstOrDefaultAsync(x => x.TenantId == TenantId && x.EmployeeId == Lookup);
+                rec = await data.Users.FirstOrDefaultAsync(x => x.TenantId == TenantId && x.EmployeeId != null && x.EmployeeId.ToLower() == Lookup.ToLower());
                 break;
 
             case DataObjects.UserLookupType.Guid:
@@ -207,156 +331,12 @@ public partial class DataAccess
                 break;
 
             case DataObjects.UserLookupType.Username:
-                rec = await data.Users.FirstOrDefaultAsync(x => x.TenantId == TenantId && x.Username == Lookup);
+                rec = await data.Users.FirstOrDefaultAsync(x => x.TenantId == TenantId && x.Username != null && x.Username.ToLower() == Lookup.ToLower());
                 break;
         }
 
-        bool newRecord = false;
-
         if (rec != null) {
             output = await GetUser(rec.UserId);
-
-            if (adUserInfo != null) {
-                bool UserUpdated = false;
-                DepartmentId = await DepartmentIdFromActiveDirectoryName(TenantId, adUserInfo.Department);
-                if (DepartmentId != Guid.Empty && DepartmentId != output.DepartmentId) {
-                    output.DepartmentId = DepartmentId;
-                    UserUpdated = true;
-                }
-                if (!String.IsNullOrWhiteSpace(adUserInfo.Username) && output.Username != adUserInfo.Username) {
-                    output.Username = adUserInfo.Username;
-                    UserUpdated = true;
-                }
-                if (!String.IsNullOrWhiteSpace(adUserInfo.FirstName) && output.FirstName != adUserInfo.FirstName) {
-                    output.FirstName = adUserInfo.FirstName;
-                    UserUpdated = true;
-                }
-                if (!String.IsNullOrWhiteSpace(adUserInfo.LastName) && output.LastName != adUserInfo.LastName) {
-                    output.LastName = adUserInfo.LastName;
-                    UserUpdated = true;
-                }
-                if (!String.IsNullOrWhiteSpace(adUserInfo.Phone) && output.Phone != adUserInfo.Phone) {
-                    output.Phone = adUserInfo.Phone;
-                    UserUpdated = true;
-                }
-                if (!String.IsNullOrWhiteSpace(adUserInfo.EmployeeId) && output.EmployeeId != adUserInfo.EmployeeId) {
-                    output.EmployeeId = adUserInfo.EmployeeId;
-                    UserUpdated = true;
-                }
-                if (UserUpdated) {
-                    await SaveUser(output);
-                }
-            }
-
-        } else {
-            if (adUserInfo != null) {
-                string FirstName = StringOrEmpty(adUserInfo.FirstName);
-                string LastName = StringOrEmpty(adUserInfo.LastName);
-
-                // Create a new user record
-                if (String.IsNullOrWhiteSpace(FirstName) && String.IsNullOrWhiteSpace(LastName)) {
-                    // If first and last are both empty from AD just set the last name to the username
-                    LastName = Lookup;
-                }
-
-                Guid UserId = Guid.NewGuid();
-
-                // If a valid Guid was returned from AD try and use that Guid.
-                if (adUserInfo.UserId.HasValue && adUserInfo.UserId != Guid.Empty) {
-                    UserId = (Guid)adUserInfo.UserId;
-                }
-
-                DepartmentId = await DepartmentIdFromActiveDirectoryName(TenantId, adUserInfo.Department);
-
-                // Before just adding a user see if we can match an existing user based on the returned email address from AD.
-                if (!String.IsNullOrWhiteSpace(adUserInfo.Email)) {
-                    rec = await data.Users.FirstOrDefaultAsync(x => x.Email == adUserInfo.Email);
-                } else if (!String.IsNullOrWhiteSpace(adUserInfo.Username)) {
-                    rec = await data.Users.FirstOrDefaultAsync(x => x.Username == adUserInfo.Username);
-                }
-
-                if (rec == null) {
-                    // Add a new user. These values only get updated when adding, not if this is just an update.
-                    rec = new EFModels.EFModels.User();
-                    rec.UserId = UserId;
-                    rec.TenantId = TenantId;
-                    rec.Admin = false;
-                    rec.Enabled = true;
-                    rec.Email = Type == DataObjects.UserLookupType.Email ? Lookup : adUserInfo.Email;
-                    newRecord = true;
-                } else {
-                    UserId = rec.UserId;
-                }
-
-                // Only update the remaining values if we received a valid value and the record is not already set to that value.
-                if (DepartmentId != Guid.Empty && rec.DepartmentId != DepartmentId) {
-                    rec.DepartmentId = DepartmentId;
-                }
-
-                if (!String.IsNullOrWhiteSpace(FirstName) && rec.FirstName != FirstName) {
-                    rec.FirstName = FirstName;
-                }
-
-                if (!String.IsNullOrWhiteSpace(LastName) && rec.LastName != LastName) {
-                    rec.LastName = LastName;
-                }
-
-                if (!String.IsNullOrWhiteSpace(adUserInfo.Username) && rec.Username != adUserInfo.Username) {
-                    rec.Username = adUserInfo.Username;
-                }
-
-                if (!String.IsNullOrWhiteSpace(adUserInfo.EmployeeId) && rec.EmployeeId != adUserInfo.EmployeeId) {
-                    rec.EmployeeId = adUserInfo.EmployeeId;
-                }
-
-                try {
-                    if (newRecord) {
-                        data.Users.Add(rec);
-                    }
-                    await data.SaveChangesAsync();
-                    output = await GetUser(UserId);
-                } catch (Exception ex) {
-                    output.ActionResponse.Messages.Add("There was an error adding a new user with an Lookup Value of '" + Lookup + "' - " + ex.Message);
-                }
-
-            } else if (AddIfNotFound) {
-                // Just add a new user with only the lookup value
-                Guid UserId = Guid.NewGuid();
-
-                if (Type == DataObjects.UserLookupType.Guid) {
-                    // Try and use the supplied Guid
-                    Guid providedGuid = Guid.Empty;
-                    try {
-                        providedGuid = new Guid(Lookup);
-                    } catch { }
-                    if (providedGuid != Guid.Empty) {
-                        UserId = providedGuid;
-                    }
-                }
-
-                newRecord = true;
-                rec = new EFModels.EFModels.User();
-                rec.Admin = false;
-                rec.DepartmentId = null;
-                rec.Email = Type == DataObjects.UserLookupType.Email ? Lookup : String.Empty;
-                rec.EmployeeId = Type == DataObjects.UserLookupType.EmployeeId ? Lookup : String.Empty;
-                rec.Enabled = true;
-                rec.FirstName = "";
-                rec.LastName = Lookup;
-                rec.UserId = UserId;
-                rec.Username = Type == DataObjects.UserLookupType.Username ? Lookup : String.Empty;
-                try {
-                    if (newRecord) {
-                        data.Users.Add(rec);
-                    }
-                    await data.SaveChangesAsync();
-                    output = await GetUser(UserId);
-                } catch (Exception ex) {
-                    output.ActionResponse.Messages.Add("There was an error adding a new user for '" + Lookup + "' - " + ex.Message);
-                }
-            } else {
-                output.ActionResponse.Messages.Add("Unable to locate a user with the Lookup Value of '" + Lookup + "' in the local database or in Active Directory");
-            }
         }
 
         return output;
@@ -378,9 +358,19 @@ public partial class DataAccess
     {
         DataObjects.User output = new DataObjects.User();
 
-        var rec = await data.Users.FirstOrDefaultAsync(x => x.TenantId == TenantId && x.Username == UserName);
-        if (rec != null) {
-            output = await GetUser(rec.UserId);
+        if (!String.IsNullOrWhiteSpace(UserName)) {
+            User? rec = null;
+
+            if (UserName.Contains("@")) {
+                rec = await data.Users.FirstOrDefaultAsync(x => x.TenantId == TenantId && x.Email != null && x.Email.ToLower() == UserName.ToLower());
+            } else {
+                rec = await data.Users.FirstOrDefaultAsync(x => x.TenantId == TenantId && x.Username.ToLower() == UserName.ToLower());
+            }
+
+            if (rec != null) {
+                output = await GetUser(rec.UserId);
+            }
+
         }
 
         return output;
@@ -401,40 +391,51 @@ public partial class DataAccess
             await ValidateMainAdminUser(UserId);
         }
 
-        var rec = await data.Users.FirstOrDefaultAsync(x => x.UserId == UserId);
+        var rec = await data.Users
+            .Include(x => x.Department)
+            .FirstOrDefaultAsync(x => x.UserId == UserId);
         if (rec != null) {
-            output.ActionResponse.Result = true;
-            output.TenantId = GuidOrEmpty(rec.TenantId);
-            output.Admin = rec.Admin.HasValue ? (bool)rec.Admin : false;
-            output.DepartmentId = rec.DepartmentId.HasValue ? (Guid)rec.DepartmentId : (Guid?)null;
-            output.DepartmentName = rec.DepartmentId.HasValue && rec.Department != null
-                ? rec.Department.DepartmentName
-                : String.Empty;
-            output.Email = rec.Email;
-            output.Phone = rec.Phone;
-            output.Photo = await GetUserPhoto(UserId);
-            output.Enabled = rec.Enabled.HasValue ? (bool)rec.Enabled : false;
-            output.FirstName = rec.FirstName;
-            output.LastLogin = rec.LastLogin.HasValue ? Convert.ToDateTime(rec.LastLogin) : (DateTime?)null;
-            output.LastName = rec.LastName;
-            output.UserId = rec.UserId;
-            output.Username = rec.Username;
-            output.EmployeeId = rec.EmployeeId;
-            output.Password = String.Empty;
-            output.PreventPasswordChange = rec.PreventPasswordChange.HasValue ? (bool)rec.PreventPasswordChange : false;
-            output.HasLocalPassword = !String.IsNullOrWhiteSpace(rec.Password);
-            output.LastLockoutDate = rec.LastLockoutDate;
+            output = new DataObjects.User {
+                ActionResponse = GetNewActionResponse(true),
+                TenantId = GuidValue(rec.TenantId),
+                Admin = BooleanValue(rec.Admin),
+                AppAdmin = output.AppAdmin,
+                DepartmentId = GuidValue(rec.DepartmentId),
+                DepartmentName = rec.DepartmentId.HasValue && rec.Department != null
+                    ? rec.Department.DepartmentName
+                    : String.Empty,
+                Email = rec.Email,
+                Phone = rec.Phone,
+                Photo = await GetUserPhoto(UserId),
+                Enabled = BooleanValue(rec.Enabled),
+                FirstName = rec.FirstName,
+                LastLogin = rec.LastLogin.HasValue ? Convert.ToDateTime(rec.LastLogin) : (DateTime?)null,
+                LastName = rec.LastName,
+                Location = rec.Location,
+                Title = rec.Title,
+                UserId = rec.UserId,
+                Username = rec.Username,
+                EmployeeId = rec.EmployeeId,
+                Password = String.Empty,
+                PreventPasswordChange = BooleanValue(rec.PreventPasswordChange),
+                HasLocalPassword = !String.IsNullOrWhiteSpace(rec.Password),
+                LastLockoutDate = rec.LastLockoutDate,
+                Source = rec.Source,
+                udf01 = rec.UDF01,
+                udf02 = rec.UDF02,
+                udf03 = rec.UDF03,
+                udf04 = rec.UDF04,
+                udf05 = rec.UDF05,
+                udf06 = rec.UDF06,
+                udf07 = rec.UDF07,
+                udf08 = rec.UDF08,
+                udf09 = rec.UDF09,
+                udf10 = rec.UDF10
+            };
 
-            output.udf01 = rec.UDF01;
-            output.udf02 = rec.UDF02;
-            output.udf03 = rec.UDF03;
-            output.udf04 = rec.UDF04;
-            output.udf05 = rec.UDF05;
-            output.udf06 = rec.UDF06;
-            output.udf07 = rec.UDF07;
-            output.udf08 = rec.UDF08;
-            output.udf09 = rec.UDF09;
-            output.udf10 = rec.UDF10;
+            if (output.AppAdmin) {
+                output.Admin = true;
+            }
 
             output.Tenants = await GetUserTenants(output.Username, output.Email);
             output.UserTenants = await GetUserTenantList(output.Username, output.Email);
@@ -442,7 +443,7 @@ public partial class DataAccess
             output.DisplayName = DisplayNameFromLastAndFirst(output.LastName, output.FirstName, output.Email, output.DepartmentName, output.Location);
 
             if(_inMemoryDatabase && output.DepartmentId.HasValue && String.IsNullOrEmpty(output.DepartmentName)) {
-                output.DepartmentName = GetDepartmentName(output.TenantId, GuidOrEmpty(output.DepartmentId));
+                output.DepartmentName = GetDepartmentName(output.TenantId, GuidValue(output.DepartmentId));
             }
 
             if (output.UserTenants != null && output.UserTenants.Any() && output.Tenants != null && output.Tenants.Any()) {
@@ -513,8 +514,10 @@ public partial class DataAccess
         output.ActionResponse = GetNewActionResponse();
         output.Records = null;
 
+        var language = GetTenantLanguage(output.TenantId, StringValue(output.CultureCode));
+
         output.Columns = new List<DataObjects.FilterColumn> {
-            new DataObjects.FilterColumn{ 
+            new DataObjects.FilterColumn{
                 Align = "center",
                 Label = "",
                 TipText = "",
@@ -522,9 +525,9 @@ public partial class DataAccess
                 DataElementName = "photo",
                 DataType = "photo"
             },
-            new DataObjects.FilterColumn{ 
+            new DataObjects.FilterColumn{
                 Align = "",
-                Label = "First",
+                Label = GetLanguageItem("FirstName", language),
                 TipText = "",
                 Sortable = true,
                 DataElementName = "firstName",
@@ -532,7 +535,7 @@ public partial class DataAccess
             },
             new DataObjects.FilterColumn{
                 Align = "",
-                Label = "Last",
+                Label = GetLanguageItem("LastName", language),
                 TipText = "",
                 Sortable = true,
                 DataElementName = "lastName",
@@ -540,7 +543,7 @@ public partial class DataAccess
             },
             new DataObjects.FilterColumn{
                 Align = "",
-                Label = "Email",
+                Label = GetLanguageItem("Email", language),
                 TipText = "",
                 Sortable = true,
                 DataElementName = "email",
@@ -548,76 +551,100 @@ public partial class DataAccess
             },
             new DataObjects.FilterColumn{
                 Align = "",
-                Label = "Username",
+                Label = GetLanguageItem("Username", language),
                 TipText = "",
                 Sortable = true,
                 DataElementName = "username",
                 DataType = "string"
-            },
-            new DataObjects.FilterColumn{
+            }
+        };
+
+        var settings = GetTenantSettings(output.TenantId);
+        List<string> blockedModules = settings.ModuleHideElements;
+        bool hideDepartments = false;
+        bool hideEmployeeId = false;
+        bool hideUDF = false;
+        if (blockedModules.Any()) {
+            hideDepartments = blockedModules.Contains("departments");
+            hideEmployeeId = blockedModules.Contains("employeeid");
+            hideUDF = blockedModules.Contains("udf");
+        }
+
+        if (!hideEmployeeId) {
+            output.Columns.Add(new DataObjects.FilterColumn {
                 Align = "",
-                Label = "Employee Id",
+                Label = GetLanguageItem("EmployeeId", language),
                 TipText = "",
                 Sortable = true,
                 DataElementName = "employeeId",
                 DataType = "string"
-            },
-            new DataObjects.FilterColumn{
+            });
+        }
+
+        if (!hideDepartments) {
+            output.Columns.Add(new DataObjects.FilterColumn {
                 Align = "",
-                Label = "Department",
+                Label = GetLanguageItem("Department", language),
                 TipText = "",
                 Sortable = true,
                 DataElementName = "departmentName",
                 DataType = "string"
-            },
-            new DataObjects.FilterColumn{
-                Align = "center",
-                Label = "Enabled",
-                TipText = "",
-                Sortable = true,
-                DataElementName = "enabled",
-                DataType = "boolean"
-            },
-            new DataObjects.FilterColumn{
-                Align = "center",
-                Label = "Admin",
-                TipText = "",
-                Sortable = true,
-                DataElementName = "admin",
-                DataType = "boolean"
-            },
-            new DataObjects.FilterColumn{
-                Align = "",
-                Label = "Last Login",
-                TipText = "",
-                Sortable = true,
-                DataElementName = "lastLogin",
-                DataType = "datetime"
-            }
-        };
+            });
+        }
+
+        output.Columns.Add(new DataObjects.FilterColumn {
+            Align = "center",
+            Label = "icon:RecordsTableIconEnabled",
+            TipText = "Enabled",
+            Sortable = true,
+            DataElementName = "enabled",
+            DataType = "boolean"
+        });
+
+        output.Columns.Add(new DataObjects.FilterColumn {
+            Align = "center",
+            Label = "icon:RecordsTableIconAdmin",
+            TipText = "Admin",
+            Sortable = true,
+            DataElementName = "admin",
+            DataType = "boolean"
+        });
+
+        output.Columns.Add(new DataObjects.FilterColumn {
+            Align = "",
+            Label = GetLanguageItem("LastLogin", language),
+            TipText = "",
+            Sortable = true,
+            DataElementName = "lastLogin",
+            DataType = "datetime"
+        });
 
         // See if any UDF labels need to be included in the column output
         var udfLabels = await GetUDFLabels(output.TenantId, false);
-        for (int x = 1; x < 11; x++) {
-            bool show = ShowUDFColumn("Users", x, udfLabels);
-            if (show) {
-                string label = UDFLabel("Users", x, udfLabels);
-                string udf = "udf" + x.ToString().PadLeft(2, '0');
-                if (String.IsNullOrEmpty(label)) {
-                    label = udf.ToUpper();
+        if (!hideUDF) {
+            for (int x = 1; x < 11; x++) {
+                bool show = ShowUDFColumn("Users", x, udfLabels);
+                if (show) {
+                    string label = UDFLabel("Users", x, udfLabels);
+                    string udf = "udf" + x.ToString().PadLeft(2, '0');
+                    if (String.IsNullOrEmpty(label)) {
+                        label = udf.ToUpper();
+                    }
+                    output.Columns.Add(new DataObjects.FilterColumn {
+                        Align = "",
+                        Label = label,
+                        TipText = "",
+                        Sortable = true,
+                        DataElementName = udf,
+                        DataType = "string"
+                    });
                 }
-                output.Columns.Add(new DataObjects.FilterColumn {
-                    Align = "",
-                    Label = label,
-                    TipText = "",
-                    Sortable = true,
-                    DataElementName = udf,
-                    DataType = "string"
-                });
             }
         }
 
-        var recs = data.Users.Where(x => x.TenantId == output.TenantId && x.Username != "admin");
+        var recs = data.Users
+            .Include(x => x.Department)
+            .Where(x => x.TenantId == output.TenantId && x.Username != null && x.Username.ToLower() != "admin");
 
         if (output.FilterDepartments != null && output.FilterDepartments.Count() > 0) {
             recs = recs.Where(x => x.DepartmentId != null && output.FilterDepartments.Contains((Guid)x.DepartmentId));
@@ -660,62 +687,80 @@ public partial class DataAccess
 
         // Add any filters
         if (!String.IsNullOrEmpty(output.Keyword)) {
+            string keyword = output.Keyword.ToLower();
             // Dynamically include only the UDF fields that are needed
-            bool includeUdf01 = UDFLabelIncludedInSearch("Users", "UDF01", udfLabels);
-            bool includeUdf02 = UDFLabelIncludedInSearch("Users", "UDF02", udfLabels);
-            bool includeUdf03 = UDFLabelIncludedInSearch("Users", "UDF03", udfLabels);
-            bool includeUdf04 = UDFLabelIncludedInSearch("Users", "UDF04", udfLabels);
-            bool includeUdf05 = UDFLabelIncludedInSearch("Users", "UDF05", udfLabels);
-            bool includeUdf06 = UDFLabelIncludedInSearch("Users", "UDF06", udfLabels);
-            bool includeUdf07 = UDFLabelIncludedInSearch("Users", "UDF07", udfLabels);
-            bool includeUdf08 = UDFLabelIncludedInSearch("Users", "UDF08", udfLabels);
-            bool includeUdf09 = UDFLabelIncludedInSearch("Users", "UDF09", udfLabels);
-            bool includeUdf10 = UDFLabelIncludedInSearch("Users", "UDF10", udfLabels);
+            bool includeUdf01 = !hideUDF && UDFLabelIncludedInSearch("Users", "UDF01", udfLabels);
+            bool includeUdf02 = !hideUDF && UDFLabelIncludedInSearch("Users", "UDF02", udfLabels);
+            bool includeUdf03 = !hideUDF && UDFLabelIncludedInSearch("Users", "UDF03", udfLabels);
+            bool includeUdf04 = !hideUDF && UDFLabelIncludedInSearch("Users", "UDF04", udfLabels);
+            bool includeUdf05 = !hideUDF && UDFLabelIncludedInSearch("Users", "UDF05", udfLabels);
+            bool includeUdf06 = !hideUDF && UDFLabelIncludedInSearch("Users", "UDF06", udfLabels);
+            bool includeUdf07 = !hideUDF && UDFLabelIncludedInSearch("Users", "UDF07", udfLabels);
+            bool includeUdf08 = !hideUDF && UDFLabelIncludedInSearch("Users", "UDF08", udfLabels);
+            bool includeUdf09 = !hideUDF && UDFLabelIncludedInSearch("Users", "UDF09", udfLabels);
+            bool includeUdf10 = !hideUDF && UDFLabelIncludedInSearch("Users", "UDF10", udfLabels);
 
             if (includeUdf01 || includeUdf02 || includeUdf03 || includeUdf04 || includeUdf05 || includeUdf06 || includeUdf07 || includeUdf08 || includeUdf09 || includeUdf10) {
-                recs = recs.Where(x => (x.LastName != null && x.LastName.Contains(output.Keyword))
-                    || (x.FirstName != null && x.FirstName.Contains(output.Keyword))
-                    || (x.Email != null && x.Email.Contains(output.Keyword))
-                    || (x.Username != null && x.Username.Contains(output.Keyword))
-                    || (includeUdf01 ? x.UDF01 != null && x.UDF01.Contains(output.Keyword) : false)
-                    || (includeUdf02 ? x.UDF02 != null && x.UDF02.Contains(output.Keyword) : false)
-                    || (includeUdf03 ? x.UDF03 != null && x.UDF03.Contains(output.Keyword) : false)
-                    || (includeUdf04 ? x.UDF04 != null && x.UDF04.Contains(output.Keyword) : false)
-                    || (includeUdf05 ? x.UDF05 != null && x.UDF05.Contains(output.Keyword) : false)
-                    || (includeUdf06 ? x.UDF06 != null && x.UDF06.Contains(output.Keyword) : false)
-                    || (includeUdf07 ? x.UDF07 != null && x.UDF07.Contains(output.Keyword) : false)
-                    || (includeUdf08 ? x.UDF08 != null && x.UDF08.Contains(output.Keyword) : false)
-                    || (includeUdf09 ? x.UDF09 != null && x.UDF09.Contains(output.Keyword) : false)
-                    || (includeUdf10 ? x.UDF10 != null && x.UDF10.Contains(output.Keyword) : false)
+                recs = recs.Where(x => (x.LastName != null && x.LastName.ToLower().Contains(keyword))
+                    || (x.FirstName != null && x.FirstName.ToLower().Contains(keyword))
+                    || (x.Email != null && x.Email.ToLower().Contains(keyword))
+                    || (x.Username != null && x.Username.ToLower().Contains(keyword))
+                    || (includeUdf01 ? x.UDF01 != null && x.UDF01.ToLower().Contains(keyword) : false)
+                    || (includeUdf02 ? x.UDF02 != null && x.UDF02.ToLower().Contains(keyword) : false)
+                    || (includeUdf03 ? x.UDF03 != null && x.UDF03.ToLower().Contains(keyword) : false)
+                    || (includeUdf04 ? x.UDF04 != null && x.UDF04.ToLower().Contains(keyword) : false)
+                    || (includeUdf05 ? x.UDF05 != null && x.UDF05.ToLower().Contains(keyword) : false)
+                    || (includeUdf06 ? x.UDF06 != null && x.UDF06.ToLower().Contains(keyword) : false)
+                    || (includeUdf07 ? x.UDF07 != null && x.UDF07.ToLower().Contains(keyword) : false)
+                    || (includeUdf08 ? x.UDF08 != null && x.UDF08.ToLower().Contains(keyword) : false)
+                    || (includeUdf09 ? x.UDF09 != null && x.UDF09.ToLower().Contains(keyword) : false)
+                    || (includeUdf10 ? x.UDF10 != null && x.UDF10.ToLower().Contains(keyword) : false)
                 );
             } else {
-                recs = recs.Where(x => (x.LastName != null && x.LastName.Contains(output.Keyword))
-                    || (x.FirstName != null && x.FirstName.Contains(output.Keyword))
-                    || (x.Email != null && x.Email.Contains(output.Keyword))
-                    || (x.Username != null && x.Username.Contains(output.Keyword))
+                recs = recs.Where(x => (x.LastName != null && x.LastName.ToLower().Contains(keyword))
+                    || (x.FirstName != null && x.FirstName.ToLower().Contains(keyword))
+                    || (x.Email != null && x.Email.ToLower().Contains(keyword))
+                    || (x.Username != null && x.Username.ToLower().Contains(keyword))
                 );
             }
         }
 
+        if (String.IsNullOrWhiteSpace(output.Sort)) {
+            output.Sort = "lastLogin";
+            output.SortOrder = "DESC";
+        }
+
+        if (String.IsNullOrWhiteSpace(output.SortOrder)) {
+            switch (output.Sort.ToUpper()) {
+                case "LASTLOGIN":
+                    output.SortOrder = "DESC";
+                    break;
+
+                default:
+                    output.SortOrder = "ASC";
+                    break;
+            }
+        }
+
         bool Ascending = true;
-        if (StringOrEmpty(output.SortOrder).ToUpper() == "DESC") {
+        if (StringValue(output.SortOrder).ToUpper() == "DESC") {
             Ascending = false;
         }
-        
-        switch (StringOrEmpty(output.Sort).ToUpper()) {
-            case "LAST":
-                if (Ascending) {
-                    recs = recs.OrderBy(x => x.LastName).ThenBy(x => x.FirstName);
-                } else {
-                    recs = recs.OrderByDescending(x => x.LastName).ThenByDescending(x => x.FirstName);
-                }
-                break;
 
-            case "FIRST":
+        switch (StringValue(output.Sort).ToUpper()) {
+            case "FIRSTNAME":
                 if (Ascending) {
                     recs = recs.OrderBy(x => x.FirstName).ThenBy(x => x.LastName);
                 } else {
                     recs = recs.OrderByDescending(x => x.FirstName).ThenByDescending(x => x.LastName);
+                }
+                break;
+
+            case "LASTNAME":
+                if (Ascending) {
+                    recs = recs.OrderBy(x => x.LastName).ThenBy(x => x.FirstName);
+                } else {
+                    recs = recs.OrderByDescending(x => x.LastName).ThenByDescending(x => x.FirstName);
                 }
                 break;
 
@@ -727,14 +772,6 @@ public partial class DataAccess
                 }
                 break;
 
-            case "EMPLOYEEID":
-                if (Ascending) {
-                    recs = recs.OrderBy(x => x.EmployeeId).ThenBy(x => x.LastName).ThenBy(x => x.FirstName);
-                } else {
-                    recs = recs.OrderByDescending(x => x.EmployeeId).ThenByDescending(x => x.LastName).ThenByDescending(x => x.FirstName);
-                }
-                break;
-
             case "USERNAME":
                 if (Ascending) {
                     recs = recs.OrderBy(x => x.Username);
@@ -743,11 +780,21 @@ public partial class DataAccess
                 }
                 break;
 
-            case "DEPARTMENT":
+            case "EMPLOYEEID":
                 if (Ascending) {
-                    recs = recs.OrderBy(x => x.Department.DepartmentName).ThenBy(x => x.LastName).ThenBy(x => x.FirstName);
+                    recs = recs.OrderBy(x => x.EmployeeId).ThenBy(x => x.LastName).ThenBy(x => x.FirstName);
                 } else {
-                    recs = recs.OrderByDescending(x => x.Department.DepartmentName).ThenByDescending(x => x.LastName).ThenByDescending(x => x.FirstName);
+                    recs = recs.OrderByDescending(x => x.EmployeeId).ThenByDescending(x => x.LastName).ThenByDescending(x => x.FirstName);
+                }
+                break;
+
+            case "DEPARTMENTNAME":
+                if (Ascending) {
+                    recs = recs.OrderBy(x => (x.Department != null ? x.Department.DepartmentName : String.Empty))
+                        .ThenBy(x => x.LastName).ThenBy(x => x.FirstName);
+                } else {
+                    recs = recs.OrderByDescending(x => (x.Department != null ? x.Department.DepartmentName : String.Empty))
+                        .ThenByDescending(x => x.LastName).ThenByDescending(x => x.FirstName);
                 }
                 break;
 
@@ -774,43 +821,43 @@ public partial class DataAccess
                     recs = recs.OrderByDescending(x => x.LastLogin).ThenByDescending(x => x.LastName).ThenByDescending(x => x.FirstName);
                 }
                 break;
-            
+
             case "UDF01":
                 recs = Ascending ? recs.OrderBy(x => x.UDF01) : recs.OrderByDescending(x => x.UDF01);
                 break;
-            
+
             case "UDF02":
                 recs = Ascending ? recs.OrderBy(x => x.UDF02) : recs.OrderByDescending(x => x.UDF02);
                 break;
-            
+
             case "UDF03":
                 recs = Ascending ? recs.OrderBy(x => x.UDF03) : recs.OrderByDescending(x => x.UDF03);
                 break;
-            
+
             case "UDF04":
                 recs = Ascending ? recs.OrderBy(x => x.UDF04) : recs.OrderByDescending(x => x.UDF04);
                 break;
-            
+
             case "UDF05":
                 recs = Ascending ? recs.OrderBy(x => x.UDF05) : recs.OrderByDescending(x => x.UDF05);
                 break;
-            
+
             case "UDF06":
                 recs = Ascending ? recs.OrderBy(x => x.UDF06) : recs.OrderByDescending(x => x.UDF06);
                 break;
-            
+
             case "UDF07":
                 recs = Ascending ? recs.OrderBy(x => x.UDF07) : recs.OrderByDescending(x => x.UDF07);
                 break;
-            
+
             case "UDF08":
                 recs = Ascending ? recs.OrderBy(x => x.UDF08) : recs.OrderByDescending(x => x.UDF08);
                 break;
-            
+
             case "UDF09":
                 recs = Ascending ? recs.OrderBy(x => x.UDF09) : recs.OrderByDescending(x => x.UDF09);
                 break;
-            
+
             case "UDF10":
                 recs = Ascending ? recs.OrderBy(x => x.UDF10) : recs.OrderByDescending(x => x.UDF10);
                 break;
@@ -873,6 +920,7 @@ public partial class DataAccess
                     PreventPasswordChange = rec.PreventPasswordChange.HasValue ? (bool)rec.PreventPasswordChange : false,
                     HasLocalPassword = !String.IsNullOrWhiteSpace(rec.Password),
                     LastLockoutDate = rec.LastLockoutDate,
+                    Source = rec.Source,
                     udf01 = rec.UDF01,
                     udf02 = rec.UDF02,
                     udf03 = rec.UDF03,
@@ -965,6 +1013,7 @@ public partial class DataAccess
                     PreventPasswordChange = rec.PreventPasswordChange.HasValue ? (bool)rec.PreventPasswordChange : false,
                     HasLocalPassword = !String.IsNullOrWhiteSpace(rec.Password),
                     LastLockoutDate = rec.LastLockoutDate,
+                    Source = rec.Source,
                     udf01 = rec.UDF01,
                     udf02 = rec.UDF02,
                     udf03 = rec.UDF03,
@@ -1006,32 +1055,32 @@ public partial class DataAccess
         List<DataObjects.UserTenant> output = new List<DataObjects.UserTenant>();
 
         if (!String.IsNullOrEmpty(username) && !String.IsNullOrEmpty(email)) {
-            var u1 = await data.Users.Where(x => x.Username == username || x.Email == email).ToListAsync();
+            var u1 = await data.Users.Where(x => x.Username == username || (x.Email != null && x.Email.ToLower() == email.ToLower())).ToListAsync();
             if (u1 != null && u1.Any()) {
                 foreach (var rec in u1) {
                     bool enabled = rec.Enabled.HasValue ? (bool)rec.Enabled : false;
                     if (enabled || !enabledUsersOnly) {
-                        output.Add(new DataObjects.UserTenant { UserId = rec.UserId, TenantId = GuidOrEmpty(rec.TenantId) });
+                        output.Add(new DataObjects.UserTenant { UserId = rec.UserId, TenantId = GuidValue(rec.TenantId) });
                     }
                 }
             }
         } else if (!String.IsNullOrEmpty(username)) {
-            var u2 = await data.Users.Where(x => x.Username == username).ToListAsync();
+            var u2 = await data.Users.Where(x => x.Username != null && x.Username.ToLower() == username.ToLower()).ToListAsync();
             if (u2 != null && u2.Any()) {
                 foreach (var rec in u2) {
                     bool enabled = rec.Enabled.HasValue ? (bool)rec.Enabled : false;
                     if (enabled || !enabledUsersOnly) {
-                        output.Add(new DataObjects.UserTenant { UserId = rec.UserId, TenantId = GuidOrEmpty(rec.TenantId) });
+                        output.Add(new DataObjects.UserTenant { UserId = rec.UserId, TenantId = GuidValue(rec.TenantId) });
                     }
                 }
             }
         } else if (!String.IsNullOrEmpty(email)) {
-            var u3 = await data.Users.Where(x => x.Email == email).ToListAsync();
+            var u3 = await data.Users.Where(x => x.Email != null && x.Email.ToLower() == email.ToLower()).ToListAsync();
             if (u3 != null && u3.Any()) {
                 foreach (var rec in u3) {
                     bool enabled = rec.Enabled.HasValue ? (bool)rec.Enabled : false;
                     if (enabled || !enabledUsersOnly) {
-                        output.Add(new DataObjects.UserTenant { UserId = rec.UserId, TenantId = GuidOrEmpty(rec.TenantId) });
+                        output.Add(new DataObjects.UserTenant { UserId = rec.UserId, TenantId = GuidValue(rec.TenantId) });
                     }
                 }
             }
@@ -1047,7 +1096,8 @@ public partial class DataAccess
         List<Guid> tenantIds = new List<Guid>();
 
         if (!String.IsNullOrEmpty(username) && !String.IsNullOrEmpty(email)) {
-            var u1 = await data.Users.Where(x => x.Username == username || x.Email == email).ToListAsync();
+            var u1 = await data.Users.Where(x => (x.Username != null && x.Username.ToLower() == username.ToLower()) ||
+                (x.Email != null && x.Email.ToLower() == email.ToLower())).ToListAsync();
             if (u1 != null && u1.Any()) {
                 if (enabledUsersOnly) {
                     tenantIds = u1.Where(x => x.Enabled == true).Select(x => x.TenantId).Distinct().ToList();
@@ -1056,7 +1106,7 @@ public partial class DataAccess
                 }
             }
         } else if (!String.IsNullOrEmpty(username)) {
-            var u2 = await data.Users.Where(x => x.Username == username).ToListAsync();
+            var u2 = await data.Users.Where(x => x.Username != null && x.Username.ToLower() == username.ToLower()).ToListAsync();
             if (u2 != null && u2.Any()) {
                 if (enabledUsersOnly) {
                     tenantIds = u2.Where(x => x.Enabled == true).Select(x => x.TenantId).Distinct().ToList();
@@ -1065,7 +1115,7 @@ public partial class DataAccess
                 }
             }
         } else if (!String.IsNullOrEmpty(email)) {
-            var u3 = await data.Users.Where(x => x.Email == email).ToListAsync();
+            var u3 = await data.Users.Where(x => x.Email != null && x.Email.ToLower() == email.ToLower()).ToListAsync();
             if (u3 != null && u3.Any()) {
                 if (enabledUsersOnly) {
                     tenantIds = u3.Where(x => x.Enabled == true).Select(x => x.TenantId).Distinct().ToList();
@@ -1131,7 +1181,7 @@ public partial class DataAccess
                 output.Messages.Add("UserId Not Found");
             } else {
                 // Make sure the current password matches what was given
-                if (Decrypt(StringOrEmpty(rec.Password)) != reset.CurrentPassword) {
+                if (Decrypt(StringValue(rec.Password)) != reset.CurrentPassword) {
                     output.Messages.Add("Incorrect Current Password");
                 } else {
                     rec.Password = Encrypt(reset.NewPassword);
@@ -1168,17 +1218,32 @@ public partial class DataAccess
         }
 
         rec.TenantId = user.TenantId;
-        rec.FirstName = user.FirstName;
-        rec.LastName = user.LastName;
+
+        user.Email = MaxStringLength(user.Email, 100);
         rec.Email = user.Email;
-        rec.Phone = user.Phone;
-        rec.Username = user.Username;
+
+        user.EmployeeId = MaxStringLength(user.EmployeeId, 50);
         rec.EmployeeId = user.EmployeeId;
-        rec.DepartmentId = user.DepartmentId.HasValue ? (Guid)user.DepartmentId : (Guid?)null;
-        rec.Enabled = user.Enabled;
+
+        user.FirstName = MaxStringLength(user.FirstName, 100);
+        rec.FirstName = user.FirstName;
+
         rec.LastLogin = user.LastLogin.HasValue ? (DateTime)user.LastLogin : (DateTime?)null;
-        rec.Admin = user.Admin;
-        rec.PreventPasswordChange = user.PreventPasswordChange;
+
+        user.LastName = MaxStringLength(user.LastName, 100);
+        rec.LastName = user.LastName;
+
+        user.Location = MaxStringLength(user.Location, 255);
+        rec.Location = user.Location;
+
+        user.Phone = MaxStringLength(user.Phone, 20);
+        rec.Phone = user.Phone;
+
+        user.Title = MaxStringLength(user.Title, 255);
+        rec.Title = user.Title;
+
+        user.Source = MaxStringLength(user.Source, 100);
+        rec.Source = user.Source;
 
         user.udf01 = MaxStringLength(user.udf01, 500);
         user.udf02 = MaxStringLength(user.udf02, 500);
@@ -1200,6 +1265,21 @@ public partial class DataAccess
         rec.UDF08 = user.udf08;
         rec.UDF09 = user.udf09;
         rec.UDF10 = user.udf10;
+
+        user.Username = MaxStringLength(user.Username, 100);
+        rec.Username = user.Username;
+
+        rec.DepartmentId = user.DepartmentId.HasValue && user.DepartmentId != Guid.Empty ? (Guid)user.DepartmentId : null;
+        if (!user.DepartmentId.HasValue && !String.IsNullOrEmpty(user.DepartmentName)) {
+            var deptId = await DepartmentIdFromNameAndLocation(user.TenantId, user.DepartmentName);
+            if (deptId != Guid.Empty) {
+                rec.DepartmentId = deptId;
+            }
+        }
+
+        rec.Enabled = user.Enabled;
+        rec.Admin = user.Admin;
+        rec.PreventPasswordChange = user.PreventPasswordChange;
 
         try {
             if (newRecord) {
@@ -1226,13 +1306,13 @@ public partial class DataAccess
     {
         user.ActionResponse = GetNewActionResponse();
 
-        if (GuidOrEmpty(user.TenantId) == Guid.Empty) {
+        if (GuidValue(user.TenantId) == Guid.Empty) {
             user.ActionResponse.Messages.Add("Invalid TenantId");
             return user;
         }
 
         bool newRecord = false;
-        var rec = await data.Users.FirstOrDefaultAsync(x => x.TenantId == user.TenantId && x.Username == user.Username);
+        var rec = await data.Users.FirstOrDefaultAsync(x => x.TenantId == user.TenantId && x.Username != null && x.Username.ToLower() == user.Username.ToLower());
         if (rec == null) {
             if (CreateIfNotFound) {
                 newRecord = true;
@@ -1249,24 +1329,31 @@ public partial class DataAccess
             }
         }
 
-        rec.FirstName = user.FirstName;
-        rec.LastName = user.LastName;
+        user.Email = MaxStringLength(user.Email, 100);
         rec.Email = user.Email;
-        rec.Phone = user.Phone;
-        rec.Username = user.Username;
+
+        user.EmployeeId = MaxStringLength(user.EmployeeId, 50);
         rec.EmployeeId = user.EmployeeId;
-        rec.DepartmentId = user.DepartmentId.HasValue ? (Guid)user.DepartmentId : (Guid?)null;
 
-        if (!user.DepartmentId.HasValue && !String.IsNullOrEmpty(user.DepartmentName)) {
-            var deptId = await DepartmentIdFromActiveDirectoryName(user.TenantId, user.DepartmentName);
-            if(deptId != Guid.Empty) {
-                rec.DepartmentId = deptId;
-            }
-        }
+        user.FirstName = MaxStringLength(user.FirstName, 100);
+        rec.FirstName = user.FirstName;
 
-        rec.Enabled = user.Enabled;
         rec.LastLogin = user.LastLogin.HasValue ? (DateTime)user.LastLogin : (DateTime?)null;
-        rec.Admin = user.Admin;
+
+        user.LastName = MaxStringLength(user.LastName, 100);
+        rec.LastName = user.LastName;
+
+        user.Location = MaxStringLength(user.Location, 255);
+        rec.Location = user.Location;
+
+        user.Phone = MaxStringLength(user.Phone, 20);
+        rec.Phone = user.Phone;
+
+        user.Title = MaxStringLength(user.Title, 255);
+        rec.Title = user.Title;
+
+        user.Source = MaxStringLength(user.Source, 100);
+        rec.Source = user.Source;
 
         user.udf01 = MaxStringLength(user.udf01, 500);
         user.udf02 = MaxStringLength(user.udf02, 500);
@@ -1288,6 +1375,22 @@ public partial class DataAccess
         rec.UDF08 = user.udf08;
         rec.UDF09 = user.udf09;
         rec.UDF10 = user.udf10;
+
+        user.Username = MaxStringLength(user.Username, 100);
+        rec.Username = user.Username;
+
+        rec.DepartmentId = user.DepartmentId.HasValue && user.DepartmentId != Guid.Empty ? (Guid)user.DepartmentId : null;
+
+        if (!user.DepartmentId.HasValue && !String.IsNullOrEmpty(user.DepartmentName)) {
+            var deptId = await DepartmentIdFromNameAndLocation(user.TenantId, user.DepartmentName);
+            if (deptId != Guid.Empty) {
+                rec.DepartmentId = deptId;
+            }
+        }
+
+        rec.Enabled = user.Enabled;
+        rec.Admin = user.Admin;
+        rec.PreventPasswordChange = user.PreventPasswordChange;
 
         try {
             if (newRecord) {
@@ -1334,16 +1437,161 @@ public partial class DataAccess
         return output;
     }
 
+    public async Task<DataObjects.User?> UpdateUserFromExternalDataSources(DataObjects.User User, DataObjects.TenantSettings? settings = null)
+    {
+        DataObjects.User? output = null;
+
+        if (settings == null) {
+            settings = GetTenantSettings(User.TenantId);
+        }
+
+        if (settings != null && settings.ExternalUserDataSources != null && settings.ExternalUserDataSources.Any()) {
+            bool updated = false;
+            bool updatedDepartmentOrLocation = false;
+            var updatedUser = CopyUser(User);
+
+            foreach (var source in settings.ExternalUserDataSources.Where(x => x.Active == true).OrderBy(x => x.SortOrder).ThenBy(x => x.Name)) {
+                if (!String.IsNullOrWhiteSpace(source.Type)) {
+                    switch (source.Type.ToUpper()) {
+                        case "SQL":
+                            if (!String.IsNullOrWhiteSpace(source.ConnectionString) && !String.IsNullOrWhiteSpace(source.Source)) {
+                                try {
+                                    string connectionString = source.ConnectionString;
+
+                                    string query = source.Source
+                                        .Replace("{{employeeid}}", User.EmployeeId)
+                                        .Replace("{{username}}", User.Username)
+                                        .Replace("{{email}}", User.Email);
+
+                                    using (Sql2LINQ s = new Sql2LINQ(connectionString)) {
+                                        var records = s.RunQuery<DataObjects.User>(query);
+                                        if (records != null && records.Count() == 1) {
+                                            var userRecord = records.FirstOrDefault();
+                                            if (userRecord != null) {
+                                                if (!String.IsNullOrWhiteSpace(userRecord.FirstName) && updatedUser.FirstName != userRecord.FirstName) {
+                                                    updatedUser.FirstName = userRecord.FirstName;
+                                                    updated = true;
+                                                }
+                                                if (!String.IsNullOrWhiteSpace(userRecord.LastName) && updatedUser.LastName != userRecord.LastName) {
+                                                    updatedUser.LastName = userRecord.LastName;
+                                                    updated = true;
+                                                }
+                                                if (!String.IsNullOrWhiteSpace(userRecord.DepartmentName) && updatedUser.DepartmentName != userRecord.DepartmentName) {
+                                                    updatedUser.DepartmentName = userRecord.DepartmentName;
+                                                    updated = true;
+                                                    updatedDepartmentOrLocation = true;
+                                                }
+                                                if (!String.IsNullOrWhiteSpace(userRecord.Location) && updatedUser.Location != userRecord.Location) {
+                                                    updatedUser.Location = userRecord.Location;
+                                                    updated = true;
+                                                    updatedDepartmentOrLocation = true;
+                                                }
+                                            }
+                                        }
+                                    }
+                                } catch { }
+                            }
+
+                            break;
+
+                        case "CSHARP":
+                            // By convention the code must have a namespace of CustomCode, a public class of CustomDynamicCode,
+                            // and a function named FindUser.
+                            if (!String.IsNullOrWhiteSpace(source.Source)) {
+                                string employeeId = StringValue(User.EmployeeId);
+                                string username = StringValue(User.Username);
+                                string email = StringValue(User.Email);
+
+                                var findUserResult = ExecuteDynamicCSharpCode<DataObjects.User>(source.Source, new object[] { employeeId, username, email, this }, null, "CustomCode", "CustomDynamicCode", "FindUser");
+                                if (findUserResult != null) {
+                                    if (!String.IsNullOrWhiteSpace(findUserResult.FirstName) && updatedUser.FirstName != findUserResult.FirstName) {
+                                        updatedUser.FirstName = findUserResult.FirstName;
+                                        updated = true;
+                                    }
+                                    if (!String.IsNullOrWhiteSpace(findUserResult.LastName) && updatedUser.LastName != findUserResult.LastName) {
+                                        updatedUser.LastName = findUserResult.LastName;
+                                        updated = true;
+                                    }
+                                    if (!String.IsNullOrWhiteSpace(findUserResult.DepartmentName) && updatedUser.DepartmentName != findUserResult.DepartmentName) {
+                                        updatedUser.DepartmentName = findUserResult.DepartmentName;
+                                        updated = true;
+                                        updatedDepartmentOrLocation = true;
+                                    }
+                                    if (!String.IsNullOrWhiteSpace(findUserResult.Location) && updatedUser.Location != findUserResult.Location) {
+                                        updatedUser.Location = findUserResult.Location;
+                                        updated = true;
+                                        updatedDepartmentOrLocation = true;
+                                    }
+                                }
+                            }
+
+                            break;
+                    }
+                }
+            }
+
+            if (updated) {
+                if (updatedDepartmentOrLocation) {
+                    var departmentId = await DepartmentIdFromNameAndLocation(updatedUser.TenantId, updatedUser.DepartmentName, updatedUser.Location);
+
+                    if (departmentId != Guid.Empty && departmentId != updatedUser.DepartmentId) {
+                        updatedUser.DepartmentId = departmentId;
+                    }
+                }
+
+                output = updatedUser;
+            }
+        }
+
+        return output;
+    }
+
+    public DataObjects.User? UpdateUserFromSsoSettings(DataObjects.User User, SSO.Auth.SingleSignOn ssoInfo)
+    {
+        DataObjects.User? output = null;
+        bool updated = false;
+
+        DataObjects.User updatedUser = CopyUser(User);
+
+        // Update only certain properties
+        if (!String.IsNullOrWhiteSpace(User.DepartmentName)) {
+            updatedUser.DepartmentName = User.DepartmentName;
+            updated = true;
+        }
+        if (!String.IsNullOrWhiteSpace(User.FirstName)) {
+            updatedUser.FirstName = User.FirstName;
+            updated = true;
+        }
+        if (!String.IsNullOrWhiteSpace(User.LastName)) {
+            updatedUser.LastName = User.LastName;
+            updated = true;
+        }
+        if (!String.IsNullOrWhiteSpace(User.Email)) {
+            updatedUser.Email = User.Email;
+            updated = true;
+        }
+        if (!String.IsNullOrWhiteSpace(User.Username)) {
+            updatedUser.Username = User.Username;
+            updated = true;
+        }
+        if (!String.IsNullOrWhiteSpace(User.EmployeeId)) {
+            updatedUser.EmployeeId = User.EmployeeId;
+            updated = true;
+        }
+
+        if (updated) {
+            output = updatedUser;
+        }
+
+        return output;
+    }
+
     public async Task UpdateUserLastLoginTime(Guid UserId)
     {
-        if (_inMemoryDatabase) {
-            var rec = data.Users.FirstOrDefault(x => x.UserId == UserId);
-            if(rec != null) {
-                rec.LastLogin = DateTime.Now;
-                data.SaveChanges();
-            }
-        } else {
-            await data.Database.ExecuteSqlRawAsync("UPDATE Users SET LastLogin={0} WHERE UserId={1}", DateTime.Now, UserId);
+        var rec = await data.Users.FirstOrDefaultAsync(x => x.UserId == UserId);
+        if (rec != null) {
+            rec.LastLogin = DateTime.UtcNow;
+            await data.SaveChangesAsync();
         }
     }
 
@@ -1385,11 +1633,140 @@ public partial class DataAccess
         var rec = await data.Users.FirstOrDefaultAsync(x => x.UserId == UserId && x.Enabled == true);
         if (rec != null) {
             var adminUser = await data.Users.FirstOrDefaultAsync(x => x.TenantId == _guid1 && x.Admin == true && x.Enabled == true &&
-                ((x.Username != null && x.Username != "" && x.Username == rec.Username)
+                ((x.Username != null && x.Username != "" && x.Username.ToLower() == rec.Username.ToLower())
                 ||
-                (x.Email != null && x.Email != "" && x.Email == rec.Email))
+                (x.Email != null && x.Email != "" && rec.Email != null && x.Email.ToLower() == rec.Email.ToLower()))
             );
             output = adminUser != null;
+        }
+
+        return output;
+    }
+
+    public async Task<DataObjects.User> UserSignup(DataObjects.User user)
+    {
+        DataObjects.User output = user;
+        output.ActionResponse = GetNewActionResponse();
+
+        // First, validate the given TenantId
+        var tenant = GetTenant(user.TenantId);
+
+        if (tenant == null || !tenant.ActionResponse.Result) {
+            output.ActionResponse.Messages.Add("Invalid Customer Code");
+            return output;
+        }
+
+        var appUrl = ApplicationURL;
+        string websiteName = WebsiteName(appUrl);
+        if (String.IsNullOrWhiteSpace(websiteName)) {
+            websiteName = StringValue(appUrl);
+        }
+
+        if (String.IsNullOrWhiteSpace(appUrl)) {
+            output.ActionResponse.Messages.Add("Application URL Not Configured");
+            return output;
+        }
+
+        if (!appUrl.EndsWith("/")) {
+            appUrl += "/";
+        }
+        appUrl += tenant.TenantCode + "/";
+
+        // Next, make sure this email address does not already exist for this customer
+        var rec = await data.Users.FirstOrDefaultAsync(x => x.TenantId == user.TenantId && x.Email == user.Email);
+        if (rec != null) {
+            output.ActionResponse.Messages.Add("An account already exists for the email address you entered. Please use the Forgot Password option to reset your password.");
+            return output;
+        }
+
+        string code = GenerateRandomCode(6);
+
+        string body = "<p>You are receiving this email because you signed up for an account at <strong>" + websiteName + "</strong>.</p>" +
+                "<p>Use the following confirmation code on that page to confirm your new account:</p>" +
+                "<p style='font-size:2em;'>" + code + "</p>";
+
+        List<string> to = new List<string>();
+        to.Add(StringValue(user.Email));
+
+        var settings = GetTenantSettings(user.TenantId);
+
+        string from = String.Empty;
+        if (settings != null) {
+            from += settings.DefaultReplyToAddress;
+        }
+
+        var sent = SendEmail(new DataObjects.EmailMessage {
+            From = from,
+            To = to,
+            Subject = "Forgot Password at " + websiteName,
+            Body = body
+        });
+
+        if (sent.Result) {
+            output = new DataObjects.User {
+                ActionResponse = GetNewActionResponse(true),
+                UserId = user.UserId,
+                TenantId = user.TenantId,
+                FirstName = user.FirstName,
+                LastName = user.LastName,
+                Email = user.Email,
+                Username = StringValue(user.Email),
+                Password = user.Password,
+                AuthToken = CompressByteArrayString(Encrypt(code))
+            };
+        } else {
+            output.ActionResponse.Messages.Add("There was an error sending an email to the address you specified.");
+        }
+
+        return output;
+    }
+
+    public async Task<DataObjects.User> UserSignupConfirm(DataObjects.User user)
+    {
+        DataObjects.User output = new DataObjects.User();
+
+        if (String.IsNullOrWhiteSpace(user.Email)) {
+            output.ActionResponse.Messages.Add("Missing Required Email Address");
+        }
+
+        if (String.IsNullOrWhiteSpace(user.Password)) {
+            output.ActionResponse.Messages.Add("Missing Required Password");
+        }
+
+        if (output.ActionResponse.Messages.Count() == 0) {
+            string extended = CompressedByteArrayStringToFullString(user.AuthToken);
+            string decrypted = Decrypt(extended);
+
+            if (user.Location == decrypted) {
+                // Create the account.
+                var rec = await data.Users.FirstOrDefaultAsync(x => x.TenantId == user.TenantId && x.Email == user.Email);
+                if (rec != null) {
+                    output.ActionResponse.Messages.Add("An account already exists for the email address you entered. Please use the Forgot Password option to reset your password.");
+                    return output;
+                }
+
+                try {
+
+                    await data.Users.AddAsync(new User {
+                        UserId = Guid.NewGuid(),
+                        TenantId = user.TenantId,
+                        FirstName = user.FirstName,
+                        LastName = user.LastName,
+                        Email = user.Email,
+                        Username = StringValue(user.Email),
+                        Password = Encrypt(user.Password),
+                        Enabled = true,
+                        Source = "Local Login Signup Form"
+                    });
+
+                    await data.SaveChangesAsync();
+                    output.ActionResponse.Result = true;
+                } catch {
+                    output.ActionResponse.Messages.Add("An error occurred attempting to create the new user account.");
+                }
+            } else {
+                output.ActionResponse.Messages.Add("Invalid Confirmation Code");
+            }
         }
 
         return output;
@@ -1469,9 +1846,9 @@ public partial class DataAccess
                 foreach (var tenant in tenants.Where(x => x.TenantId != _guid1)) {
                     var rec = await data.Users.FirstOrDefaultAsync(x => x.TenantId == tenant.TenantId
                         && (
-                            (x.Username != null && x.Username != "" && x.Username == user.Username)
+                            (x.Username != null && x.Username != "" && x.Username.ToLower() == user.Username.ToLower())
                             ||
-                            (x.Email != null && x.Email != "" && x.Email == user.Email)
+                            (x.Email != null && x.Email != "" && x.Email.ToLower() == StringValue(user.Email).ToLower())
                         ));
 
                     if (rec == null) {
@@ -1509,77 +1886,9 @@ public partial class DataAccess
             return output;
         }
 
-        // Not a current user, see if we can find and add this user via AD
-        var ldapRoot = GetSetting<string>("activedirectoryroot", DataObjects.SettingType.Text);
-        if (!String.IsNullOrWhiteSpace(ldapRoot)) {
-            var ldapQueryUsername = GetSetting<string>("LdapUsername", DataObjects.SettingType.EncryptedText);
-            var ldapQueryPassword = GetSetting<string>("LdapPassword", DataObjects.SettingType.EncryptedText);
-
-            if (String.IsNullOrWhiteSpace(ldapQueryUsername) || String.IsNullOrWhiteSpace(ldapQueryPassword)) {
-                ldapQueryUsername = "";
-                ldapQueryPassword = "";
-            }
-
-            var ldapOptionalLocationAttribute = GetLdapOptionalLocationAttribute();
-            var adUser = GetActiveDirectoryInfo(UserId, ldapRoot, ldapQueryUsername, ldapQueryPassword, ldapOptionalLocationAttribute);
-            if (adUser != null) {
-                // Add a new user for this account unless we have a GUID conflict for some reason
-                Guid? adUserId = adUser.UserId;
-                if (adUserId.HasValue) {
-                    DataObjects.User conflictUser = await GetUser((Guid)adUserId);
-                    if (conflictUser.ActionResponse.Result) {
-                        // This GUID exists
-                        output.Messages.Add("There is a conflict trying to add UserId '" + ((Guid)adUserId).ToString() + "'");
-                        return output;
-                    } else {
-                        // Add or update this user
-                        Guid DepartmentId = await DepartmentIdFromActiveDirectoryName(TenantId, adUser.Department);
-
-                        string Message = "User Updated from Active Directory Lookup";
-                        bool newRecord = false;
-                        var newUser = await data.Users.FirstOrDefaultAsync(x => x.TenantId == TenantId && x.Username == adUser.Username);
-                        if (newUser == null) {
-                            newUser = new EFModels.EFModels.User();
-                            newUser.UserId = (Guid)adUserId;
-                            newUser.TenantId = TenantId;
-                            newUser.Enabled = true;
-                            newRecord = true;
-                            Message = "User Added from Active Directory Lookup";
-                        }
-
-                        newUser.DepartmentId = DepartmentId != Guid.Empty ? DepartmentId : (Guid?)null;
-                        newUser.Username = StringOrEmpty(adUser.Username);
-                        newUser.FirstName = adUser.FirstName;
-                        newUser.LastName = adUser.LastName;
-                        newUser.Email = adUser.Email;
-                        newUser.Phone = adUser.Phone;
-                        newUser.EmployeeId = adUser.EmployeeId;
-                        try {
-                            if (newRecord) {
-                                data.Users.Add(newUser);
-                            }
-                            await data.SaveChangesAsync();
-                            output.Result = true;
-                            output.Messages.Add(Message);
-
-                            if (newUser.UserId != adUserId) {
-                                output.Messages.Add("ADUserId:" + adUserId.ToString());
-                                output.Messages.Add("LocalUserId:" + newUser.UserId.ToString());
-                            }
-
-                        } catch (Exception ex) {
-                            output.Messages.Add("There was an error adding/updating the AD User '" + ((Guid)adUserId).ToString() + "' - " + ex.Message);
-                        }
-                    }
-                }
-            }
-        }
-
         if (!output.Result && output.Messages.Count() == 0) {
             output.Messages.Add("Unable to Validate UserId '" + UserId.ToString() + "'");
         }
         return output;
     }
-
-
 }

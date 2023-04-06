@@ -16,9 +16,15 @@ var SettingsModel = /** @class */ (function () {
      * Called when the view changes in the MainModel to do any necessary work in this viewModel.
      */
     SettingsModel.prototype.ViewChanged = function () {
+        var allowed = this.MainModel().AdminUser();
         switch (this.MainModel().CurrentView()) {
             case "settings":
-                this.GetSettings();
+                if (allowed) {
+                    this.GetSettings();
+                }
+                else {
+                    this.MainModel().Nav("AccessDenied");
+                }
                 break;
         }
     };

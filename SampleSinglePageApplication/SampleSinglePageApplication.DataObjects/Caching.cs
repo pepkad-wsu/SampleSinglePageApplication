@@ -21,28 +21,17 @@ public static class CacheExtensions
 public static class CacheStore
 {
     /// <summary>
-    /// Retrieve an item from the cache, loading if necessary
+    /// Determines if a key exists in the current cache store.
     /// </summary>
     /// <param name="TenantId">The Unique TenantId</param>
     /// <param name="cacheKey">Name/Key for the cache</param>
-    /// <param name="cacheLoadFunc">Function returning object to use if cache is empty</param>
-    /// <param name="absoluteExpiration">The absolute expiration of the cache item. Default is beginning of next day.</param>
-    /// <returns>Stored object from cache</returns>
-    public static T GetCachedItem<T>(Guid TenantId, string cacheKey, Func<T> cacheLoadFunc, DateTimeOffset? absoluteExpiration = null)
+    /// <returns>True if the item exists in the cache store.</returns>
+    public static bool ContainsKey(Guid TenantId, string cacheKey)
     {
         var memCache = MemoryCache.Default;
-
         string key = cacheKey + "_" + TenantId.ToString();
-
-        if (!memCache.Contains(key)) {
-            var policy = new CacheItemPolicy { AbsoluteExpiration = absoluteExpiration ?? DateTimeOffset.Now.Date.AddDays(1.0) };
-
-            var cItem = new CacheItem(key, cacheLoadFunc());
-
-            memCache.Set(cItem, policy);
-        }
-
-        return (T)memCache.GetCacheItem(key).Value;
+        bool output = memCache.Contains(key);
+        return output;
     }
 
     /// <summary>

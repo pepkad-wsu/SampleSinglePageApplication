@@ -2,52 +2,220 @@
 <div id="view-login">
     <div data-bind="visible:MainModel().CurrentView() == 'login'">
         <div class="row">
-            <div class="col-sm-4"></div>
-            <div class="col-sm-4">
+            <div class="col-sm-3"></div>
+            <div class="col-sm-6">
                 <h1 class="display-7"><i data-bind="html:MainModel().IconAndText('LoginTitle')"></i></h1>
-                <p data-bind="html:MainModel().Language('LoginIntro')"></p>
-        
-                <div class="padbottom" data-bind="visible:LoginType() == ''">
+                <p data-bind="html:MainModel().Language('LoginIntro'), visible:LoginOptions().length > 1"></p>
+
+                <div class="mb-2" data-bind="visible:LoginType() == ''">
+                    <div class="mb-2" data-bind="visible:LoginMessage() != null && LoginMessage() != ''">
+                        <div class="alert" id="login-message" data-bind="html:LoginMessage, class:LoginMessageClass"></div>
+                    </div>
+
                     <!-- ko if:  LoginUseLocal() == true && ShowLocalLoginButton() == true -->
-                    <div class="padbottom">
-                        <button type="button" class="btn btn-dark" data-bind="click:function(){ Login('local') }">
+                    <div class="mb-2">
+                        <button type="button" class="btn btn-dark login-button" id="local-login-button" data-bind="click:function(){Login('local')}">
                             <i data-bind="html:MainModel().IconAndText('LoginWithLocalAccount')"></i>
                         </button>
                     </div>
                     <!-- /ko -->
                     <!-- ko if: LoginUseEITSSO() == true -->
-                    <div class="padbottom">
-                        <button type="button" class="btn btn-primary" data-bind="click:function(){ Login('eitSSO') }">
+                    <div class="mb-2">
+                        <button type="button" class="btn btn-primary login-button" data-bind="click:function(){Login('eitSSO')}">
                             <i data-bind="html:MainModel().IconAndText('LoginWithEITSSO')"></i>
+                        </button>
+                    </div>
+                    <!-- /ko -->
+                    <!-- ko if: LoginUseFacebook -->
+                    <div class="mb-2">
+                        <button type="button" class="btn btn-primary login-button" data-bind="click:function(){Login('facebook')}">
+                            <i data-bind="html:MainModel().IconAndText('LoginWithFacebook')"></i>
+                        </button>
+                    </div>
+                    <!-- /ko -->
+                    <!-- ko if: LoginUseGoogle -->
+                    <div class="mb-2">
+                        <button type="button" class="btn btn-primary login-button" data-bind="click:function(){Login('google')}">
+                            <i data-bind="html:MainModel().IconAndText('LoginWithGoogle')"></i>
+                        </button>
+                    </div>
+                    <!-- /ko -->
+                    <!-- ko if: LoginUseMicrosoftAccount -->
+                    <div class="mb-2">
+                        <button type="button" class="btn btn-primary login-button" data-bind="click:function(){Login('microsoftaccount')}">
+                            <i data-bind="html:MainModel().IconAndText('LoginWithMicrosoftAccount')"></i>
+                        </button>
+                    </div>
+                    <!-- /ko -->
+                    <!-- ko if: LoginUseOpenId -->
+                    <div class="mb-2">
+                        <button type="button" class="btn btn-primary login-button" data-bind="click:function(){Login('openid')}">
+                            <i data-bind="html:MainModel().IconAndText('LoginWithOpenId')"></i>
+                        </button>
+                    </div>
+                    <!-- /ko -->
+                    <!-- ko if: LoginUseCustom -->
+                    <div class="mb-2">
+                        <button type="button" class="btn btn-primary login-button" data-bind="click:function(){Login('custom')}">
+                            <i data-bind="html:MainModel().Icon('LoginWithCustom')"></i>
+                            <span class="icon-text" data-bind="html:CustomLoginButtonText()"></span>
                         </button>
                     </div>
                     <!-- /ko -->
                 </div>
 
                 <div data-bind="visible:LoginType() == 'local' && Validating() == false">
-                    <div class="alert alert-danger" data-bind="visible:LoginError() != '', html:LoginError"></div>
-
-                    <form id="local-login-form" method="post" action="~/Login" data-bind="submit:LocalLogin">
-                        <input type="hidden" name="local-login-tenantid" id="local-login-tenantid" data-bind="value:MainModel().TenantId" />
-                        <input type="hidden" name="local-login-url" id="local-login-url" data-bind="value:LoginUrl()" />
-                        <div class="padbottom">
-                            <label for="username">Username</label>
-                            <input type="text" class="form-control" id="local-username" name="local-username" data-bind="value:Authenticate().username" />
-                        </div>
-                        <div class="padbottom">
-                            <label for="password">Password</label>
-                            <input type="password" class="form-control" id="local-password" name="local-password" data-bind="value:Authenticate().password" />
+                    <div data-bind="visible:View() == ''">
+                        <div class="mb-2" data-bind="visible:LoginMessage() != null && LoginMessage() != ''">
+                            <div class="alert" id="login-message" data-bind="html:LoginMessage, class:LoginMessageClass"></div>
                         </div>
 
-                        <button type="button" class="btn btn-dark" data-bind="click:LocalLoginCancel, html:MainModel().IconAndText('Cancel')"></button>
+                        <form id="local-login-form" method="post" action="~/LoginLocal" data-bind="submit:LocalLogin">
+                            <input type="hidden" name="local-login-tenantid" id="local-login-tenantid" data-bind="value:MainModel().TenantId" />
+                            <input type="hidden" name="local-login-url" id="local-login-url" data-bind="value:LoginUrl()" />
+                            <div class="mb-2" data-bind="visible:MainModel().UseTenantCodeInUrl() == false && MainModel().ShowTenantCodeFieldOnLoginForm() == true">
+                                <label for="local-tenantCode" data-bind="html:MainModel().Language('LoginTextTenantCode')"></label>
+                                <input type="text" class="form-control" id="local-tenantCode" name="local-tenantCode" data-bind="value:Authenticate().tenantCode" />
+                            </div>
+                            <div class="mb-2">
+                                <label for="username" data-bind="html:MainModel().Language('LoginTextUsername')"></label>
+                                <input type="text" class="form-control" id="local-username" name="local-username" data-bind="value:Authenticate().username" />
+                            </div>
+                            <div class="mb-2">
+                                <label for="password" data-bind="html:MainModel().Language('LoginTextPassword')"></label>
+                                <input type="password" class="form-control" id="local-password" name="local-password" data-bind="value:Authenticate().password" />
+                            </div>
 
-                        <button type="submit" class="btn btn-primary" data-bind="click:LocalLogin, html:MainModel().IconAndText('Login')"></button>
-                    </form>
+                            <button type="button" class="btn btn-dark mb-2" data-bind="click:LocalLoginCancel, html:MainModel().IconAndText('Cancel'), visible:LoginOptions().length > 1"></button>
+
+                            <button type="submit" id="login-button" class="btn btn-primary mb-2" data-bind="click:LocalLogin, html:MainModel().IconAndText('Login')"></button>
+
+                            <!-- ko if: ShowSignup() == true -->
+                            <button type="button" class="btn btn-success mb-2" data-bind="html:MainModel().IconAndText('Signup'), click:SignUp"></button>
+                            <!-- /ko -->
+                            <!-- ko if: ShowPasswordReset() == true -->
+                            <button type="button" class="btn btn-warning mb-2" data-bind="html:MainModel().IconAndText('ForgotPassword'), click:ForgotPassword"></button>
+                            <!-- /ko -->
+                        </form>
+                    </div>
+
+
+
+
+
+                    <div data-bind="visible:View() == 'forgotpassword'">
+                        <div class="mb-2" data-bind="visible:LoginMessage() != null && LoginMessage() != ''">
+                            <div class="alert" id="login-message" data-bind="html:LoginMessage, class:LoginMessageClass"></div>
+                        </div>
+
+                        <div class="mb-2">
+                            <label for="forgotpassword-email" data-bind="html:MainModel().LanguageRequired('EmailAddress')"></label>
+                            <input type="text" class="form-control" id="forgotpassword-email"
+                                   data-bind="textInput:User().email, css:{'missing-required': User().email() == null || User().email() == ''}" />
+                        </div>
+                        <div class="mb-2">
+                            <label for="forgotpassword-password" data-bind="html:MainModel().LanguageRequired('NewPassword')"></label>
+                            <input type="password" class="form-control" id="forgotpassword-password"
+                                   data-bind="textInput:User().password, css:{'missing-required': User().password() == null || User().password() == ''}" />
+                        </div>
+
+                        <button type="button" class="btn btn-dark mb-2" data-bind="html:MainModel().IconAndText('BackToLogin'), click:BackToLogin"></button>
+                        <button type="button" class="btn btn-success mb-2" data-bind="html:MainModel().IconAndText('ResetPassword'), click:ForgotPasswordReset"></button>
+                    </div>
+
+
+
+
+
+                    <div data-bind="visible:View() == 'forgotpasswordvalidate'">
+                        <div class="mb-2" data-bind="html:MainModel().Language('ForgotPasswordValidateInstructions')"></div>
+
+                        <div class="mb-2" data-bind="visible:LoginMessage() != null && LoginMessage() != ''">
+                            <div class="alert" id="login-message" data-bind="html:LoginMessage, class:LoginMessageClass"></div>
+                        </div>
+
+                        <div class="mb-2">
+                            <label for="forgot-password-validate" data-bind="html:MainModel().Language('ValidationCode')"></label>
+                            <input id="forgot-password-validate" class="form-control" data-bind="value:User().location" />
+                        </div>
+
+                        <div class="mb-2">
+                            <button type="button" class="btn btn-dark mb-2" data-bind="html:MainModel().IconAndText('BackToLogin'), click:BackToLogin"></button>
+                            <button type="button" class="btn btn-primary mb-2" data-bind="html:MainModel().IconAndText('ValidateConfirmationCode'), click:ForgotPasswordValidateCode"></button>
+                        </div>
+                    </div>
+
+
+
+
+
+                    <div data-bind="visible:View() == 'signup'">
+                        <div class="mb-2" data-bind="html:MainModel().Language('SignUpInstructions')"></div>
+
+                        <div class="mb-2" data-bind="visible:LoginMessage() != null && LoginMessage() != ''">
+                            <div class="alert" id="login-message" data-bind="html:LoginMessage, class:LoginMessageClass"></div>
+                        </div>
+
+                        <div class="mb-2">
+                            <label for="signup-firstName" data-bind="html:MainModel().LanguageRequired('FirstName')"></label>
+                            <input type="text" class="form-control" id="signup-firstName"
+                                   data-bind="textInput:User().firstName, css:{'missing-required': User().firstName() == null || User().firstName() == ''}" />
+                        </div>
+
+                        <div class="mb-2">
+                            <label for="signup-lastName" data-bind="html:MainModel().LanguageRequired('LastName')"></label>
+                            <input type="text" class="form-control" id="signup-lastName"
+                                   data-bind="textInput:User().lastName, css:{'missing-required': User().lastName() == null || User().lastName() == ''}" />
+                        </div>
+
+                        <div class="mb-2">
+                            <label for="signup-email" data-bind="html:MainModel().LanguageRequired('EmailAddress')"></label>
+                            <input type="text" class="form-control" id="signup-email"
+                                   data-bind="textInput:User().email, css:{'missing-required': User().email() == null || User().email() == ''}" />
+                        </div>
+
+                        <div class="mb-2">
+                            <label for="signup-password" data-bind="html:MainModel().LanguageRequired('Password')"></label>
+                            <input type="password" class="form-control" id="signup-password"
+                                   data-bind="textInput:User().password, css:{'missing-required': User().password() == null || User().password() == ''}" />
+                        </div>
+
+                        <div class="mb-2">
+                            <label for="signup-confirmPassword" data-bind="html:MainModel().LanguageRequired('ConfirmPassword')"></label>
+                            <input type="password" class="form-control" id="signup-confirmPassword"
+                                   data-bind="textInput:ConfirmPassword, css:{'missing-required': ConfirmPassword() == null || ConfirmPassword() == ''}" />
+                        </div>
+
+                        <button type="button" class="btn btn-dark mb-2" data-bind="html:MainModel().IconAndText('BackToLogin'), click:BackToLogin"></button>
+                        <button type="button" class="btn btn-success mb-2" data-bind="html:MainModel().IconAndText('Save'), click:SignUpSave"></button>
+                    </div>
+
+
+
+
+
+                    <div data-bind="visible:View() == 'signupvalidate'">
+                        <div class="mb-2" data-bind="html:MainModel().Language('SignUpValidateInstructions')"></div>
+
+                        <div class="mb-2" data-bind="visible:LoginMessage() != null && LoginMessage() != ''">
+                            <div class="alert" id="login-message" data-bind="html:LoginMessage, class:LoginMessageClass"></div>
+                        </div>
+
+                        <div class="mb-2">
+                            <label for="signup-validate" data-bind="html:MainModel().Language('ValidationCode')"></label>
+                            <input id="signup-validate" class="form-control" data-bind="value:User().location" />
+                        </div>
+
+                        <div class="mb-2">
+                            <button type="button" class="btn btn-dark mb-2" data-bind="html:MainModel().IconAndText('BackToLogin'), click:BackToLogin"></button>
+                            <button type="button" class="btn btn-primary mb-2" data-bind="html:MainModel().IconAndText('ValidateConfirmationCode'), click:SignupValidateCode"></button>
+                        </div>
+                    </div>
                 </div>
 
                 <div data-bind="visible:LoginType() == 'local' && Validating() == true, html:MainModel().Language('ValidatingLogin')"></div>
             </div>
-            <div class="col-sm-4"></div>
+            <div class="col-sm-3"></div>
         </div>
     </div>
 
@@ -61,7 +229,7 @@
 
 
     <div data-bind="visible:MainModel().CurrentView() == 'serverupdated'">
-        <div class="padbottom">
+        <div class="mb-2">
             <h1 class="display-7"><i data-bind="html:MainModel().IconAndText('ServerUpdated')"></i></h1>
         </div>
 

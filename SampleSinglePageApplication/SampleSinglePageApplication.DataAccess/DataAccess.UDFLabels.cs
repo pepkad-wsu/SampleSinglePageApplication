@@ -98,7 +98,7 @@ public partial class DataAccess
 
                     // If the ShowInFilter option is checked then get the distinct values for this column
                     if (item.ShowInFilter && includeFilterOptions) {
-                        item.FilterOptions = await GetUDFLabelFilterOptions(TenantId, StringOrEmpty(item.Module), StringOrEmpty(item.udf));
+                        item.FilterOptions = await GetUDFLabelFilterOptions(TenantId, StringValue(item.Module), StringValue(item.udf));
                     }
                 }
             }
@@ -129,7 +129,7 @@ public partial class DataAccess
                 }
                 rec.Module = MaxStringLength(label.Module, 20);
                 rec.UDF = MaxStringLength(label.udf, 10);
-                rec.Label = StringOrEmpty(label.Label);
+                rec.Label = StringValue(label.Label);
                 rec.ShowColumn = label.ShowColumn;
                 rec.ShowInFilter = label.ShowInFilter;
                 rec.IncludeInSearch = label.IncludeInSearch;
@@ -225,6 +225,4 @@ public partial class DataAccess
 
         return output;
     }
-
-
 }

@@ -18,9 +18,15 @@
      * Called when the view changes in the MainModel to do any necessary work in this viewModel.
      */
     ViewChanged() {
+        let allowed: boolean = this.MainModel().AdminUser();
+
         switch (this.MainModel().CurrentView()) {
             case "settings":
-                this.GetSettings();
+                if (allowed) {
+                    this.GetSettings();
+                } else {
+                    this.MainModel().Nav("AccessDenied");
+                }
                 break;
         }
     }

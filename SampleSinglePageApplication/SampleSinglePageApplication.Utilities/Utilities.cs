@@ -7,6 +7,25 @@ namespace SampleSinglePageApplication;
 
 public static class Utilities
 {
+    public static string AddContentToSection(string source, string itemStart, string itemEnd, List<string> contentToAdd)
+    {
+        string existing = GetTextBetweenItems(source, itemStart, itemEnd);
+        //string replacement = existing + contentToAdd + Environment.NewLine + new String(' ', GetIndentSpaces(existing));
+
+        string replacement = existing;
+
+        if (!String.IsNullOrEmpty(existing) && contentToAdd.Count() > 1) {
+            replacement += Environment.NewLine + new String(' ', GetIndentSpaces(existing));
+        }
+
+        foreach (var item in contentToAdd) {
+            replacement += item + Environment.NewLine + new String(' ', GetIndentSpaces(existing));
+        }
+
+        string output = ReplaceTextBetweenItems(source, itemStart, itemEnd, replacement);
+        return output;
+    }
+
     /// <summary>
     /// Takes an optional datetime value and corrects for a timezone offset.
     /// </summary>
@@ -35,6 +54,33 @@ public static class Utilities
             }
 
         }
+        return output;
+    }
+
+    public static string CamelCase(string? input)
+    {
+        string output = !String.IsNullOrWhiteSpace(input) ? input : String.Empty;
+
+        if (!String.IsNullOrEmpty(input)) {
+            output = input.Substring(0, 1).ToLower() + input.Substring(1);
+        }
+
+        return output;
+    }
+
+    public static List<string>? ConcatenateListsOfStrings(List<string>? messages, List<string>? newMessages)
+    {
+        List<string>? output = messages;
+
+        if (newMessages != null && newMessages.Count() > 0) {
+            if (output == null) {
+                output = new List<string>();
+            }
+            foreach (var msg in newMessages) {
+                output.Add(msg);
+            }
+        }
+
         return output;
     }
 
@@ -87,6 +133,17 @@ public static class Utilities
             }
 
             httpContext.Response.Cookies.Append(cookieName, value, option);
+        }
+    }
+
+    public static HttpClient GetHttpClient(string url)
+    {
+        if (!String.IsNullOrWhiteSpace(url) && url.ToLower().Contains("//localhost")) {
+            var httpClientHandler = new HttpClientHandler();
+            httpClientHandler.ServerCertificateCustomValidationCallback = (message, cert, chain, sslPolicyErrors) => { return true; };
+            return new HttpClient(httpClientHandler);
+        } else {
+            return new HttpClient();
         }
     }
 
@@ -746,6 +803,27 @@ public static class Utilities
         #endregion
     };
 
+    public static int GetIndentSpaces(string source)
+    {
+        int output = 0;
+
+        if (!String.IsNullOrEmpty(source)) {
+            string[] lines = source.Split(new string[] { Environment.NewLine }, StringSplitOptions.None);
+            if (lines != null && lines.Any()) {
+                foreach (var line in lines) {
+                    if (output == 0 && line.StartsWith(" ")) {
+                        int indent = line.TakeWhile(Char.IsWhiteSpace).Count();
+                        if (indent > 2) {
+                            output = indent;
+                        }
+                    }
+                }
+            }
+        }
+
+        return output;
+    }
+
     /// <summary>
     /// Gets the mimetype for a given file extension.
     /// </summary>
@@ -764,6 +842,22 @@ public static class Utilities
         string mime;
 
         return _mappings.TryGetValue(extension, out mime) ? mime : "application/octet-stream";
+    }
+
+    public static string GetTextBetweenItems(string source, string itemStart, string itemEnd)
+    {
+        string output = String.Empty;
+
+        int start = source.ToLower().IndexOf(itemStart.ToLower());
+
+        if (start > -1) {
+            int end = source.ToLower().IndexOf(itemEnd.ToLower());
+            if (end > -1) {
+                output = source.Substring(start + itemStart.Length, end - (start + itemStart.Length));
+            }
+        }
+
+        return output;
     }
 
     public static string HtmlDecode(this string HtmlToDecode)
@@ -865,12 +959,37 @@ public static class Utilities
         return replaceString;
     }
 
-    public static string SerializeObjectToJsonCamelCase(object o)
+    public static string ReplaceTextBetweenItems(string source, string itemStart, string itemEnd, string replacement)
     {
-        var jsonSerializerSettings = new JsonSerializerSettings {
-            ContractResolver = new CamelCasePropertyNamesContractResolver()
-        };
-        string output = JsonConvert.SerializeObject(o, jsonSerializerSettings);
+        string output = source;
+
+        int start = source.ToLower().IndexOf(itemStart.ToLower());
+
+        if (start > -1) {
+            int end = source.ToLower().IndexOf(itemEnd.ToLower());
+            if (end > -1) {
+                string before = source.Substring(0, start + itemStart.Length);
+                string after = source.Substring(end);
+
+                output = before + replacement + after;
+            }
+        }
+
+        return output;
+    }
+
+    public static string SerializeObjectToJsonCamelCase(object? o)
+    {
+        string output = "{}";
+
+        if (o != null) {
+            var jsonSerializerSettings = new JsonSerializerSettings {
+                ContractResolver = new CamelCasePropertyNamesContractResolver()
+            };
+            jsonSerializerSettings.Converters.Add(new UTCDateTimeConverter());
+
+            output = JsonConvert.SerializeObject(o, jsonSerializerSettings);
+        }
 
         return output;
     }
@@ -880,6 +999,7 @@ public static class Utilities
         var jsonSerializerSettings = new JsonSerializerSettings {
             ContractResolver = null
         };
+        jsonSerializerSettings.Converters.Add(new UTCDateTimeConverter());
         string output = JsonConvert.SerializeObject(o, jsonSerializerSettings);
 
         return output;

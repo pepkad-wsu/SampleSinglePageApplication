@@ -2,11 +2,74 @@ var TenantsModel = /** @class */ (function () {
     function TenantsModel() {
         var _this = this;
         this.AllowDelete = ko.observable(false);
-        this.AllowedFileTypes = ko.observable("");
         this.Loading = ko.observable(false);
         this.MainModel = ko.observable(window.mainModel);
         this.Tenant = ko.observable(new tenant);
         this.Tenants = ko.observableArray([]);
+        this.AuthOptionCustom = ko.computed(function () {
+            var output = false;
+            if (_this.Tenant().tenantSettings().loginOptions() != null) {
+                var hasOption = ko.utils.arrayFirst(_this.Tenant().tenantSettings().loginOptions(), function (item) {
+                    return item == "custom";
+                });
+                output = hasOption != null;
+            }
+            return output;
+        });
+        this.AuthOptionFacebook = ko.computed(function () {
+            var output = false;
+            if (_this.Tenant().tenantSettings().loginOptions() != null) {
+                var hasOption = ko.utils.arrayFirst(_this.Tenant().tenantSettings().loginOptions(), function (item) {
+                    return item == "facebook";
+                });
+                output = hasOption != null;
+            }
+            return output;
+        });
+        this.AuthOptionGoogle = ko.computed(function () {
+            var output = false;
+            if (_this.Tenant().tenantSettings().loginOptions() != null) {
+                var hasOption = ko.utils.arrayFirst(_this.Tenant().tenantSettings().loginOptions(), function (item) {
+                    return item == "google";
+                });
+                output = hasOption != null;
+            }
+            return output;
+        });
+        this.AuthOptionMicrosoft = ko.computed(function () {
+            var output = false;
+            if (_this.Tenant().tenantSettings().loginOptions() != null) {
+                var hasOption = ko.utils.arrayFirst(_this.Tenant().tenantSettings().loginOptions(), function (item) {
+                    return item == "microsoft";
+                });
+                output = hasOption != null;
+            }
+            return output;
+        });
+        this.AuthOptionOpenId = ko.computed(function () {
+            var output = false;
+            if (_this.Tenant().tenantSettings().loginOptions() != null) {
+                var hasOption = ko.utils.arrayFirst(_this.Tenant().tenantSettings().loginOptions(), function (item) {
+                    return item == "openid";
+                });
+                output = hasOption != null;
+            }
+            return output;
+        });
+        this.ShowEitSsoUrl = ko.computed(function () {
+            var output = false;
+            if (_this.Tenant().tenantSettings().loginOptions() != null && _this.Tenant().tenantSettings().loginOptions().length > 0) {
+                output = _this.Tenant().tenantSettings().loginOptions().indexOf("eitsso") > -1;
+            }
+            return output;
+        });
+        this.ShowLocalLoginSignup = ko.computed(function () {
+            var output = false;
+            if (_this.Tenant().tenantSettings().loginOptions() != null && _this.Tenant().tenantSettings().loginOptions().length > 0) {
+                output = _this.Tenant().tenantSettings().loginOptions().indexOf("local") > -1;
+            }
+            return output;
+        });
         this.MainModel().View.subscribe(function () {
             _this.ViewChanged();
         });
@@ -14,6 +77,63 @@ var TenantsModel = /** @class */ (function () {
             _this.SignalrUpdate();
         });
     }
+    TenantsModel.prototype.AddExternalUserDataSource = function (type) {
+        var sortOrder = 0;
+        if (this.Tenant().tenantSettings().externalUserDataSources() == null) {
+            this.Tenant().tenantSettings().externalUserDataSources([]);
+        }
+        else {
+            this.Tenant().tenantSettings().externalUserDataSources().forEach(function (item) {
+                sortOrder++;
+                if (item.sortOrder() > sortOrder) {
+                    sortOrder = item.sortOrder() + 1;
+                }
+            });
+        }
+        var item = new externalDataSource();
+        item.sortOrder(sortOrder);
+        item.type(type);
+        item.active(true);
+        if (type == 'csharp') {
+            var code = "namespace CustomCode {\n" +
+                "  using SampleSinglePageApplication;\n" +
+                "  using SampleSinglePageApplication.EFModels.EFModels;\n" +
+                "  using System;\n" +
+                "  using System.Data;\n" +
+                "  using System.Drawing;\n" +
+                "  using System.Text;\n" +
+                "  using System.Text.RegularExpressions;\n" +
+                "  using System.Xml;\n" +
+                "  using System.Xml.Serialization;\n" +
+                "  using System.Net.Http.Headers;\n" +
+                "  using JWT;\n" +
+                "  using JWT.Algorithms;\n" +
+                "  using JWT.Serializers;\n" +
+                "  using Microsoft.EntityFrameworkCore;\n" +
+                "  using System.Net;\n" +
+                "  using System.Net.Mail;\n" +
+                "  using System.Data.SqlClient;\n" +
+                "  using Newtonsoft.Json;\n" +
+                "  using Newtonsoft.Json.Converters;\n" +
+                "  using System.Dynamic;\n" +
+                "  using Microsoft.Graph;\n" +
+                "  using Microsoft.Identity.Client;\n" +
+                "  // Other using statements, etc.\n" +
+                "\n" +
+                "  public class CustomDynamicCode {\n" +
+                "    public DataObjects.User? FindUser(string EmployeeId, string Username, string Email){\n" +
+                "      DataObjects.User? output = null;\n" +
+                "\n" +
+                "      // Execute your code here to find a user and update the output object\n" +
+                "\n" +
+                "      return output;\n" +
+                "    }\n" +
+                "  }\n" +
+                "}";
+            item.source(code);
+        }
+        this.Tenant().tenantSettings().externalUserDataSources.push(item);
+    };
     /**
      * Called when the URL view is set to "NewTenant" to prepare the Tenant object as a new tenant and sets the focus on the name field.
      */
@@ -40,6 +160,9 @@ var TenantsModel = /** @class */ (function () {
         }
         this.MainModel().Nav("DeletingTenant", this.MainModel().Id());
     };
+    TenantsModel.prototype.DeleteExternalUserDataSource = function (data) {
+        this.Tenant().tenantSettings().externalUserDataSources.remove(data);
+    };
     /**
      * Called to confirm deleting a tenant record.
      */
@@ -56,7 +179,7 @@ var TenantsModel = /** @class */ (function () {
             _this.MainModel().Message_Hide();
             if (data != null) {
                 if (data.result) {
-                    window.location.href = window.baseURL + "Admin/Tenants";
+                    window.location.href = window.baseURL + "/Tenants";
                 }
                 else {
                     _this.MainModel().Message_Errors(data.messages);
@@ -73,15 +196,13 @@ var TenantsModel = /** @class */ (function () {
      */
     TenantsModel.prototype.EditTenant = function () {
         var _this = this;
+        this.MainModel().Message_Hide();
         var tenantId = this.MainModel().Id();
-        this.AllowedFileTypes("");
         this.AllowDelete(false);
         this.Tenant(new tenant);
         if (tsUtilities.HasValue(tenantId)) {
-            this.MainModel().Message_Loading();
             var success = function (data) {
                 _this.Loading(false);
-                _this.MainModel().Message_Hide();
                 if (data != null) {
                     if (data.actionResponse.result) {
                         _this.Tenant().Load(data);
@@ -115,6 +236,7 @@ var TenantsModel = /** @class */ (function () {
                 });
             }
             _this.Tenants(tenants);
+            _this.MainModel().Tenants(tenants);
         };
         tsUtilities.AjaxData(window.baseURL + "api/Data/GetTenants", null, success);
     };
@@ -140,6 +262,27 @@ var TenantsModel = /** @class */ (function () {
                 focus = labelPrefix + "tenant-tenantCode";
             }
         }
+        if (this.Tenant().tenantSettings().externalUserDataSources() != null && this.Tenant().tenantSettings().externalUserDataSources().length > 0) {
+            var missingDataSourceInfo_1 = false;
+            this.Tenant().tenantSettings().externalUserDataSources().forEach(function (item) {
+                if (missingDataSourceInfo_1 == false) {
+                    if (!tsUtilities.HasValue(item.name()) || !tsUtilities.HasValue(item.type())) {
+                        missingDataSourceInfo_1 = true;
+                    }
+                    else {
+                        if (item.type() == "sql" && !tsUtilities.HasValue(item.connectionString())) {
+                            missingDataSourceInfo_1 = true;
+                        }
+                        if (!tsUtilities.HasValue(item.source())) {
+                            missingDataSourceInfo_1 = true;
+                        }
+                    }
+                }
+            });
+            if (missingDataSourceInfo_1) {
+                errors.push("When configuring External User Data Sources you must complete all required fields.");
+            }
+        }
         if (errors.length > 0) {
             this.MainModel().Message_Errors(errors);
             tsUtilities.DelayedFocus(focus);
@@ -151,6 +294,9 @@ var TenantsModel = /** @class */ (function () {
                 _this.MainModel().Message_Hide();
                 if (data != null) {
                     if (data.actionResponse.result) {
+                        if (newTenant) {
+                            _this.MainModel().ReloadUser();
+                        }
                         _this.MainModel().Nav("Tenants");
                     }
                     else {
@@ -198,21 +344,47 @@ var TenantsModel = /** @class */ (function () {
      * Called when the view changes in the MainModel to do any necessary work in this viewModel.
      */
     TenantsModel.prototype.ViewChanged = function () {
+        var allowed = this.MainModel().User().appAdmin();
         switch (this.MainModel().CurrentView()) {
             case "deletingtenant":
-                this.DeletingTenant();
+                if (allowed) {
+                    this.DeletingTenant();
+                }
+                else {
+                    this.MainModel().Nav("AccessDenied");
+                }
                 break;
             case "deletetenant":
-                this.DeleteTenant();
+                if (allowed) {
+                    this.DeleteTenant();
+                }
+                else {
+                    this.MainModel().Nav("AccessDenied");
+                }
                 break;
             case "edittenant":
-                this.EditTenant();
+                if (allowed) {
+                    this.EditTenant();
+                }
+                else {
+                    this.MainModel().Nav("AccessDenied");
+                }
                 break;
             case "newtenant":
-                this.AddTenant();
+                if (allowed) {
+                    this.AddTenant();
+                }
+                else {
+                    this.MainModel().Nav("AccessDenied");
+                }
                 break;
             case "tenants":
-                this.GetTenants();
+                if (allowed) {
+                    this.GetTenants();
+                }
+                else {
+                    this.MainModel().Nav("AccessDenied");
+                }
                 break;
         }
     };

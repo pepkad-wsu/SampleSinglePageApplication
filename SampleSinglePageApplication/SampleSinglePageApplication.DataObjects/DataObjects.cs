@@ -1,15 +1,8 @@
-﻿namespace SampleSinglePageApplication;
+﻿using System.Text.Json.Serialization;
+
+namespace SampleSinglePageApplication;
 public class DataObjects
 {
-    public enum SignalRUpdateType
-    {
-        This = 0,
-        That = 1,
-        Setting = 2,
-        Unknown = 3,
-        Files = 4
-    }
-
     public enum SettingType
     {
         Boolean = 0,
@@ -21,6 +14,13 @@ public class DataObjects
         NumberInt = 6,
         Object = 7,
         Text = 8
+    }
+
+    public enum SignalRUpdateType
+    {
+        Setting,
+        Unknown,
+        Files
     }
 
     public enum UserLookupType
@@ -62,6 +62,12 @@ public class DataObjects
         public string? Location { get; set; }
     }
 
+    public class AddModule
+    {
+        public string? Module { get; set; }
+        public string? Name { get; set; }
+    }
+
     public class AjaxLookup : ActionResponseObject
     {
         public Guid TenantId { get; set; }
@@ -81,10 +87,27 @@ public class DataObjects
         public string? extra3 { get; set; }
     }
 
+    public class ApplicationSettings : ActionResponseObject
+    {
+        public string? ApplicationURL { get; set; }
+        public string? DefaultTenantCode { get; set; }
+        public string? EncryptionKey { get; set; }
+        public string? MailServer { get; set; }
+        public string? MailServerPassword { get; set; }
+        public int? MailServerPort { get; set; }
+        public string? MailServerUsername { get; set; }
+        public bool MailServerUseSSL { get; set; }
+        public string? DefaultReplyToAddress { get; set; }
+        public bool UseTenantCodeInUrl { get; set; }
+        public bool ShowTenantCodeFieldOnLoginForm { get; set; }
+        public bool ShowTenantListingWhenMissingTenantCode { get; set; }
+    }
+
     public class Authenticate
     {
         public string? Username { get; set; }
         public string? Password { get; set; }
+        public string? TenantCode { get; set; }
     }
 
     public class BooleanResponse
@@ -95,19 +118,39 @@ public class DataObjects
 
     public class ConnectionStringConfig : ActionResponseObject
     {
-        public string Server { get; set; } = null!;
-        public string Database { get; set; } = null!;
-        public string UserId { get; set; } = null!;
-        [System.ComponentModel.DataAnnotations.DataType(System.ComponentModel.DataAnnotations.DataType.Password)]
-        public string Password { get; set; } = null!;
         public string ConnectionString { get; set; } = null!;
+        public string DatabaseType { get; set; } = null!;
+
+        public string MySQL_Server { get; set; } = null!;
+        public string MySQL_Database { get; set; } = null!;
+        public string MySQL_User { get; set; } = null!;
+        [System.ComponentModel.DataAnnotations.DataType(System.ComponentModel.DataAnnotations.DataType.Password)]
+        public string MySQL_Password { get; set; } = null!;
+
+
+        public string PostgreSql_Host { get; set; } = null!;
+        public string PostgreSql_Database { get; set; } = null!;
+        public string PostgreSql_Username { get; set; } = null!;
+        [System.ComponentModel.DataAnnotations.DataType(System.ComponentModel.DataAnnotations.DataType.Password)]
+        public string PostgreSql_Password { get; set; } = null!;
+
+
+        public string SQLiteDatabase { get; set; } = null!;
+
+        public string SqlServer_Server { get; set; } = null!;
+        public string SqlServer_Database { get; set; } = null!;
+        public string SqlServer_UserId { get; set; } = null!;
+        [System.ComponentModel.DataAnnotations.DataType(System.ComponentModel.DataAnnotations.DataType.Password)]
+        public string SqlServer_Password { get; set; } = null!;
+        public bool SqlServer_IntegratedSecurity { get; set; }
+        public bool SqlServer_PersistSecurityInfo { get; set; }
+        public bool SqlServer_TrustServerCertificate { get; set; }
     }
 
     public class DataMigration
     {
-        public List<string>? Migration { get; set; } = new List<string>();
-        public DateTime MigrationDate { get; set; }
-        public int MigrationId { get; set; }
+        public List<string> Migration { get; set; } = new List<string>();
+        public string MigrationId { get; set; } = String.Empty;
     }
 
     public class Department : ActionResponseObject
@@ -125,6 +168,12 @@ public class DataObjects
         public Guid DepartmentGroupId { get; set; }
         public Guid TenantId { get; set; }
         public string? DepartmentGroupName { get; set; }
+    }
+
+    public class Dictionary
+    {
+        public string? Key { get; set; }
+        public string? Value { get; set; }
     }
 
     public class EmailMessage : ActionResponseObject
@@ -147,6 +196,16 @@ public class DataObjects
         }
     }
 
+    public class ExternalDataSource
+    {
+        public string Name { get; set; } = String.Empty;
+        public string Type { get; set; } = String.Empty;
+        public string? ConnectionString { get; set; } = String.Empty;
+        public string Source { get; set; } = String.Empty;
+        public int SortOrder { get; set; }
+        public bool Active { get; set; }
+    }
+
     public class FileStorage : ActionResponseObject
     {
         public Guid FileId { get; set; }
@@ -157,6 +216,7 @@ public class DataObjects
         public string? SourceFileId { get; set; }
         public long? Bytes { get; set; }
         public Byte[]? Value { get; set; }
+        [JsonConverter(typeof(UTCDateTimeConverter))]
         public DateTime UploadDate { get; set; }
         public Guid? UserId { get; set; }
     }
@@ -167,7 +227,9 @@ public class DataObjects
         public double ExecutionTime { get; set; }
         public bool Loading { get; set; }
         public bool ShowFilters { get; set; }
+        [JsonConverter(typeof(UTCDateTimeConverter))]
         public DateTime? Start { get; set; }
+        [JsonConverter(typeof(UTCDateTimeConverter))]
         public DateTime? End { get; set; }
         public string? Keyword { get; set; }
         public string? Sort { get; set; }
@@ -180,6 +242,7 @@ public class DataObjects
         public List<Guid>? Tenants { get; set; }
         public List<FilterColumn>? Columns { get; set; }
         public object[]? Records { get; set; }
+        public string? CultureCode { get; set; }
     }
 
     public class FilterColumn
@@ -190,6 +253,8 @@ public class DataObjects
         public string? DataElementName { get; set; }
         public string? DataType { get; set; }
         public bool Sortable { get; set; }
+        public string? Class { get; set; }
+        public string? BooleanIcon { get; set; }
     }
 
     public class FilterUsers : Filter
@@ -207,6 +272,12 @@ public class DataObjects
         public string? udf08 { get; set; }
         public string? udf09 { get; set; }
         public string? udf10 { get; set; }
+    }
+
+    public class Language
+    {
+        public string Culture { get; set; } = String.Empty;
+        public List<DataObjects.OptionPair> Phrases { get; set; } = new List<OptionPair>();
     }
 
     public class ListItem : ActionResponseObject
@@ -260,12 +331,13 @@ public class DataObjects
     public class SimplePost
     {
         public string? SingleItem { get; set; }
-        public List<string> Items { get; set; }
+        public List<string> Items { get; set; } = new List<string>();
+    }
 
-        public SimplePost()
-        {
-            this.Items = new List<string>();
-        }
+    public class SimpleResponse
+    {
+        public bool Result { get; set; }
+        public string? Message { get; set; }
     }
 
     public class Tenant : ActionResponseObject
@@ -280,18 +352,39 @@ public class DataObjects
         public List<udfLabel>? udfLabels { get; set; } = null!;
     }
 
+    public class TenantList
+    {
+        public Guid TenantId { get; set; }
+        public string Name { get; set; } = "";
+        public string TenantCode { get; set; } = "";
+    }
+
     public class TenantSettings
     {
         public bool AllowUsersToManageAvatars { get; set; }
         public bool AllowUsersToManageBasicProfileInfo { get; set; }
         public List<string>? AllowUsersToManageBasicProfileInfoElements { get; set; }
+        public bool AllowUsersToResetPasswordsForLocalLogin { get; set; }
+        public bool AllowUsersToSignUpForLocalLogin { get; set; }
         public string? CookieDomain { get; set; }
+        public string? CustomAuthenticationCode { get; set; }
+        public string? CustomAuthenticationName { get; set; }
+        public string? DefaultCultureCode { get; set; }
+        public string? DefaultReplyToAddress { get; set; }
         public string? EitSsoUrl { get; set; }
         public string? JasonWebTokenKey { get; set; }
+        public string? LdapLookupRoot { get; set; }
+        public string? LdapLookupUsername { get; set; }
+        public string? LdapLookupPassword { get; set; }
+        public string? LdapLookupSearchBase { get; set; }
+        public string? LdapLookupLocationAttribute { get; set; }
+        public int LdapLookupPort { get; set; }
         public List<string> LoginOptions { get; set; } = new List<string>();
+        public List<string> ModuleHideElements { get; set; } = new List<string>();
         public WorkSchedule WorkSchedule { get; set; } = new WorkSchedule();
         public bool RequirePreExistingAccountToLogIn { get; set; }
         public List<ListItem>? ListItems { get; set; } = null!;
+        public List<ExternalDataSource>? ExternalUserDataSources { get; set; }
     }
 
     public class udfLabel
@@ -321,13 +414,14 @@ public class DataObjects
         public string? DisplayName { get; set; }
         public string? Email { get; set; }
         public string? Phone { get; set; }
-        public string Username { get; set; } = null!;
+        public string? Username { get; set; }
         public string? EmployeeId { get; set; }
         public Guid? DepartmentId { get; set; }
         public string? DepartmentName { get; set; }
         public string? Title { get; set; }
         public string? Location { get; set; }
         public bool Enabled { get; set; }
+        [JsonConverter(typeof(UTCDateTimeConverter))]
         public DateTime? LastLogin { get; set; }
         public bool Admin { get; set; }
         public bool AppAdmin { get; set; }
@@ -337,9 +431,11 @@ public class DataObjects
         public bool HasLocalPassword { get; set; }
         public string? AuthToken { get; set; }
         public int FailedLoginAttempts { get; set; }
+        [JsonConverter(typeof(UTCDateTimeConverter))]
         public DateTime? LastLockoutDate { get; set; }
         public List<Tenant>? Tenants { get; set; }
         public List<UserTenant> UserTenants { get; set; } = new List<UserTenant>();
+        public string? Source { get; set; }
         public string? udf01 { get; set; }
         public string? udf02 { get; set; }
         public string? udf03 { get; set; }
@@ -350,6 +446,21 @@ public class DataObjects
         public string? udf08 { get; set; }
         public string? udf09 { get; set; }
         public string? udf10 { get; set; }
+    }
+
+    public class UserGroup : ActionResponseObject
+    {
+        public Guid GroupId { get; set; }
+        public Guid TenantId { get; set; }
+        public string? Name { get; set; }
+        public bool Enabled { get; set; }
+        public List<Guid>? Users { get; set; }
+        public UserGroupSettings Settings { get; set; } = new UserGroupSettings();
+    }
+
+    public class UserGroupSettings
+    {
+        public string? SomeSetting { get; set; }
     }
 
     public class UserPasswordReset
@@ -370,7 +481,8 @@ public class DataObjects
 
     public class VersionInfo
     {
-        public string? Released { get; set; }
+        [JsonConverter(typeof(UTCDateTimeConverter))]
+        public DateTime Released { get; set; }
         public double RunningSince { get; set; }
         public string? Version { get; set; }
     }

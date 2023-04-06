@@ -9,8 +9,8 @@ public partial class DataAccess
         if (rec == null) {
             output.Messages.Add("Error Deleting File Storage " + FileId.ToString() + " - Record No Longer Exists");
         } else {
-            Guid requestId = GuidOrEmpty(rec.ItemId);
-            Guid tenantId = GuidOrEmpty(rec.TenantId);
+            Guid requestId = GuidValue(rec.ItemId);
+            Guid tenantId = GuidValue(rec.TenantId);
             data.FileStorages.Remove(rec);
             try {
                 await data.SaveChangesAsync();
@@ -37,10 +37,10 @@ public partial class DataAccess
 
         DateTime checkTime = itemTime.HasValue
             ? Convert.ToDateTime(itemTime)
-            : DateTime.Now;
+            : DateTime.UtcNow;
 
         double? TotalSeconds = null;
-        var recs = files.Where(x => x.FileName != null && x.FileName.ToLower() == Filename);
+        var recs = files.Where(x => x.FileName != null && x.FileName.ToLower() == Filename.ToLower());
         if (recs != null && recs.Count() > 0) {
             foreach (var rec in recs) {
                 double Seconds = Math.Abs((checkTime - rec.UploadDate).TotalSeconds);
@@ -85,14 +85,14 @@ public partial class DataAccess
             output.ActionResponse.Messages.Add("File " + FileId.ToString() + " Does Not Exist");
         } else {
             output.ActionResponse.Result = true;
-            output.TenantId = GuidOrEmpty(rec.TenantId);
+            output.TenantId = GuidValue(rec.TenantId);
             output.Extension = rec.Extension;
             output.Bytes = rec.Bytes.HasValue ? (long)rec.Bytes : (long?)null;
             output.FileId = FileId;
             output.FileName = rec.FileName;
             output.ItemId = rec.ItemId;
             output.SourceFileId = rec.SourceFileId;
-            output.UploadDate = rec.UploadDate.HasValue ? (DateTime)rec.UploadDate : DateTime.Now;
+            output.UploadDate = rec.UploadDate.HasValue ? (DateTime)rec.UploadDate : DateTime.UtcNow;
             output.UserId = rec.UserId;
             output.Value = rec.Value != null
                 ? rec.Value.ToArray()
@@ -123,9 +123,9 @@ public partial class DataAccess
                     FileId = rec.FileId,
                     FileName = rec.FileName,
                     ItemId = rec.ItemId,
-                    TenantId = GuidOrEmpty(rec.TenantId),
+                    TenantId = GuidValue(rec.TenantId),
                     SourceFileId = rec.SourceFileId,
-                    UploadDate = rec.UploadDate.HasValue ? (DateTime)rec.UploadDate : DateTime.Now,
+                    UploadDate = rec.UploadDate.HasValue ? (DateTime)rec.UploadDate : DateTime.UtcNow,
                     UserId = rec.UserId,
                     Value = value
                 });
@@ -154,7 +154,7 @@ public partial class DataAccess
         }
 
         if (fileStorage.UploadDate == DateTime.MinValue) {
-            fileStorage.UploadDate = DateTime.Now;
+            fileStorage.UploadDate = DateTime.UtcNow;
         }
 
         rec.TenantId = fileStorage.TenantId;
@@ -173,7 +173,7 @@ public partial class DataAccess
 
         rec.Bytes = fileStorage.Bytes;
         rec.Value = fileStorage.Value;
-        rec.UploadDate = fileStorage.UploadDate != DateTime.MinValue ? fileStorage.UploadDate : DateTime.Now;
+        rec.UploadDate = fileStorage.UploadDate != DateTime.MinValue ? fileStorage.UploadDate : DateTime.UtcNow;
         rec.UserId = fileStorage.UserId.HasValue ? (Guid)fileStorage.UserId : (Guid?)null;
         try {
             if (newRecord) {
@@ -205,6 +205,4 @@ public partial class DataAccess
         }
         return output;
     }
-
-
 }

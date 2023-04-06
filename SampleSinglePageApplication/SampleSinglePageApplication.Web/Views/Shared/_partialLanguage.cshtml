@@ -3,29 +3,102 @@
     <div data-bind="visible:MainModel().CurrentView() == 'language'">
         <div data-bind="css:{fixed: MainModel().StickyMenus() == true}">
             <i class="sticky-menu-icon" data-bind="html:MainModel().StickyIcon(), click:function(){MainModel().ToggleStickyMenus()}"></i>
-            <h1 class="display-7"><i data-bind="html:MainModel().IconAndText('Language')"></i></h1>
+            <h1 class="display-7">
+                <i data-bind="html:MainModel().Icon('Language')"></i>
+                <span data-bind="html:LanguageTitle"></span>
+            </h1>
 
-            <div class="padbottom-5">
+            <div class="mb-2" data-bind="visible:View() == 'edit'">
+                <button type="button" class="btn btn-dark" data-bind="html:MainModel().IconAndText('Back'), click:function(){MainModel().Nav('Language')}"></button>
                 <button type="button" class="btn btn-success" data-bind="click:SaveLanguage, html:MainModel().IconAndText('Save')"></button>
                 <button type="button" class="btn btn-warning" data-bind="click:ResetAll, visible:ResetAvailable">
                     <i data-bind="html:MainModel().Icon('Reset')"></i>
-                    Reset All Language to Defaults
+                    <span data-bind="html:MainModel().Language('ResetLanguageDefaults')"></span>
                 </button>
                 <button type="button" class="btn btn-dark" data-bind="html:MainModel().IconAndText('AllItems'), visible:ModifiedItemsOnly() == false, click:function(){ModifiedItemsOnly(true);}"></button>
                 <button type="button" class="btn btn-dark" data-bind="html:MainModel().IconAndText('ModifiedItems'), visible:ModifiedItemsOnly() == true, click:function(){ModifiedItemsOnly(false);}"></button>
             </div>
+
+            <div class="mb-2" data-bind="visible:View() == 'add'">
+                <button type="button" class="btn btn-dark" data-bind="html:MainModel().IconAndText('Back'), click:function(){MainModel().Nav('Language')}"></button>
+            </div>
         </div>
 
-        <div data-bind="foreach:LanguageItems">
-            <div class="padbottom" data-bind="visible:$root.ModifiedItemsOnly() == false || $data.value() != $root.DefaultLanguageItem($data.id())">
-                <label data-bind="text: $data.id, attr: {for: 'language-item-' + $data.id()}"></label> -
-                <span class="note">
-                    (default: <span data-bind="text:$root.DefaultLanguageItem($data.id())"></span>)
-                </span>
-                
-                <div class="input-group">
-                    <input type="text" class="form-control" data-bind="textInput:$data.value, attr: {id: 'language-item-' + $data.id()}" />
-                    <span class="input-group-text pointer" data-bind="click:function(){ $root.ResetLanguageDefault($data.id()); }, visible:$data.value() != $root.DefaultLanguageItem($data.id()) ">Reset Default</span>
+        <div data-bind="visible:View() == ''">
+            <div class="mb-2">
+                <button type="button" class="btn btn-success"
+                    data-bind="html:MainModel().IconAndText('AddLanguage'), click:Add"></button>
+            </div>
+
+            <table class="table">
+                <thead>
+                    <tr class="table-dark">
+                        <th style="width:1%;"></th>
+                        <th style="width:150px" data-bind="html:MainModel().Language('Code')"></th>
+                        <th style="width:auto;" data-bind="html:MainModel().Language('Description')"></th>
+                    </tr>
+                </thead>
+                <tbody data-bind="foreach:MainModel().CurrentCultures()">
+                    <tr>
+                        <td>
+                            <button type="button" class="btn btn-primary btn-sm nowrap"
+                                    data-bind="html:$root.MainModel().IconAndText('Edit'), click:function(){$root.MainModel().Nav('Language',$data.id())}"></button>
+                        </td>
+                        <td data-bind="html:$data.id"></td>
+                        <td data-bind="html:$data.value"></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+
+
+
+
+        <div data-bind="visible:View() == 'add'">
+            <div class="alert alert-info" data-bind="html:MainModel().Language('AddLanguageInfo')"></div>
+
+            <table class="table">
+                <thead>
+                    <tr class="table-dark">
+                        <th style="width:1%;"></th>
+                        <th style="width:150px" data-bind="html:MainModel().Language('Code')"></th>
+                        <th style="width:auto;" data-bind="html:MainModel().Language('Description')"></th>
+                    </tr>
+                </thead>
+                <tbody data-bind="foreach:MainModel().AvailableCultures">
+                    <tr>
+                        <td>
+                            <button type="button" class="btn btn-primary btn-sm nowrap"
+                                data-bind="html:$root.MainModel().IconAndText('Add'), click:function(){$root.AddLanguage($data)}"></button>
+                        </td>
+                        <td data-bind="html:$data.id"></td>
+                        <td data-bind="html:$data.value"></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+
+
+
+
+        <div data-bind="visible:View() == 'edit'">
+            <div data-bind="visible:Loading() == true, html:MainModel().Language('LoadingWait')"></div>
+
+            <div data-bind="visible:Loading() == false">
+                <div data-bind="foreach:Language().phrases">
+                    <div class="mb-2" data-bind="visible:$root.ModifiedItemsOnly() == false || $data.value() != $root.DefaultLanguageItem($data.id())">
+                        <label data-bind="text: $data.id, attr: {for: 'language-item-' + $data.id()}"></label> -
+                        <span class="note">
+                            (default: <span data-bind="text:$root.DefaultLanguageItem($data.id())"></span>)
+                        </span>
+
+                        <div class="input-group">
+                            <input type="text" class="form-control" data-bind="textInput:$data.value, attr: {id: 'language-item-' + $data.id()}" />
+                            <span class="input-group-text pointer" data-bind="click:function(){ $root.ResetLanguageDefault($data.id()); }, visible:$data.value() != $root.DefaultLanguageItem($data.id()) ">Reset Default</span>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

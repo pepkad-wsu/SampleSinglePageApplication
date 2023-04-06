@@ -1,31 +1,122 @@
-﻿@model SampleSinglePageApplication.DataObjects.ConnectionStringConfig
+﻿@using SampleSinglePageApplication;
+@model DataObjects.ConnectionStringConfig
 @inject IHttpContextAccessor context;
-@inject SampleSinglePageApplication.IDataAccess data;
+@inject IDataAccess data;
 @{
+    ViewBag.Title = "Database Not Configured";
     Layout = "_LayoutNotLoggedIn";
 }
 
 <div class="container-fluid">
     <h1>Database Not Configured</h1>
 
-    <p>Configure the connection string and click Next to continue:</p>
+    <div class="alert alert-primary">
+        This application uses Entity Framework Core for database
+        connectivity and supports several common providers.
+        Basic configuration options are provided below.
+        For a more complex configuration manually edit the appsettings.json
+        file in the root of the application.
+    </div>
 
     <form method="post">
-        <div class="padbottom">
-            <label for="Server">Server</label>
-            <input asp-for="Server" class="form-control" />
+        <div class="mb-2">
+            <strong>Database Type</strong>
+            <br />
+            <input type="radio" asp-for="DatabaseType" id="optInMemory" value="InMemory" onchange="databaseTypeSelected();" />
+            <label for="optInMemory" class="unbold">In-Memory <span class="note">(for testing only)</span></label>
+
+            <br />
+            <input type="radio" asp-for="DatabaseType" id="optSqlServer" value="SqlServer" onchange="databaseTypeSelected();" />
+            <label for="optSqlServer" class="unbold">Microsoft SQL Server</label>
+
+            <br />
+            <input type="radio" asp-for="DatabaseType" id="optMySQL" value="MySQL" onchange="databaseTypeSelected();" />
+            <label for="optMySQL" class="unbold">MySQL</label>
+
+            <br />
+            <input type="radio" asp-for="DatabaseType" id="optPostgreSql" value="PostgreSQL" onchange="databaseTypeSelected();" />
+            <label for="optPostgreSql" class="unbold">PostgreSQL</label>
+
+            <br />
+            <input type="radio" asp-for="DatabaseType" id="optSQLite" value="SQLite" onchange="databaseTypeSelected();" />
+            <label for="optSQLite" class="unbold">SQLite</label>
         </div>
-        <div class="padbottom">
-            <label for="Database">Database</label>
-            <input asp-for="Database" class="form-control" />
+
+        <div id="db-mysql" class="db-option" style="display:none;">
+            <div class="mb-2">
+                <label for="MySQL_Server">Server</label>
+                <input asp-for="MySQL_Server" class="form-control" />
+            </div>
+            <div class="mb-2">
+                <label for="MySQL_Database">Database</label>
+                <input asp-for="MySQL_Database" class="form-control" />
+            </div>
+            <div class="mb-2">
+                <label for="MySQL_User">User</label>
+                <input asp-for="MySQL_User" class="form-control" />
+            </div>
+            <div class="mb-2">
+                <label for="MySQL_Password">Password</label>
+                <input asp-for="MySQL_Password" class="form-control" />
+            </div>
         </div>
-        <div class="padbottom">
-            <label for="UserId">UserId</label>
-            <input asp-for="UserId" class="form-control" />
+
+        <div id="db-postgresql" class="db-option" style="display:none;">
+            <div class="mb-2">
+                <label for="PostgreSql_Host">Host</label>
+                <input asp-for="PostgreSql_Host" class="form-control" />
+            </div>
+            <div class="mb-2">
+                <label for="PostgreSql_Database">Database</label>
+                <input asp-for="PostgreSql_Database" class="form-control" />
+            </div>
+            <div class="mb-2">
+                <label for="PostgreSql_Username">Username</label>
+                <input asp-for="PostgreSql_Username" class="form-control" />
+            </div>
+            <div class="mb-2">
+                <label for="PostgreSql_Password">Pasword</label>
+                <input asp-for="PostgreSql_Password" class="form-control" />
+            </div>
         </div>
-        <div class="padbottom">
-            <label for="Password">Password</label>
-            <input asp-for="Password" class="form-control" />
+
+        <div id="db-sql-server" class="db-option" style="display:none;">
+            <div class="mb-2">
+                <label for="SqlServer_Server">Server</label>
+                <input asp-for="SqlServer_Server" class="form-control" />
+            </div>
+            <div class="mb-2">
+                <label for="SqlServer_Database">Database</label>
+                <input asp-for="SqlServer_Database" class="form-control" />
+            </div>
+            <div class="mb-2">
+                <label for="SqlServer_UserId">UserId</label>
+                <input asp-for="SqlServer_UserId" class="form-control" />
+            </div>
+            <div class="mb-2">
+                <label for="SqlServer_Password">Password</label>
+                <input asp-for="SqlServer_Password" class="form-control" />
+            </div>
+            <div class="mb-2">
+                <input type="checkbox" asp-for="SqlServer_IntegratedSecurity" />
+                <label for="SqlServer_IntegratedSecurity" class="unbold">Integrated Security</label>
+            </div>
+            <div class="mb-2">
+                <input type="checkbox" asp-for="SqlServer_TrustServerCertificate" />
+                <label for="SqlServer_TrustServerCertificate" class="unbold">Trust Server Certificate</label>
+            </div>
+            <div class="mb-2">
+                <input type="checkbox" asp-for="SqlServer_PersistSecurityInfo" />
+                <label for="SqlServer_PersistSecurityInfo" class="unbold">Persist Security Info</label>
+            </div>
+        </div>
+
+        <div id="db-sqlite" class="db-option" style="display:none;">
+            <div class="mb-2">
+                <label for="SQLiteDatabase">Database Path</label>
+                <input asp-for="SQLiteDatabase" class="form-control"
+                       placeholder="Path to the SQLite database file (eg: C:\Data\Database.db)" />
+            </div>
         </div>
 
         <input type="submit" value="Next" class="btn btn-primary" />
@@ -33,7 +124,35 @@
 </div>
 
 <script type="text/javascript">
-    $(document).ready(function(){
-        $("#Server").focus();
-    });
+    function databaseTypeSelected() {
+        $(".db-option").hide();
+
+        var value = $('input[name="DatabaseType"]:checked').val();
+
+        switch (value) {
+            case "InMemory":
+                // No options to configure
+                break;
+
+            case "MySQL":
+                $("#db-mysql").show();
+                $("#MySQL_Server").focus();
+                break;
+
+            case "PostgreSQL":
+                $("#db-postgresql").show();
+                $("#PostgreSql_Host").focus();
+                break;
+
+            case "SqlServer":
+                $("#db-sql-server").show();
+                $("#Server").focus();
+                break;
+
+            case "SQLite":
+                $("#db-sqlite").show();
+                $("#DatabaseFile").focus();
+                break;
+        }
+    }
 </script>

@@ -1,45 +1,79 @@
-﻿@using SampleSinglePageApplication;
+@using SampleSinglePageApplication;
+@using Microsoft.AspNetCore.Localization;
 @inject IHttpContextAccessor context;
-@inject SampleSinglePageApplication.IDataAccess data;
+@inject IDataAccess data;
+@inject ICustomAuthentication auth;
 @{
-    //string action = String.Empty;
     bool adminUser = false;
     bool appAdminUser = false;
-    string appName = "sample-app";
+    string appName = "";
     string appTitle = "";
     string baseUrl = String.Empty;
+    string copyright = "";
+    string culture = "";
+    List<DataObjects.OptionPair> cultureCodes = new List<DataObjects.OptionPair>();
+    List<string> cultures = new List<string>();
     string currentUrl = "";
     string defaultTenantCode = data.DefaultTenantCode;
     List<string> extra = new List<string>();
-    //string id = String.Empty;
     bool loggedIn = false;
     bool missingTenantCode = false;
     string objDefaultLanguage = String.Empty;
-    string objExtra = String.Empty;
     string objLanguage = String.Empty;
-    string objTenant = String.Empty;
     string objUserJson = String.Empty;
-    string objVersionInfo = String.Empty;
+    DateTime released = DateTime.Now;
+    bool showTenantCodeFieldOnLoginForm = false;
+    bool showTenantListingWhenMissingTenantCode = false;
     DataObjects.Tenant tenant = new DataObjects.Tenant();
     string tenantCode = String.Empty;
     string tenantId = String.Empty;
+    List<DataObjects.TenantList> tenants = new List<DataObjects.TenantList>();
     string token = String.Empty;
+    bool useAuthProviderCustom = false;
     DataObjects.User? user = null;
+    bool userUpdateRequired = false;
     bool useTenantCodeInUrl = true;
-    bool validTenant = false;
     bool validDatabaseConnection = false;
-    DataObjects.VersionInfo versionInfo = new DataObjects.VersionInfo();
+    bool validTenant = false;
     string version = "";
+    string versionDisplay = "";
+    DataObjects.VersionInfo versionInfo = new DataObjects.VersionInfo();
 
-    SampleSinglePageApplication.RouteHelper routeHelper = new RouteHelper(context.HttpContext, useTenantCodeInUrl);
+    RouteHelper routeHelper = new RouteHelper(context.HttpContext, useTenantCodeInUrl);
 
-    if(data == null) {
-        if(context != null && context.HttpContext != null) {
+    if (data == null) {
+        if (context != null && context.HttpContext != null) {
             IgnoreBody();
             context.HttpContext.Response.Redirect("../DatabaseNotConfigured/");
             return;
         }
-    }else{
+    } else if (GlobalSettings.StartupError == true) {
+        string startupErrorCode = String.Empty + GlobalSettings.StartupErrorCode;
+
+        switch (startupErrorCode.ToLower()) {
+            case "missingconnectionstring":
+                if (context != null && context.HttpContext != null) {
+                    IgnoreBody();
+                    context.HttpContext.Response.Redirect("../DatabaseNotConfigured/");
+                    return;
+                }
+                break;
+        }
+    } else {
+        appName = data.AppName;
+        copyright = data.Copyright;
+
+        cultureCodes = data.GetLanguageCultureCodes();
+
+        var appSettings = data.GetApplicationSettings();
+        if(appSettings.UseTenantCodeInUrl != useTenantCodeInUrl) {
+            useTenantCodeInUrl = appSettings.UseTenantCodeInUrl;
+            routeHelper = new RouteHelper(context.HttpContext, useTenantCodeInUrl);
+        }
+
+        showTenantCodeFieldOnLoginForm = appSettings.ShowTenantCodeFieldOnLoginForm;
+        showTenantListingWhenMissingTenantCode = appSettings.ShowTenantListingWhenMissingTenantCode;
+
         versionInfo = data.VersionInfo;
 
         if (context != null && context.HttpContext != null) {
@@ -49,8 +83,22 @@
                 return;
             }
 
+            // Get the list of all tenants excluding the Admin tenant
+            var allTenants = await data.GetTenants();
+            if (allTenants != null && allTenants.Any()) {
+                foreach (var t in allTenants) {
+                    if (t.Enabled && t.TenantId.ToString() != "00000000-0000-0000-0000-000000000001") {
+                        tenants.Add(new DataObjects.TenantList {
+                            TenantId = t.TenantId,
+                            TenantCode = t.TenantCode,
+                            Name = t.Name
+                        });
+                    }
+                }
+            }
+
             var language = data.GetDefaultLanguage();
-            objDefaultLanguage = Utilities.SerializeObjectToJsonCamelCase(language);
+            objDefaultLanguage = Utilities.SerializeObjectToJsonCamelCase(language.Phrases);
 
             validDatabaseConnection = true;
 
@@ -59,18 +107,16 @@
             currentUrl = data.GetFullUrl();
 
             version = data.Version;
+            released = data.Released;
 
             if (useTenantCodeInUrl) {
                 tenantCode += routeHelper.TenantCode;
                 Utilities.CookieWrite(appName + "-tenant-code", "", context.HttpContext);
             } else {
-                // Not use the tenant code in the URL, so get it from a cookie
+                // Not using the tenant code in the URL, so get it from a cookie
                 tenantCode += Utilities.CookieRead(appName + "-tenant-code", context.HttpContext);
             }
 
-            //tenantCode += routeHelper.TenantCode;
-            //action += helper.Action;
-            //id += routeHelper.Id;
             baseUrl += routeHelper.GetBaseUrl();
             if (routeHelper.Extra != null && routeHelper.Extra.Any()) {
                 extra = routeHelper.Extra;
@@ -78,18 +124,20 @@
 
             if(!baseUrl.EndsWith("/")){ baseUrl += "/"; }
 
-            var settingBaseUrl = data.StringOrEmpty(data.GetSetting<string>("ApplicationURL", DataObjects.SettingType.Text));
-            if(settingBaseUrl.ToLower() != baseUrl.ToLower()) {
+            var settingBaseUrl = data.ApplicationURL;
+            if (settingBaseUrl != baseUrl) {
+                // This will automatically update the ApplicationURL setting if you are
+                // running on a different URL.
                 data.SaveSetting("ApplicationURL", DataObjects.SettingType.Text, baseUrl);
             }
 
-            if(String.IsNullOrEmpty(tenantCode)){
+            if (!String.IsNullOrWhiteSpace(tenantCode) && tenantCode.ToLower() == "missingtenantcode") {
+                tenantCode = String.Empty;
+            }
+
+            if (String.IsNullOrEmpty(tenantCode)) {
                 tenantCode = defaultTenantCode;
                 missingTenantCode = true;
-
-                if (!useTenantCodeInUrl) {
-                    Utilities.CookieWrite(appName + "-tenant-code", tenantCode, context.HttpContext);
-                }
             }
 
             tenant = await data.GetTenantFromCode(tenantCode);
@@ -98,13 +146,51 @@
                 tenantId = tenant.TenantId.ToString();
                 validTenant = true;
 
+                cultures = await data.GetLanguageCultures(tenant.TenantId);
+                if (String.IsNullOrEmpty(culture) && cultures.Any()) {
+                    culture = cultures.First();
+                }
+                var savedCulture = data.CookieRead(appName + "-culture");
+                if (!String.IsNullOrWhiteSpace(savedCulture)) {
+                    culture = savedCulture;
+                } else {
+                    // Get the client culture.
+                    var locale = context.HttpContext.Features.Get<IRequestCultureFeature>();
+                    if (locale != null) {
+                        var browserCulture = locale.RequestCulture.UICulture.ToString();
+                        if (!String.IsNullOrWhiteSpace(browserCulture)) {
+                            // If this is one of the configured cultures, set the culture to this value
+                            if (cultures.Any()) {
+                                var browserCultureExistsInCultures = cultures.FirstOrDefault(x => x.ToLower() == browserCulture.ToLower());
+                                if (!String.IsNullOrWhiteSpace(browserCultureExistsInCultures)) {
+                                    culture = browserCultureExistsInCultures;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if (String.IsNullOrEmpty(culture)) {
+                    culture = "en-US";
+                }
+
+                // If no culture was detected that matched a configured culture, then use the default.
+                if (String.IsNullOrWhiteSpace(culture)) {
+                    culture = data.StringValue(tenant.TenantSettings.DefaultCultureCode);
+                }
+
                 bool useEMSSO = false;
+                string eitSsoUrl = String.Empty;
+                string cookieDomain = String.Empty;
+
                 if(tenant.TenantSettings.LoginOptions != null && tenant.TenantSettings.LoginOptions.Any()) {
                     var eitSSO = tenant.TenantSettings.LoginOptions.FirstOrDefault(x => x.ToLower() == "eitsso");
                     useEMSSO = eitSSO != null;
+                    if(useEMSSO){
+                        eitSsoUrl += tenant.TenantSettings.EitSsoUrl;
+                        cookieDomain += tenant.TenantSettings.CookieDomain;
+                    }
                 }
-
-                appTitle += data.GetSetting<string>("ApplicationTitle", DataObjects.SettingType.Text, tenant.TenantId);
 
                 // See if we already have a valid user token.
                 string cookieToken = data.CookieRead("Token-" + tenantId);
@@ -113,9 +199,12 @@
                 }
                 if(user != null && user.ActionResponse.Result) {
                     // Valid log in.
-                } else if(useEMSSO) {
+                } else if(useEMSSO && !String.IsNullOrEmpty(eitSsoUrl)) {
                     // try SSO
-                    SSO.Auth.SingleSignOn sso = new SSO.Auth.SingleSignOn(context.HttpContext);
+                    // If we already have a token we'll pass that to the SSO client.
+                    string ssoToken = data.CookieRead("sso-token");
+
+                    SSO.Auth.SingleSignOn sso = new SSO.Auth.SingleSignOn(eitSsoUrl, context.HttpContext, ssoToken, cookieDomain);
                     if (sso.Authenticated) {
                         // This user was authenticated, but might not have an account for this tenant.
                         // Check this tenant's settings to see if accounts can be created during login.
@@ -138,7 +227,7 @@
                                     FirstName = sso.Properties.FirstName,
                                     LastName = sso.Properties.LastName,
                                     Email = sso.Properties.Email,
-                                    Username = sso.Username,
+                                    Username = sso.Properties.NID,
                                     Admin = false,
                                     DepartmentName = sso.Properties.Department,
                                     EmployeeId = sso.Properties.WSUID,
@@ -149,11 +238,29 @@
                                 user = await data.SaveUserByUsername(addUser, true);
                             }
                         }
+
+                        if(user != null && user.ActionResponse.Result) {
+                            var updatedFromSso = data.UpdateUserFromSsoSettings(user, sso);
+                            if (updatedFromSso != null) {
+                                user = updatedFromSso;
+                                userUpdateRequired = true;
+                            }
+                        }
                     }
                 }
 
                 if(user != null && user.ActionResponse.Result) {
                     loggedIn = true;
+
+                    var updatedFromExternalSources = await data.UpdateUserFromExternalDataSources(user, tenant.TenantSettings);
+                    if (updatedFromExternalSources != null) {
+                        user = updatedFromExternalSources;
+                        userUpdateRequired = true;
+                    }
+
+                    if (userUpdateRequired) {
+                        user = await data.SaveUser(user);
+                    }
 
                     appAdminUser = user.AppAdmin;
 
@@ -186,9 +293,20 @@
                     objUserJson = Utilities.SerializeObjectToJsonCamelCase(user);
                 }
 
-                var tenantLanguage = data.GetTenantLanguage(tenant.TenantId);
-                if(tenantLanguage != null) {
+                var tenantLanguage = data.GetTenantLanguage(tenant.TenantId, culture);
+                if (tenantLanguage != null) {
                     language = tenantLanguage;
+                }
+
+                var languageAppTitle = language.Phrases.FirstOrDefault(x => data.StringValue(x.Id).ToLower() == "apptitle");
+                if (languageAppTitle != null) {
+                    appTitle += languageAppTitle.Value;
+                }
+
+                if(!String.IsNullOrWhiteSpace(tenant.TenantSettings.CustomAuthenticationName) &&
+                    !String.IsNullOrWhiteSpace(tenant.TenantSettings.CustomAuthenticationCode)
+                ) {
+                    useAuthProviderCustom = true;
                 }
             }
 
@@ -212,20 +330,15 @@
         appTitle = "SampleSinglePageApplication";
     }
 
-    //string extraInfo = "";
-    //if(extra != null && extra.Any()) {
-    //    foreach(string item in extra) {
-    //        if(extraInfo != ""){ extraInfo += ", "; }
-    //        extraInfo += "&ldquo;" + item.Trim() + "&rdquo;";
-    //    }
-    //}
-
     // Prepare serialized object defaults
-    objExtra = Utilities.SerializeObjectToJsonPascalCase(extra);
     if(String.IsNullOrEmpty(objLanguage)){ objLanguage = "{}"; }
     if(String.IsNullOrEmpty(objUserJson)) { objUserJson = "{}"; }
-    objTenant = Utilities.SerializeObjectToJsonCamelCase(tenant);
-    objVersionInfo = Utilities.SerializeObjectToJsonCamelCase(versionInfo);
+
+    string copyrightDisplay = String.Empty;
+    if (!String.IsNullOrWhiteSpace(copyright)) {
+        copyrightDisplay += "<br />&copy;" + released.Year.ToString() + " " + copyright;
+    }
+    versionDisplay = "v. " + version + " - " + released.ToShortDateString();
 }
 <!DOCTYPE html>
 <html lang="en">
@@ -234,7 +347,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@appTitle</title>
     @await Html.PartialAsync("_partialIncludes")
-    <script src="~/js/viewModels/main.js"></script>
+    <script src="~/js/viewModels/main.js?v=@Html.Raw(Guid.NewGuid().ToString().Replace("-", ""))"></script>
     @if(loggedIn){
     <script src="~/js/signalr/dist/browser/signalr.js"></script>
     }
@@ -253,24 +366,43 @@
                     </a>
                     <div class="navbar-collapse collapse" id="navBarToggler">
                         <ul class="navbar-nav me-auto">
+                            <!-- BEGIN AUTO-GENERATED MENU PUBLIC -->
+                            <!-- END AUTO-GENERATED MENU PUBLIC -->
                             @if (loggedIn) {
-                                <li class="nav-item"><a href="#" class="nav-link" data-bind="click:function(){ Nav('Page1'); }, css:{ active: CurrentView() == 'page1'}"><i class="fa-regular fa-face-smile"></i>Page 1</a></li>
-                                <li class="nav-item"><a href="#" class="nav-link" data-bind="click:function(){ Nav('Page2'); }, css:{ active: CurrentView() == 'page2'}"><i class="fa-regular fa-face-laugh"></i>Page 2</a></li>
-                                @if(adminUser){
+                                <!-- Any non-admin items added via AppSettings will appear below, you can move them where you want after they are created. -->
+                                <!-- AUTO-GENERATED MENU LOGGED IN -->
+                                <!-- END AUTO-GENERATED MENU LOGGED IN -->
+                                <li class="nav-item"><a href="#" class="nav-link" data-bind="click:function(){ Nav('SamplePage'); }, css:{ active: CurrentView() == 'samplepage'}, html:IconAndText('SamplePage')"></a></li>
+                                @if(adminUser || appAdminUser){
                                     <li class="nav-item dropdown">
                                         <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false" data-bind="css:{ active: CurrentViewAdmin() == true}">
                                             <i data-bind="html:IconAndText('Admin')"></i>
                                         </a>
                                         <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+                                            <!-- Any admin items added via AppSettings will appear below, you can move them where you want after they are created. -->
+                                            <!-- AUTO-GENERATED MENU ADMIN-->
+                                            <!-- END AUTO-GENERATED MENU ADMIN-->
+                                            @if (appAdminUser) {
+                                                <!-- AUTO-GENERATED MENU APPADMIN-->
+                                                <!-- END AUTO-GENERATED MENU APPADMIN-->
+                                                <li><a class="dropdown-item app-admin-only" href="#" data-bind="click:function(){ Nav('AppSettings'); }, css: { active: CurrentView() == 'appsettings'}"><i data-bind="html:IconAndText('AppSettings')"></i></a></li>
+                                            }
                                             @if (adminUser) {
+                                                <!-- ko if: BlockModuleDepartments() == false -->
                                                 <li><a class="dropdown-item" href="#" data-bind="click:function(){ Nav('Departments'); }, css: { active: CurrentView() == 'departments' || CurrentView() == 'editdepartment' || CurrentView() == 'newdepartment' || CurrentView() == 'departmentgroups' || CurrentView() == 'editdepartmentgroup' || CurrentView() == 'newdepartmentgroup'}"><i data-bind="html:IconAndText('Departments')"></i></a></li>
+                                                <!-- /ko -->
                                                 <li><a class="dropdown-item" href="#" data-bind="click:function(){ Nav('Language'); }, css: { active: CurrentView() == 'language'}"><i data-bind="html:IconAndText('Language')"></i></a></li>
                                                 <li><a class="dropdown-item" href="#" data-bind="click:function(){ Nav('Settings'); }, css: { active: CurrentView() == 'settings'}"><i data-bind="html:IconAndText('Settings')"></i></a></li>
                                                 @if (appAdminUser) {
-                                                    <li><a class="dropdown-item" href="#" data-bind="click:function(){ Nav('Tenants'); }, css: { active: CurrentView() == 'tenants' || CurrentView() == 'edittenant' || CurrentView() == 'newtenant'}"><i data-bind="html:IconAndText('Tenants')"></i></a></li>
+                                                    <li><a class="dropdown-item app-admin-only" href="#" data-bind="click:function(){ Nav('Tenants'); }, css: { active: CurrentView() == 'tenants' || CurrentView() == 'edittenant' || CurrentView() == 'newtenant'}"><i data-bind="html:IconAndText('Tenants')"></i></a></li>
                                                 }
+                                                <!-- ko if: BlockModuleUDF() == false -->
                                                 <li><a class="dropdown-item" href="#" data-bind="click:function(){ Nav('UdfLabels'); }, css: { active: CurrentView() == 'udflabels'}"><i data-bind="html:IconAndText('UdfLabels')"></i></a></li>
+                                                <!-- /ko -->
                                                 <li><a class="dropdown-item" href="#" data-bind="click:function(){ Nav('Users'); }, css: { active: CurrentView() == 'users' || CurrentView() == 'edituser' || CurrentView() == 'newuser'}"><i data-bind="html:IconAndText('Users')"></i></a></li>
+                                                <!-- ko if: BlockModuleUserGroups() == false -->
+                                                <li><a class="dropdown-item" href="#" data-bind="click:function(){ Nav('UserGroups'); }, css: { active: CurrentView() == 'usergroups'}, html:IconAndText('UserGroups')"></a></li>
+                                                <!-- /ko -->
                                             }
                                         </ul>
                                     </li>                      
@@ -293,7 +425,9 @@
                                             <p class="fixed-300 dropdown-text">
                                                 <span class="menu-user-name" data-bind="html:User().firstName() + ' ' + User().lastName()"></span>
                                                 <span class="menu-user-title" data-bind="visible:User().title() != null && User().title() != '', html:User().title"></span>
+                                                <!-- ko if: BlockModuleDepartments() == false -->
                                                 <span class="menu-user-dept" data-bind="visible:User().departmentName() != null && User().departmentName() != '', html:User().departmentName"></span>
+                                                <!-- /ko -->
                                                 <span class="menu-user-username" data-bind="visible:User().username() != null && User().username() != '', html:Language('Username').toLowerCase() + ': ' + User().username()"></span>
                                                 <span class="menu-user-email" data-bind="visible:User().email() != null && User().email() != '', html:Language('Email').toLowerCase() + ': ' + User().email()"></span>
                                             </p>
@@ -312,11 +446,20 @@
                                             <li><hr class="dropdown-divider" /></li>
                                             <p class="fixed-300 dropdown-text">
                                                 <span data-bind="html:Language('Theme')"></span>:
-                                                <select class="form-select theme-selector" data-bind="value:Theme" title="Select a Theme" alt="Select a Theme">
-                                                    <option value="">Light</option>
-                                                    <option value="medium">Medium</option>>
-                                                    <option value="dark">Dark</option>
+                                                <select class="form-select theme-selector" data-bind="value:Theme, attr:{title:Language('SelectTheme'), alt:Language('SelectTheme')}">
+                                                    <option value="" data-bind="html:Language('ThemeAuto')"></option>
+                                                    <option value="light" data-bind="html:Language('ThemeLight')"></option>>
+                                                    <option value="dark" data-bind="html:Language('ThemeDark')"></option>
                                                 </select>
+                                                @if (cultures.Count() > 1) {
+                                                    <span class="mt-2" data-bind="html:Language('Language')"></span>
+                                                    <select class="form-select language-selector"
+                                                    data-bind="value:Culture,
+                                                            options:CurrentCultures,
+                                                            optionsText:function(item){return item.value() + ' [' + item.id() + ']'},
+                                                            optionsValue:function(item){return item.id}">
+                                                    </select>
+                                                }
                                             </p>
 
                                             <li><hr class="dropdown-divider"></li>
@@ -327,14 +470,22 @@
                                             <li><a class="dropdown-item" href="#" data-bind="click:function(){Nav('Profile')}"><i data-bind="html:IconAndText('ManageProfile')"></i></a></li>
                                             <!-- /ko -->
                                             <li><a class="dropdown-item" href="#" data-bind="click:function(){Logout()}"><i data-bind="html:IconAndText('Logout')"></i></a></li>
+                                            <li><hr class="dropdown-divider"></li>
+                                            <p class="fixed-350 dropdown-text menu-version-info">
+                                                @Html.Raw(versionDisplay)
+                                                <br />@Html.Raw(copyrightDisplay)
+                                            </p>
                                         </ul>
                                     </li>
                                 } else {
-                                    <select class="form-select theme-selector" data-bind="value:Theme" title="Select a Theme" alt="Select a Theme">
-                                        <option value="">Light</option>
-                                        <option value="medium">Medium</option>>
-                                        <option value="dark">Dark</option>
-                                    </select>
+                                    <div class="input-group">
+                                        <span class="input-group-text" data-bind="html:Language('Theme')"></span>
+                                        <select class="form-select theme-selector" data-bind="value:Theme, attr:{title:Language('SelectTheme'), alt:Language('SelectTheme')}">
+                                            <option value="" data-bind="html:Language('ThemeAuto')"></option>
+                                            <option value="light" data-bind="html:Language('ThemeLight')"></option>>
+                                            <option value="dark" data-bind="html:Language('ThemeDark')"></option>
+                                        </select>
+                                    </div>
                                 }
                             </ul>
                         </form>
@@ -357,37 +508,44 @@
 
             <div data-bind="visible:AccessDeniedMessage() != null && AccessDeniedMessage() != '', html:AccessDeniedMessage"></div>
         </div>
+
+        <div id="status-app-offline" role="alert" data-bind="visible:AppOnline() == false, html:Language('ServerOffline')" class="alert alert-danger"></div>
     </div>
     <div id="page-view-model-area" class="container-fluid page-view">
         <main role="main" class="pb-3">
+        <!-- BEGIN PUBLIC PARTIALS -->
         @await Html.PartialAsync("_partialLogin")
+        <!-- END PUBLIC PARTIALS -->
 
         @if (loggedIn) {
             IgnoreBody();
-                @await Html.PartialAsync("_partialPage1")
-                @await Html.PartialAsync("_partialPage2")
+                <!-- BEGIN LOGGED IN PARTIALS -->
+                @await Html.PartialAsync("_partialSamplePage")
                 @await Html.PartialAsync("_partialHome")
                 @await Html.PartialAsync("_partialProfile")
+                <!-- END LOGGED IN PARTIALS -->
+
                 @if (adminUser) {
-                    @await Html.PartialAsync("_partialDepartments")
-                    @await Html.PartialAsync("_partialLanguage")
-                    @await Html.PartialAsync("_partialSettings")
-                    if (appAdminUser) {
-                        @await Html.PartialAsync("_partialTenants")
-                    }
-                    @await Html.PartialAsync("_partialUdfLabels")
-                    @await Html.PartialAsync("_partialUsers")
+                <!-- BEGIN ADMIN PARTIALS -->
+                @await Html.PartialAsync("_partialDepartments")
+                @await Html.PartialAsync("_partialLanguage")
+                @await Html.PartialAsync("_partialSettings")
+                @await Html.PartialAsync("_partialUdfLabels")
+                @await Html.PartialAsync("_partialUsers")
+                @await Html.PartialAsync("_partialUserGroups")
+                <!-- END ADMIN PARTIALS -->
                 }
-        } else if (!validTenant) {
+
+                @if (appAdminUser) {
+                <!-- BEGIN APPADMIN PARTIALS -->
+                @await Html.PartialAsync("_partialAppSettings")
+                @await Html.PartialAsync("_partialTenants")
+                <!-- END APPADMIN PARTIALS -->
+                }
+        } else if (!validTenant && useTenantCodeInUrl) {
             IgnoreBody();
-            <h1>Invalid Tenant Code</h1>
-            <p>
-                The Tenant Code
-                &ldquo;@Html.Raw(tenantCode)&rdquo;
-                is not a valid Tenant Code. Please check your URL and
-                ensure a valid URL is used.
-            </p>
-        } else {
+            <div id="invalid-tenant-code-message"></div>
+            } else {
             IgnoreBody();
         }
         </main>
@@ -400,70 +558,111 @@
     window.appName = "@Html.Raw(appName)";
     window.appTitle = "@Html.Raw(appTitle)";
     window.baseURL = "@Html.Raw(baseUrl)";
+    window.culture = "@Html.Raw(culture)";
+    window.GuidEmpty = "@Html.Raw(Guid.Empty.ToString())";
     window.id = "@Html.Raw(routeHelper.Id)";
     window.loggedIn = @Html.Raw(loggedIn.ToString().ToLower());
     window.appAdmin = @Html.Raw(appAdminUser.ToString().ToLower());
     window.mainModel;
+    window.models = [];
     window.missingTenantCode = @Html.Raw(missingTenantCode.ToString().ToLower());
+    window.objCultureCodes = @Html.Raw(Utilities.SerializeObjectToJsonCamelCase(cultureCodes));
+    window.objCultures = @Html.Raw(Utilities.SerializeObjectToJsonPascalCase(cultures));
     window.objDefaultLanguage = @Html.Raw(objDefaultLanguage);
-    window.objExtra = @Html.Raw(objExtra);
+    window.objExtra = @Html.Raw(Utilities.SerializeObjectToJsonPascalCase(extra));
     window.objLanguage = @Html.Raw(objLanguage);
-    window.objTenant = @Html.Raw(objTenant);
+    window.objTenant = @Html.Raw(Utilities.SerializeObjectToJsonCamelCase(tenant));
+    window.objTenantList = @Html.Raw(Utilities.SerializeObjectToJsonCamelCase(tenants));
     window.objUser = @Html.Raw(objUserJson);
-    window.objVersionInfo = @Html.Raw(objVersionInfo);
-    window.requestsModel;
+    window.objVersionInfo = @Html.Raw(Utilities.SerializeObjectToJsonCamelCase(versionInfo));
+    window.showTenantCodeFieldOnLoginForm = @Html.Raw(showTenantCodeFieldOnLoginForm.ToString().ToLower());
+    window.showTenantListingWhenMissingTenantCode = @Html.Raw(showTenantListingWhenMissingTenantCode.ToString().ToLower());
     window.settingsModel;
-    window.statsModel;
     window.tenantCode = "@Html.Raw(tenantCode)";
     window.tenantId = "@Html.Raw(tenantId)";
     window.token = "@Html.Raw(token)";
+    window.useAuthProviderCustom = @Html.Raw(useAuthProviderCustom.ToString().ToLower());
+    window.useAuthProviderFacebook = @Html.Raw(auth.UseFacebook.ToString().ToLower());
+    window.useAuthProviderGoogle = @Html.Raw(auth.UseGoogle.ToString().ToLower());
+    window.useAuthProviderMicrosoftAccount = @Html.Raw(auth.UseMicrosoftAccount.ToString().ToLower());
+    window.useAuthProviderOpenId = @Html.Raw(auth.UseOpenId.ToString().ToLower());
     window.useTenantCodeInUrl = @Html.Raw(useTenantCodeInUrl.ToString().ToLower());
 
     $(document).ready(function(){
+        Dropzone.autoDiscover = false;
+
         if(window.missingTenantCode && window.useTenantCodeInUrl){
-            var url = window.baseURL + window.tenantCode + "/";
-            window.history.pushState(null, null, url);
+            if (window.tenantCode == undefined || window.tenantCode == null || window.tenantCode == "") {
+                // Missing a tenant code
+            } else {
+                var url = window.baseURL + window.tenantCode + "/";
+                window.history.pushState(null, null, url);
+            }
         }
 
+        // <BEGIN PUBLIC MODELS>
         window.mainModel = new MainModel();
         ko.applyBindings(window.mainModel, document.getElementById('main-model'));
+        window.models.push("MainModel");
 
         window.loginModel = new LoginModel();
         ko.applyBindings(window.loginModel, document.getElementById('view-login'));
+        window.models.push("LoginModel");
+        // <END PUBLIC MODELS>
 
         if(window.loggedIn){
+            // <BEGIN LOGGED IN MODELS>
             window.homeModel = new HomeModel();
             ko.applyBindings(window.homeModel, document.getElementById('view-home'));
+            window.models.push("HomeModel");
 
             window.profileModel = new ProfileModel();
             ko.applyBindings(window.profileModel, document.getElementById('view-profile'));
+            window.models.push("ProfileModel");
 
-            window.page1Model = new Page1Model();
-            ko.applyBindings(window.page1Model, document.getElementById('view-page1'));
-
-            window.page2Model = new Page2Model();
-            ko.applyBindings(window.page2Model, document.getElementById('view-page2'));
+            window.samplePageModel = new SamplePageModel();
+            ko.applyBindings(window.samplePageModel, document.getElementById('view-samplepage'));
+            window.models.push("SamplePageModel");
+            // <END LOGGED IN MODELS>
 
             if(window.adminUser){
+                // <BEGIN ADMIN MODELS>
                 window.settingsModel = new SettingsModel();
                 ko.applyBindings(window.settingsModel, document.getElementById('view-settings'));
+                window.models.push("SettingsModel");
 
                 window.departmentsModel = new DepartmentsModel();
                 ko.applyBindings(window.departmentsModel, document.getElementById('view-departments'));
+                window.models.push("DepartmentsModel");
 
                 window.languageModel = new LanguageModel();
                 ko.applyBindings(window.languageModel, document.getElementById('view-language'));
-
-                if(window.appAdmin){
-                    window.tenantsModel = new TenantsModel();
-                    ko.applyBindings(window.tenantsModel, document.getElementById('view-tenants'));
-                }
+                window.models.push("LanguageModel");
 
                 window.udfLabelsModel = new UdfLabelsModel();
                 ko.applyBindings(window.udfLabelsModel, document.getElementById('view-udflabels'));
+                window.models.push("UdfLabelsModel");
 
                 window.usersModel = new UsersModel();
                 ko.applyBindings(window.usersModel, document.getElementById('view-users'));
+                window.models.push("UsersModel");
+
+                window.userGroupsModel = new UserGroupsModel();
+                ko.applyBindings(window.userGroupsModel, document.getElementById('view-usergroups'));
+                window.models.push("UserGroupsModel");
+                // <END ADMIN MODELS>
+            }
+
+            if (window.appAdmin) {
+                // <BEGIN APPADMIN MODELS>
+                window.appSettingsModel = new AppSettingsModel();
+                ko.applyBindings(window.appSettingsModel, document.getElementById('view-appsettings'));
+                window.models.push("AppSettingsModel");
+
+                window.tenantsModel = new TenantsModel();
+                ko.applyBindings(window.tenantsModel, document.getElementById('view-tenants'));
+                window.models.push("TenantsModel");
+                // <END APPADMIN MODELS>
             }
 
             var connection = new signalR.HubConnectionBuilder().withUrl(window.baseURL + "signalRHub").withAutomaticReconnect().build();

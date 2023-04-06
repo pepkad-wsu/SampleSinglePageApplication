@@ -54,6 +54,8 @@
         this.Filter().udf09(null);
         this.Filter().udf10(null);
         this.Filter().page(1);
+        this.Filter().sort(null);
+        this.Filter().sortOrder(null);
         this.GetUsers();
     }
 
@@ -181,6 +183,7 @@
         if (this.Filter().recordsPerPage() == null || this.Filter().recordsPerPage() == 0) {
             this.Filter().recordsPerPage(10);
         }
+        this.Filter().tenantId(this.MainModel().TenantId());
 
         let success: Function = (data: server.filterUsers) => {
             this.MainModel().Message_Hide();
@@ -200,16 +203,16 @@
             this.Filter().loading(false);
         };
 
-
         let postFilter: filterUsers = new filterUsers();
         postFilter.Load(JSON.parse(ko.toJSON(this.Filter)));
+        postFilter.tenantId(this.MainModel().TenantId());
         postFilter.columns(null);
         postFilter.records(null);
+        postFilter.cultureCode(this.MainModel().Culture());
 
         let jsonData: string = ko.toJSON(postFilter);
         tsUtilities.CookieWrite("saved-filter-users", jsonData);
         tsUtilities.AjaxData(window.baseURL + "api/Data/GetUsersFiltered/", jsonData, success);
-
     }
 
     /**
@@ -279,12 +282,12 @@
         // Load records in the pagedRecordset
         let f: filter = new filter();
         f.Load(JSON.parse(ko.toJSON(this.Filter)));
+        f = this.MainModel().UpdatePagedRecordsetColumnIcons(f);
 
         let records: any = JSON.parse(ko.toJSON(this.Filter().records));
 
         // Only show photos if this set of data includes at least one photo
         let photoBaseUrl: string = "";
-        
 
         if (records != null && records.length > 0) {
             let havePhotos: any = ko.utils.arrayFirst(records, function (e) {
@@ -559,23 +562,37 @@
     ViewChanged(): void {
         this.Loading(false);
 
+        let allowAccess: boolean = this.MainModel().AdminUser();
+
         switch (this.MainModel().CurrentView()) {
             case "edituser":
-                this.AddToSelectedTeam("");
-                this.EditUser();
-                this.ResettingUserPassword(false);
+                if (allowAccess) {
+                    this.AddToSelectedTeam("");
+                    this.EditUser();
+                    this.ResettingUserPassword(false);
+                } else {
+                    this.MainModel().Nav("AccessDenied");
+                }
                 break;
 
             case "newuser":
-                this.AddToSelectedTeam("");
-                this.AddUser();
-                this.ResettingUserPassword(false);
+                if (allowAccess) {
+                    this.AddToSelectedTeam("");
+                    this.AddUser();
+                    this.ResettingUserPassword(false);
+                } else {
+                    this.MainModel().Nav("AccessDenied");
+                }
                 break;
 
             case "users":
-                this.AddToSelectedTeam("");
-                this.GetSavedFilter();
-                this.ResettingUserPassword(false);
+                if (allowAccess) {
+                    this.AddToSelectedTeam("");
+                    this.GetSavedFilter();
+                    this.ResettingUserPassword(false);
+                } else {
+                    this.MainModel().Nav("AccessDenied");
+                }
                 break;
         }
     }

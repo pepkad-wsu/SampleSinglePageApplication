@@ -23,7 +23,7 @@ public partial class DataAccess
                 return output;
             }
 
-            Guid tenantId = GuidOrEmpty(rec.TenantId);
+            Guid tenantId = GuidValue(rec.TenantId);
 
             data.Departments.Remove(rec);
             try {
@@ -58,23 +58,19 @@ public partial class DataAccess
         } else {
             // First, delete related data
             try {
-                if (_inMemoryDatabase) {
-                    var recs = await data.Departments.Where(x => x.DepartmentGroupId == DepartmentGroupId).ToListAsync();
-                    if(recs != null) {
-                        foreach(var r in recs) {
-                            r.DepartmentGroupId = null;
-                        }
-                        await data.SaveChangesAsync();
+                var recs = await data.Departments.Where(x => x.DepartmentGroupId == DepartmentGroupId).ToListAsync();
+                if (recs != null) {
+                    foreach (var r in recs) {
+                        r.DepartmentGroupId = null;
                     }
-                } else {
-                    await data.Database.ExecuteSqlRawAsync("UPDATE Departments SET DepartmentGroupId=NULL WHERE DepartmentGroupId={0}", DepartmentGroupId);
+                    await data.SaveChangesAsync();
                 }
             } catch (Exception ex) {
                 output.Messages.Add("Error Deleting Related Department Records for DepartmentGroup " + DepartmentGroupId.ToString() + " - " + ex.Message);
                 return output;
             }
 
-            Guid tenantId = GuidOrEmpty(rec.TenantId);
+            Guid tenantId = GuidValue(rec.TenantId);
 
             data.DepartmentGroups.Remove(rec);
             try {
@@ -99,15 +95,53 @@ public partial class DataAccess
         return output;
     }
 
-    public async Task<Guid> DepartmentIdFromActiveDirectoryName(Guid TenantId, string? Department)
+    public async Task<Guid> DepartmentIdFromNameAndLocation(Guid TenantId, string? Department, string? Location = "")
     {
         Guid output = Guid.Empty;
 
-        if (!String.IsNullOrEmpty(Department)) {
-            var rec = await data.Departments.FirstOrDefaultAsync(x => x.TenantId == TenantId && x.ActiveDirectoryNames != null && x.ActiveDirectoryNames.ToLower().Contains("{" + Department.ToLower() + "}"));
-            if (rec != null) {
-                output = rec.DepartmentId;
+        EFModels.EFModels.Department? rec = null;
+
+        string department = StringValue(Department).ToLower();
+        string location = StringValue(Location).ToLower();
+
+        // First, try and match on both Department and Location.
+        if (!String.IsNullOrWhiteSpace(department) && !String.IsNullOrWhiteSpace(location)) {
+            rec = await data.Departments.AsNoTracking()
+                .OrderBy(x => x.DepartmentName)
+                .FirstOrDefaultAsync(x => x.TenantId == TenantId &&
+                    x.ActiveDirectoryNames != null &&
+                    x.ActiveDirectoryNames.ToLower().Contains("{" + department + "}") &&
+                    x.ActiveDirectoryNames.ToLower().Contains("[" + location + "]")
+                );
+        }
+
+        if (rec == null) {
+            if (!String.IsNullOrWhiteSpace(department)) {
+                // Try and match on just Department
+                rec = await data.Departments.AsNoTracking()
+                    .OrderBy(x => x.DepartmentName)
+                    .FirstOrDefaultAsync(x => x.TenantId == TenantId &&
+                        x.ActiveDirectoryNames != null &&
+                        x.ActiveDirectoryNames.ToLower().Contains("{" + department + "}")
+                    );
             }
+        }
+
+        if (rec == null) {
+            if (!String.IsNullOrWhiteSpace(location)) {
+                // Finally, try and match on a group that only has a location tag.
+                rec = await data.Departments.AsNoTracking()
+                    .OrderBy(x => x.DepartmentName)
+                    .FirstOrDefaultAsync(x => x.TenantId == TenantId &&
+                        x.ActiveDirectoryNames != null &&
+                        x.ActiveDirectoryNames.ToLower().Contains("[" + location + "]") &&
+                        !x.ActiveDirectoryNames.Contains("{")
+                    );
+            }
+        }
+
+        if (rec != null && rec.DepartmentId != Guid.Empty) {
+            output = rec.DepartmentId;
         }
 
         return output;
@@ -124,7 +158,7 @@ public partial class DataAccess
             output.ActionResponse.Result = true;
             output.ActiveDirectoryNames = rec.ActiveDirectoryNames;
             output.DepartmentId = DepartmentId;
-            output.TenantId = GuidOrEmpty(rec.TenantId);
+            output.TenantId = GuidValue(rec.TenantId);
             output.DepartmentName = rec.DepartmentName;
             output.Enabled = rec.Enabled.HasValue ? (bool)rec.Enabled : false;
             output.DepartmentGroupId = rec.DepartmentGroupId;
@@ -143,7 +177,7 @@ public partial class DataAccess
                 ActionResponse = GetNewActionResponse(true),
                 DepartmentGroupId = rec.DepartmentGroupId,
                 DepartmentGroupName = rec.DepartmentGroupName,
-                TenantId = GuidOrEmpty(rec.TenantId)
+                TenantId = GuidValue(rec.TenantId)
             };
         } else {
             output.ActionResponse = GetNewActionResponse(false, "Department Group '" + DepartmentGroupId.ToString() + "' Not Found");
@@ -194,7 +228,7 @@ public partial class DataAccess
                     ActionResponse = GetNewActionResponse(true),
                     ActiveDirectoryNames = rec.ActiveDirectoryNames,
                     DepartmentId = rec.DepartmentId,
-                    TenantId = GuidOrEmpty(rec.TenantId),
+                    TenantId = GuidValue(rec.TenantId),
                     DepartmentName = rec.DepartmentName,
                     Enabled = rec.Enabled.HasValue ? (bool)rec.Enabled : false,
                     DepartmentGroupId = rec.DepartmentGroupId
@@ -209,7 +243,7 @@ public partial class DataAccess
     {
         department.ActionResponse = GetNewActionResponse();
 
-        if (GuidOrEmpty(department.TenantId) != Guid.Empty) {
+        if (GuidValue(department.TenantId) != Guid.Empty) {
             bool newRecord = false;
             var rec = await data.Departments.FirstOrDefaultAsync(x => x.DepartmentId == department.DepartmentId);
             if (rec == null) {
@@ -224,7 +258,7 @@ public partial class DataAccess
                 }
             }
 
-            rec.TenantId = GuidOrEmpty(department.TenantId);
+            rec.TenantId = GuidValue(department.TenantId);
             rec.DepartmentName = department.DepartmentName;
             rec.ActiveDirectoryNames = department.ActiveDirectoryNames;
             rec.Enabled = department.Enabled;
@@ -259,7 +293,7 @@ public partial class DataAccess
     {
         departmentGroup.ActionResponse = GetNewActionResponse();
 
-        if (GuidOrEmpty(departmentGroup.TenantId) != Guid.Empty) {
+        if (GuidValue(departmentGroup.TenantId) != Guid.Empty) {
             bool newRecord = false;
             var rec = await data.DepartmentGroups.FirstOrDefaultAsync(x => x.DepartmentGroupId == departmentGroup.DepartmentGroupId);
             if (rec == null) {
@@ -310,6 +344,4 @@ public partial class DataAccess
         }
         return output;
     }
-
-
 }

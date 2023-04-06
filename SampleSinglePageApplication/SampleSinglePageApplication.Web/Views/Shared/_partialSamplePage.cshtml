@@ -1,0 +1,65 @@
+﻿<script src="~/js/viewModels/samplePage.js?v=@Html.Raw(Guid.NewGuid().ToString().Replace("-", ""))"></script>
+<div id="view-samplepage">
+    <div data-bind="visible:MainModel().CurrentView() == 'samplepage'">
+        <div data-bind="css:{fixed: MainModel().StickyMenus() == true}">
+            <i class="sticky-menu-icon" data-bind="html:MainModel().StickyIcon(), click:function(){MainModel().ToggleStickyMenus()}"></i>
+            <h1 class="display-7" data-bind="html:MainModel().IconAndText('SamplePage')"></h1>
+        </div>
+
+        <div class="mb-2">
+            A sample page that demonstrates some of the included utilities.
+            To see more of the utilities that are available take a look a the
+            \wwwroot\js\tsUtilities\utilFunctions.ts TypeScript file and the
+            \wwwroot\js\pagedRecordset\pagedRecordset.ts Typescript file.
+            You can see the Paged Recordset in use on the Admin\Users page
+            and you can see how it is utilitized on the backend by checking out
+            the GetUsersFiltered function in the DataAccess.Users.cs partial
+            class file.
+        </div>
+
+        <div class="mb-2">
+            <label for="sample-html-editor" 
+                data-bind="click:function(){tsUtilities.HtmlEditorFocus('sample-html-editor');}">Sample HTML Editor</label>
+            <textarea id="sample-html-editor" class="form-control"></textarea>
+        </div>
+
+        <div class="mb-4" data-bind="visible:Html() != null && Html() != ''">
+            <strong>Rendered HTML</strong>:
+            <div data-bind="html:Html"></div>
+        </div>
+
+        <div class="row">
+            <div class="col-sm-6 mb-2">
+                <label for="sample-user-lookup">Sample User Lookup</label>
+            <input type="text" class="form-control" id="sample-user-lookup" 
+                data-bind="attr: {placeholder: User().displayName() != null && User().displayName() != '' ? User().displayName() : MainModel().Language('AutoCompleteUserLookup')  }"/>
+            </div>
+            <div class="col-sm-3 mb-2">
+                <label for="sample-dateTime">Date Picker</label>
+                <input type="text" id="sample-datePicker" class="form-control datePicker fixed-width" />
+            </div>
+            <div class="col-sm-3 mb-2">
+                <label for="sample-dateTimePicker">DateTime Picker</label>
+                <input type="text" id="sample-dateTimePicker" class="form-control dateTimePicker fixed-width" />
+            </div>
+        </div>
+
+        <div class="mt-4 mb-2">
+            <button type="button" class="btn btn-primary" data-bind="click:ColorboxTest">
+                <i data-bind="html:MainModel().Icon('Photo')"></i>
+                Colorbox Photo Viewer Test
+            </button>
+
+            <button type="button" class="btn btn-dark" data-bind="click:ModalTest">
+                <i class="fa-regular fa-comment-dots"></i> Modal Dialog
+            </button>
+
+            <button type="button" class="btn btn-secondary" data-bind="click:GenerateGuid">
+                <i class="fa-solid fa-arrows-rotate"></i> Generate a Guid
+            </button>
+
+            <div class="mt-2" id="generated-guid" style="display:none;"></div>
+        </div>
+
+    </div>
+</div>

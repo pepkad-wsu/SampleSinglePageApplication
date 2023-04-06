@@ -1,0 +1,29 @@
+﻿@using SampleSinglePageApplication;
+@model DataObjects.ConnectionStringConfig
+@inject IHttpContextAccessor context;
+@inject IDataAccess data;
+@{
+    Layout = "_LayoutNotLoggedIn";
+
+    data.SetHttpContext(context.HttpContext);
+
+    string title = data.GetLanguageItem("InvalidLogin");
+    string back = data.GetLanguageItem("Back");
+
+    ViewBag.Title = title;
+
+    string authMethod = data.QueryStringValue("authMethod");
+    if (!String.IsNullOrWhiteSpace(authMethod)) {
+        title += " from " + authMethod;
+    }
+
+    var settings = data.GetApplicationSettings();
+    RouteHelper routeHelper = new RouteHelper(context.HttpContext, settings.UseTenantCodeInUrl);
+    string baseUrl = routeHelper.GetBaseUrl();
+
+}
+<div class="container-fluid">
+    <h1 class="display-7">@Html.Raw(title)</h1>
+
+    <a href="@Html.Raw(baseUrl)" class="btn btn-dark"><i class="fas fa-arrow-left"></i> @Html.Raw(back)</a>
+</div>

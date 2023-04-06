@@ -1,0 +1,227 @@
+﻿<script src="~/js/viewModels/appSettings.js?v=@Html.Raw(Guid.NewGuid().ToString().Replace("-", ""))"></script>
+<div id="view-appsettings">
+    <div data-bind="visible:MainModel().CurrentView() == 'appsettings'">
+        <div data-bind="visible:MainModel().Id() == ''">
+            <div data-bind="css:{fixed: MainModel().StickyMenus() == true}">
+                <i class="sticky-menu-icon" data-bind="html:MainModel().StickyIcon(), click:function(){MainModel().ToggleStickyMenus()}"></i>
+                <h1 class="display-7"><i data-bind="html:MainModel().IconAndText('AppSettings')"></i></h1>
+
+                <div class="mb-2">
+                    <button type="button" class="btn btn-success" data-bind="html:MainModel().IconAndText('Save'), click:Save"></button>
+                    <button type="button" class="btn btn-warning"
+                            data-bind="html:MainModel().IconAndText('AddModule'), click:function(){MainModel().Nav('AppSettings','AddModule')},
+                            visible:AllowAddModule() == true"></button>
+                </div>
+            </div>
+
+            <div data-bind="visible:Loading, html:MainModel().Language('LoadingWait')"></div>
+
+            <div data-bind="visible:Loading() == false">
+                <div class="mb-2">
+                    <label for="edit-appsetting-applicationURL" data-bind="html:MainModel().Language('AppUrl')"></label>
+                    <input type="text" id="edit-appsetting-applicationURL" class="form-control" data-bind="value:AppSettings().applicationURL" />
+                </div>
+
+                <div class="mb-2">
+                    <label for="edit-appsetting-defaultTenantCode" data-bind="html:MainModel().Language('DefaultTenantCode')"></label>
+                    <select id="edit-appsetting-defaultTenantCode" class="form-select"
+                            data-bind="value:AppSettings().defaultTenantCode,
+                        options:MainModel().Tenants(),
+                        optionsText:function(item){return item.tenantCode() + ' - ' + item.name()},
+                        optionsValue:function(item){return item.tenantCode()},
+                        optionsCaption: ''">
+                    </select>
+                </div>
+
+                <div class="mb-2 form-check form-switch">
+                    <input type="checkbox" id="edit-appsetting-useTenantCodeInUrl" role="switch" class="form-check-input" data-bind="checked:AppSettings().useTenantCodeInUrl" />
+                    <label for="edit-appsetting-useTenantCodeInUrl" class="form-check-label" data-bind="html:MainModel().Language('UseTenantCodeInUrl')"></label>
+                </div>
+
+                <div class="mb-2 form-check form-switch" data-bind="visible:AppSettings().useTenantCodeInUrl">
+                    <input type="checkbox" id="edit-appsetting-showTenantListingWhenMissingTenantCode" role="switch" class="form-check-input" data-bind="checked:AppSettings().showTenantListingWhenMissingTenantCode" />
+                    <label for="edit-appsetting-showTenantListingWhenMissingTenantCode" class="form-check-label" data-bind="html:MainModel().Language('ShowTenantListingWhenMissingTenantCode')"></label>
+                </div>
+
+                <div class="mb-2 form-check form-switch" data-bind="visible:AppSettings().useTenantCodeInUrl() == false">
+                    <input type="checkbox" id="edit-appsetting-showTenantCodeFieldOnLoginForm" role="switch" class="form-check-input" data-bind="checked:AppSettings().showTenantCodeFieldOnLoginForm" />
+                    <label for="edit-appsetting-showTenantCodeFieldOnLoginForm" class="form-check-label" data-bind="html:MainModel().Language('ShowTenantCodeFieldOnLoginForm')"></label>
+                </div>
+
+                <div class="card mb-2">
+                    <div class="card-header" data-bind="html:MainModel().Language('MailServerConfiguration')"></div>
+                    <div class="card-body">
+                        <div class="mb-2">
+                            <label for="edit-appsetting-defaultReplyToAddress" data-bind="html:MainModel().Language('DefaultReplyToAddress')"></label>
+                            <input type="text" id="edit-appsetting-defaultReplyToAddress" class="form-control" data-bind="value:AppSettings().defaultReplyToAddress" />
+                        </div>
+
+                        <div class="mb-2">
+                            <label for="edit-appsetting-mailServer" data-bind="html:MainModel().Language('MailServer')"></label>
+                            <input type="text" id="edit-appsetting-mailServer" class="form-control" data-bind="textInput:AppSettings().mailServer" />
+                        </div>
+
+                        <div data-bind="visible:AppSettings().mailServer() != null && AppSettings().mailServer() != ''">
+                            <div class="mb-2">
+                                <label for="edit-appsetting-mailServerUsername" data-bind="html:MainModel().Language('MailServerUsername')"></label>
+                                <div class="input-group">
+                                    <input type="text" id="edit-appsetting-mailServerUsername" class="form-control" data-bind="textInput:AppSettings().mailServerUsername" />
+                                    <!-- ko if: AppSettings().mailServerUsername() != null && AppSettings().mailServerUsername() != '' && AppSettings().mailServerUsername().indexOf(',0x') > -1 -->
+                                    <span class="input-group-text pointer bg-danger text-white" data-bind="click:function(){Decrypt('mailServerUsername')}">Decrypt</span>
+                                    <!-- /ko -->
+                                    <!-- ko if: AppSettings().mailServerUsername() != null && AppSettings().mailServerUsername() != '' && AppSettings().mailServerUsername().indexOf(',0x') == -1 -->
+                                    <span class="input-group-text pointer bg-warning" data-bind="click:function(){Encrypt('mailServerUsername')}">Encrypt</span>
+                                    <!-- /ko -->
+                                </div>
+                            </div>
+
+                            <div class="mb-2">
+                                <label for="edit-appsetting-mailServerPassword" data-bind="html:MainModel().Language('MailServerPassword')"></label>
+                                <div class="input-group">
+                                    <input type="text" id="edit-appsetting-mailServerPassword" class="form-control" data-bind="textInput:AppSettings().mailServerPassword" />
+                                    <!-- ko if: AppSettings().mailServerPassword() != null && AppSettings().mailServerPassword() != '' && AppSettings().mailServerPassword().indexOf(',0x') > -1 -->
+                                    <span class="input-group-text pointer bg-danger text-white" data-bind="click:function(){Decrypt('mailServerPassword')}">Decrypt</span>
+                                    <!-- /ko -->
+                                    <!-- ko if: AppSettings().mailServerPassword() != null && AppSettings().mailServerPassword() != '' && AppSettings().mailServerPassword().indexOf(',0x') == -1 -->
+                                    <span class="input-group-text pointer bg-warning" data-bind="click:function(){Encrypt('mailServerPassword')}">Encrypt</span>
+                                    <!-- /ko -->
+                                </div>
+                            </div>
+
+                            <div class="mb-2">
+                                <label for="edit-appsetting-mailServerPort" data-bind="html:MainModel().Language('MailServerPort')"></label>
+                                <input type="number" id="edit-appsetting-mailServerPort" class="form-control" data-bind="value:AppSettings().mailServerPort" />
+                            </div>
+
+                            <div class="mb-2 form-check form-switch">
+                                <input type="checkbox" id="edit-appsetting-mailServerUseSSL" role="switch" class="form-check-input" data-bind="checked:AppSettings().mailServerUseSSL" />
+                                <label for="edit-appsetting-mailServerUseSSL" class="form-check-label" data-bind="html:MainModel().Language('MailServerUsesSSL')"></label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mb-2">
+                    <div class="card-header" data-bind="html:MainModel().Language('EncryptionKey')"></div>
+                    <div class="card-body">
+                        <div class="alert alert-danger" data-bind="html:MainModel().Language('EncryptionKeyWarning')"></div>
+
+                        <div class="mb-2">
+                            <label for="edit-appsetting-encryptionKey" data-bind="html:MainModel().Language('EncryptionKey')"></label>
+                            <div class="input-group">
+                                <input type="text" id="edit-appsetting-encryptionKey" class="form-control" data-bind="value:AppSettings().encryptionKey" />
+                                <span class="input-group-text pointer bg-warning" data-bind="click:GetNewEncryptionKey, html:MainModel().Language('New')"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+
+
+
+
+
+
+
+
+        <div data-bind="visible:MainModel().Id().toLowerCase() == 'addmodule'">
+            <div data-bind="css:{fixed: MainModel().StickyMenus() == true}">
+                <i class="sticky-menu-icon" data-bind="html:MainModel().StickyIcon(), click:function(){MainModel().ToggleStickyMenus()}"></i>
+                <h1 class="display-7"><i data-bind="html:MainModel().IconAndText('AddModule')"></i></h1>
+
+                <div class="mb-2">
+                    <button type="button" class="btn btn-dark" data-bind="html:MainModel().IconAndText('Cancel'), click:function(){MainModel().Nav('AppSettings')}"></button>
+                    <button type="button" class="btn btn-success" data-bind="html:MainModel().IconAndText('Save'), click:AddModuleSave"></button>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-sm-6 mb-2">
+                    <label for="edit-appsettings-addModule-module" data-bind="html:MainModel().LanguageRequired('Module')"></label>
+                    <select id="edit-appsettings-addModule-module" class="form-select"
+                            data-bind="value:Module().module, css: {'missing-required': Module().module() == null || Module().module() == ''}">
+                        <option value=""></option>
+                        <option value="public">Public (Available When Not Logged In)</option>
+                        <option value="loggedin">Logged In</option>
+                        <option value="admin">Admin</option>
+                        <option value="appadmin">App Admin</option>
+                    </select>
+                </div>
+                <div class="col-sm-6 mb-2">
+                    <label for="edit-appsettings-addModule-name" data-bind="html:MainModel().LanguageRequired('ModuleName')"></label>
+                    <span class="note" data-bind="html:MainModel().Language('ModuleNameInfo')"></span>
+                    <input type="text" id="edit-appsettings-addModule-name" class="form-control"
+                           data-bind="textInput:Module().name, css: {'missing-required': Module().name() == null || Module().name() == ''}" />
+                </div>
+            </div>
+
+            <div class="alert alert-danger">
+                <h2 class="display-8">Warning: Advanced Tool</h2>
+                <div class="mb-2">
+                    This tool can be used to create a new module for your application.
+                    It will only appear when running on localhost, as this cannot be done
+                    in a production environment, only during development.
+                    This will add a new ViewModel (www/js/viewModels/MODULENAME.js),
+                    Partial View (/View/Shared/_partialMODULENAME.cshtml), and
+                    Menu Items (in /View/Shared/_Layout.cshtml) in the appopriate areas.
+                    This tool is intended to save time and effort involved in copying existing
+                    files to create another view.
+                </div>
+                <div class="mb-2">
+                    There are several placeholder tags in the _Layout.cshtml file that are used
+                    to determine where this items will be placed. If you have removed those tags
+                    this function will no longer work. Those tags are:
+                </div>
+                <div class="mb-2">
+                    <strong>Menu Items</strong>:
+                    <ul>
+                        <li>&lt;!-- BEGIN AUTO-GENERATED MENU PUBLIC --&gt;</li>
+                        <li>&lt;!-- END AUTO-GENERATED MENU PUBLIC --&gt;</li>
+                        <li>&lt;!-- AUTO-GENERATED MENU LOGGED IN --&gt;</li>
+                        <li>&lt;!-- END AUTO-GENERATED MENU LOGGED IN --&gt;</li>
+                        <li>&lt;!-- AUTO-GENERATED MENU ADMIN --&gt;</li>
+                        <li>&lt;!-- END AUTO-GENERATED MENU ADMIN --&gt;</li>
+                        <li>&lt;!-- AUTO-GENERATED MENU APPADMIN --&gt;</li>
+                        <li>&lt;!-- END AUTO-GENERATED MENU APPADMIN --&gt;</li>
+                    </ul>
+                    <strong>Partial Views</strong>:
+                    <ul>
+                        <li>&lt;!-- BEGIN PUBLIC PARTIALS --&gt;</li>
+                        <li>&lt;!-- END PUBLIC PARTIALS --&gt;</li>
+                        <li>&lt;!-- BEGIN LOGGED IN PARTIALS --&gt;</li>
+                        <li>&lt;!-- END LOGGED IN PARTIALS --&gt;</li>
+                        <li>&lt;!-- BEGIN ADMIN PARTIALS --&gt;</li>
+                        <li>&lt;!-- END ADMIN PARTIALS --&gt;</li>
+                        <li>&lt;!-- BEGIN APPADMIN PARTIALS --&gt;</li>
+                        <li>&lt;!-- END APPADMIN PARTIALS --&gt;</li>
+
+                    </ul>
+                    <strong>View Models</strong>:
+                    <ul>
+                        <li>// &lt;BEGIN PUBLIC MODELS&gt;</li>
+                        <li>// &lt;END PUBLIC MODELS&gt;</li>
+                        <li>// &lt;BEGIN LOGGED IN MODELS&gt;</li>
+                        <li>// &lt;END LOGGED IN MODELS&gt;</li>
+                        <li>// &lt;BEGIN ADMIN MODELS&gt;</li>
+                        <li>// &lt;END ADMIN MODELS&gt;</li>
+                        <li>// &lt;BEGIN APPADMIN MODELS&gt;</li>
+                        <li>// &lt;END APPADMIN MODELS&gt;</li>
+                    </ul>
+                </div>
+                <div class="mb-2">
+                    Also, a placeholder icon will be added to the Icon function in the main.ts file
+                    and for Admin and App Admin item types the admin menu highlighting function
+                    CurrentViewAdmin will be modified in the main.ts file.
+                </div>
+                <div class="mb-2">
+                    You can add multiple items before restarting, but your must restart debugging to
+                    see all of the changes, as the _Layout.cshtml won't be recompiled when it changes
+                    outside of Visual Studio.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

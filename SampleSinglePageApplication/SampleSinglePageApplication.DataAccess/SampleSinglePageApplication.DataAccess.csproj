@@ -1,16 +1,18 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFramework>net7.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Basic.Reference.Assemblies.Net70" Version="1.4.1" />
     <PackageReference Include="JWT" Version="8.9.0" />
     <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.2.0" />
-    <PackageReference Include="System.Data.SqlClient" Version="4.8.3" />
-    <PackageReference Include="System.DirectoryServices" Version="6.0.0" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.4.0" />
+    <PackageReference Include="Novell.Directory.Ldap.NETStandard" Version="3.6.0" />
   </ItemGroup>
 
   <ItemGroup>

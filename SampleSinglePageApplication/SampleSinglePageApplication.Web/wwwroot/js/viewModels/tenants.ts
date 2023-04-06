@@ -1,6 +1,5 @@
 ﻿class TenantsModel {
     AllowDelete: KnockoutObservable<boolean> = ko.observable(false);
-    AllowedFileTypes: KnockoutObservable<string> = ko.observable("");
     Loading: KnockoutObservable<boolean> = ko.observable(false);
     MainModel: KnockoutObservable<MainModel> = ko.observable(window.mainModel);
     Tenant: KnockoutObservable<tenant> = ko.observable(new tenant);
@@ -14,6 +13,69 @@
         this.MainModel().SignalRUpdate.subscribe(() => {
             this.SignalrUpdate();
         });
+    }
+
+    AddExternalUserDataSource(type: string): void {
+        let sortOrder: number = 0;
+
+        if (this.Tenant().tenantSettings().externalUserDataSources() == null) {
+            this.Tenant().tenantSettings().externalUserDataSources([]);
+        } else {
+            this.Tenant().tenantSettings().externalUserDataSources().forEach(function (item) {
+                sortOrder++;
+                if (item.sortOrder() > sortOrder) {
+                    sortOrder = item.sortOrder() + 1;
+                }
+            });
+        }
+
+        let item: externalDataSource = new externalDataSource();
+        item.sortOrder(sortOrder);
+        item.type(type);
+        item.active(true);
+
+        if (type == 'csharp') {
+            let code: string =
+                "namespace CustomCode {\n" +
+                "  using SampleSinglePageApplication;\n" +
+                "  using SampleSinglePageApplication.EFModels.EFModels;\n" +
+                "  using System;\n" +
+                "  using System.Data;\n" +
+                "  using System.Drawing;\n" +
+                "  using System.Text;\n" +
+                "  using System.Text.RegularExpressions;\n" +
+                "  using System.Xml;\n" +
+                "  using System.Xml.Serialization;\n" +
+                "  using System.Net.Http.Headers;\n" +
+                "  using JWT;\n" +
+                "  using JWT.Algorithms;\n" +
+                "  using JWT.Serializers;\n" +
+                "  using Microsoft.EntityFrameworkCore;\n" +
+                "  using System.Net;\n" +
+                "  using System.Net.Mail;\n" +
+                "  using System.Data.SqlClient;\n" +
+                "  using Newtonsoft.Json;\n" +
+                "  using Newtonsoft.Json.Converters;\n" +
+                "  using System.Dynamic;\n" +
+                "  using Microsoft.Graph;\n" +
+                "  using Microsoft.Identity.Client;\n" +
+                "  // Other using statements, etc.\n" +
+                "\n" +
+                "  public class CustomDynamicCode {\n" +
+                "    public DataObjects.User? FindUser(string EmployeeId, string Username, string Email){\n" +
+                "      DataObjects.User? output = null;\n" +
+                "\n" +
+                "      // Execute your code here to find a user and update the output object\n" +
+                "\n" +
+                "      return output;\n" +
+                "    }\n" +
+                "  }\n" +
+                "}";
+
+            item.source(code);
+        }
+
+        this.Tenant().tenantSettings().externalUserDataSources.push(item);
     }
 
     /**
@@ -32,6 +94,71 @@
         tsUtilities.DelayedFocus("new-tenant-name");
     }
 
+    AuthOptionCustom = ko.computed((): boolean => {
+        let output: boolean = false;
+
+        if (this.Tenant().tenantSettings().loginOptions() != null) {
+            var hasOption = ko.utils.arrayFirst(this.Tenant().tenantSettings().loginOptions(), function (item) {
+                return item == "custom";
+            });
+            output = hasOption != null;
+        }
+
+        return output;
+    });
+
+    AuthOptionFacebook = ko.computed((): boolean => {
+        let output: boolean = false;
+
+        if (this.Tenant().tenantSettings().loginOptions() != null) {
+            var hasOption = ko.utils.arrayFirst(this.Tenant().tenantSettings().loginOptions(), function (item) {
+                return item == "facebook";
+            });
+            output = hasOption != null;
+        }
+
+        return output;
+    });
+
+    AuthOptionGoogle = ko.computed((): boolean => {
+        let output: boolean = false;
+
+        if (this.Tenant().tenantSettings().loginOptions() != null) {
+            var hasOption = ko.utils.arrayFirst(this.Tenant().tenantSettings().loginOptions(), function (item) {
+                return item == "google";
+            });
+            output = hasOption != null;
+        }
+
+        return output;
+    });
+
+    AuthOptionMicrosoft = ko.computed((): boolean => {
+        let output: boolean = false;
+
+        if (this.Tenant().tenantSettings().loginOptions() != null) {
+            var hasOption = ko.utils.arrayFirst(this.Tenant().tenantSettings().loginOptions(), function (item) {
+                return item == "microsoft";
+            });
+            output = hasOption != null;
+        }
+
+        return output;
+    });
+
+    AuthOptionOpenId = ko.computed((): boolean => {
+        let output: boolean = false;
+
+        if (this.Tenant().tenantSettings().loginOptions() != null) {
+            var hasOption = ko.utils.arrayFirst(this.Tenant().tenantSettings().loginOptions(), function (item) {
+                return item == "openid";
+            });
+            output = hasOption != null;
+        }
+
+        return output;
+    });
+
     /**
      * Called when the delete tenant confirmation button is clicked to navigate to the "DeletingTenant" page.
      */
@@ -45,6 +172,10 @@
         }
 
         this.MainModel().Nav("DeletingTenant", this.MainModel().Id());
+    }
+
+    DeleteExternalUserDataSource(data: externalDataSource): void {
+        this.Tenant().tenantSettings().externalUserDataSources.remove(data);
     }
 
     /**
@@ -64,7 +195,7 @@
             this.MainModel().Message_Hide();
             if (data != null) {
                 if (data.result) {
-                    window.location.href = window.baseURL + "Admin/Tenants";
+                    window.location.href = window.baseURL + "/Tenants";
                 } else {
                     this.MainModel().Message_Errors(data.messages);
                 }
@@ -80,19 +211,17 @@
      * Called when the URL view is "EditTenant" to load the tenant record and show the edit tenant interface.
      */
     EditTenant(): void {
+        this.MainModel().Message_Hide();
+
         let tenantId: string = this.MainModel().Id();
 
-        this.AllowedFileTypes("");
         this.AllowDelete(false);
 
         this.Tenant(new tenant);
 
         if (tsUtilities.HasValue(tenantId)) {
-            this.MainModel().Message_Loading();
-
             let success: Function = (data: server.tenant) => {
                 this.Loading(false);
-                this.MainModel().Message_Hide();
                 if (data != null) {
                     if (data.actionResponse.result) {
                         this.Tenant().Load(data);
@@ -126,6 +255,7 @@
                 });
             }
             this.Tenants(tenants);
+            this.MainModel().Tenants(tenants);
         };
 
         tsUtilities.AjaxData(window.baseURL + "api/Data/GetTenants", null, success);
@@ -152,6 +282,29 @@
             if (focus == "") { focus = labelPrefix + "tenant-tenantCode"; }
         }
 
+        if (this.Tenant().tenantSettings().externalUserDataSources() != null && this.Tenant().tenantSettings().externalUserDataSources().length > 0) {
+            let missingDataSourceInfo: boolean = false;
+
+            this.Tenant().tenantSettings().externalUserDataSources().forEach(function (item) {
+                if (missingDataSourceInfo == false) {
+                    if (!tsUtilities.HasValue(item.name()) || !tsUtilities.HasValue(item.type())) {
+                        missingDataSourceInfo = true;
+                    } else {
+                        if (item.type() == "sql" && !tsUtilities.HasValue(item.connectionString())) {
+                            missingDataSourceInfo = true;
+                        }
+                        if (!tsUtilities.HasValue(item.source())) {
+                            missingDataSourceInfo = true;
+                        }
+                    }
+                }
+            });
+
+            if (missingDataSourceInfo) {
+                errors.push("When configuring External User Data Sources you must complete all required fields.");
+            }
+        }
+
         if (errors.length > 0) {
             this.MainModel().Message_Errors(errors);
             tsUtilities.DelayedFocus(focus);
@@ -163,6 +316,9 @@
                 this.MainModel().Message_Hide();
                 if (data != null) {
                     if (data.actionResponse.result) {
+                        if (newTenant) {
+                            this.MainModel().ReloadUser();
+                        }
                         this.MainModel().Nav("Tenants");
                     } else {
                         this.MainModel().Message_Errors(data.actionResponse.messages);
@@ -175,6 +331,26 @@
             tsUtilities.AjaxData(window.baseURL + "api/Data/SaveTenant", ko.toJSON(this.Tenant), success);
         }
     }
+
+    ShowEitSsoUrl = ko.computed((): boolean => {
+        let output: boolean = false;
+
+        if (this.Tenant().tenantSettings().loginOptions() != null && this.Tenant().tenantSettings().loginOptions().length > 0) {
+            output = this.Tenant().tenantSettings().loginOptions().indexOf("eitsso") > -1;
+        }
+
+        return output;
+    });
+
+    ShowLocalLoginSignup = ko.computed((): boolean => {
+        let output: boolean = false;
+
+        if (this.Tenant().tenantSettings().loginOptions() != null && this.Tenant().tenantSettings().loginOptions().length > 0) {
+            output = this.Tenant().tenantSettings().loginOptions().indexOf("local") > -1;
+        }
+
+        return output;
+    });
 
     /**
      * This model subscribes to the SignalR updates from the MainModel to update tenant data when tenants are changed.
@@ -211,25 +387,47 @@
      * Called when the view changes in the MainModel to do any necessary work in this viewModel.
      */
     ViewChanged(): void {
+        let allowed: boolean = this.MainModel().User().appAdmin();
+
         switch (this.MainModel().CurrentView()) {
             case "deletingtenant":
-                this.DeletingTenant();
+                if (allowed) {
+                    this.DeletingTenant();
+                } else {
+                    this.MainModel().Nav("AccessDenied");
+                }
                 break;
 
             case "deletetenant":
-                this.DeleteTenant();
+                if (allowed) {
+                    this.DeleteTenant();
+                } else {
+                    this.MainModel().Nav("AccessDenied");
+                }
                 break;
 
             case "edittenant":
-                this.EditTenant();
+                if (allowed) {
+                    this.EditTenant();
+                } else {
+                    this.MainModel().Nav("AccessDenied");
+                }
                 break;
 
             case "newtenant":
-                this.AddTenant();
+                if (allowed) {
+                    this.AddTenant();
+                } else {
+                    this.MainModel().Nav("AccessDenied");
+                }
                 break;
 
             case "tenants":
-                this.GetTenants();
+                if (allowed) {
+                    this.GetTenants();
+                } else {
+                    this.MainModel().Nav("AccessDenied");
+                }
                 break;
         }
     }

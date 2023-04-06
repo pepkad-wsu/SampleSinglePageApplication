@@ -17,6 +17,29 @@ public partial class DataAccess
         return output;
     }
 
+    public string ApplicationURL { 
+        get {
+            string output = StringValue(CacheStore.GetCachedItem<string>(Guid.Empty, "ApplicationURL"));
+            if (String.IsNullOrWhiteSpace(output)) {
+                output += GetSetting<string>("ApplicationURL", DataObjects.SettingType.Text);
+                CacheStore.SetCacheItem(Guid.Empty, "ApplicationURL", output);
+            }
+            return output;
+        }
+    }
+
+    public string AppName {
+        get {
+            return _appName;
+        }
+    }
+
+    public bool BooleanValue(bool? value)
+    {
+        bool output = value.HasValue ? (bool)value : false;
+        return output;
+    }
+
     public string CleanHtml(string html)
     {
         string output = html;
@@ -174,7 +197,7 @@ public partial class DataAccess
     public void CookieWrite(string cookieName, string value, string cookieDomain = "")
     {
         if (_httpContext != null) {
-            DateTime now = DateTime.Now;
+            DateTime now = DateTime.UtcNow;
             if (String.IsNullOrEmpty(cookieName)) { return; }
 
             Microsoft.AspNetCore.Http.CookieOptions option = new Microsoft.AspNetCore.Http.CookieOptions();
@@ -190,7 +213,32 @@ public partial class DataAccess
         }
     }
 
-    public T? DeserializeObject<T>(string SerializedObject)
+    public string Copyright {
+        get {
+            return _copyright;
+        }
+    }
+
+    public string DatabaseType {
+        get {
+            return _databaseType;
+        }
+    }
+
+    private string DefaultReplyToAddress {
+        get {
+            string output = String.Empty;
+            if(CacheStore.ContainsKey(Guid.Empty, "DefaultReplyToAddress")) {
+                output += CacheStore.GetCachedItem<string>(Guid.Empty, "DefaultReplyToAddress");
+            } else {
+                output += GetSetting<string>("DefaultReplyToAddress", DataObjects.SettingType.Text);
+                CacheStore.SetCacheItem(Guid.Empty, "DefaultReplyToAddress", output);
+            }
+            return output;
+        }
+    }
+
+    public T? DeserializeObject<T>(string? SerializedObject)
     {
         var output = default(T);
 
@@ -201,6 +249,83 @@ public partial class DataAccess
                     output = d;
                 }
             } catch { }
+        }
+
+        return output;
+    }
+
+    public T? DeserializeObjectFromXmlOrJson<T>(string? SerializedObject)
+    {
+        var output = default(T);
+
+        if (!String.IsNullOrWhiteSpace(SerializedObject)) {
+            if (SerializedObject.StartsWith("<") || SerializedObject.ToLower().Contains("xmlns:")) {
+                var deserializedXML = Serialize_XmlToObject<T>(SerializedObject);
+                if (deserializedXML != null) {
+                    output = deserializedXML;
+                }
+            } else {
+                var deserializedJson = DeserializeObject<T>(SerializedObject);
+                if (deserializedJson != null) {
+                    output = deserializedJson;
+                }
+            }
+        }
+
+        return output;
+    }
+
+    private List<DataObjects.Dictionary>? DictionaryToListOfDictionary(Dictionary<string, string>? dict)
+    {
+        List<DataObjects.Dictionary>? output = null;
+
+        if (dict != null && dict.Any()) {
+            output = new List<DataObjects.Dictionary>();
+            foreach (var item in dict) {
+                output.Add(new DataObjects.Dictionary {
+                    Key = item.Key,
+                    Value = item.Value
+                });
+            }
+        }
+
+        return output;
+    }
+
+    private static T? DuplicateObject<T>(object? o)
+    {
+        T? output = default(T);
+
+        if (o != null) {
+            // To make a new copy serialize the object and then deserialize it back to a new object.
+            var serialized = Newtonsoft.Json.JsonConvert.SerializeObject(o);
+            if (!String.IsNullOrEmpty(serialized)) {
+                try {
+                    var duplicate = Newtonsoft.Json.JsonConvert.DeserializeObject<T>(serialized);
+                    if (duplicate != null) {
+                        output = duplicate;
+                    }
+                } catch { }
+            }
+        }
+
+        return output;
+    }
+
+    /// <summary>
+    /// Generates a random numeric code
+    /// </summary>
+    /// <param name="Length">The length of the code</param>
+    /// <returns>A string with a random code</returns>
+    public string GenerateRandomCode(int Length)
+    {
+        string output = String.Empty;
+        char[] Possibilities = "1234567890".ToCharArray();
+        Random Randomizer = new Random();
+
+        while (Length > 0) {
+            output += Possibilities[Randomizer.Next(0, Possibilities.Length)];
+            Length--;
         }
 
         return output;
@@ -257,7 +382,7 @@ public partial class DataAccess
         return output;
     }
 
-    public Guid GuidOrEmpty(Guid? guid)
+    public Guid GuidValue(Guid? guid)
     {
         return guid.HasValue ? (Guid)guid : Guid.Empty;
     }
@@ -267,6 +392,80 @@ public partial class DataAccess
         string output = Regex.Replace(html, @"<(.|\n)*?>", "");
         output = System.Web.HttpUtility.HtmlDecode(output);
         return output;
+    }
+
+    public int IntValue(int? value)
+    {
+        int output = value.HasValue ? (int)value : 0;
+        return output;
+    }
+
+    private string MailServer {
+        get {
+            string output = String.Empty;
+            if (CacheStore.ContainsKey(Guid.Empty, "MailServer")) {
+                output += CacheStore.GetCachedItem<string>(Guid.Empty, "MailServer");
+            } else {
+                output += GetSetting<string>("MailServer", DataObjects.SettingType.Text);
+                CacheStore.SetCacheItem(Guid.Empty, "MailServer", output);
+            }
+            return output;
+        }
+    }
+
+    private string MailServerPassword {
+        get {
+            string output = String.Empty;
+            if (CacheStore.ContainsKey(Guid.Empty, "MailServerPassword")) {
+                output += CacheStore.GetCachedItem<string>(Guid.Empty, "MailServerPassword");
+            } else {
+                output += GetSetting<string>("MailServerPassword", DataObjects.SettingType.Text);
+                CacheStore.SetCacheItem(Guid.Empty, "MailServerPassword", output);
+            }
+            return output;
+        }
+    }
+
+    private int MailServerPort {
+        get {
+            int output = 0;
+            if(CacheStore.ContainsKey(Guid.Empty, "MailServerPort")) {
+                output = CacheStore.GetCachedItem<int>(Guid.Empty, "MailServerPort");
+            } else {
+                output = GetSetting<int>("MailServerPort", DataObjects.SettingType.NumberInt);
+                if (output < 1) {
+                    output = 25;
+                }
+                CacheStore.SetCacheItem(Guid.Empty, "MailServerPort", output);
+            }
+            return output;
+        }
+    }
+
+    private string MailServerUsername {
+        get {
+            string output = String.Empty;
+            if(CacheStore.ContainsKey(Guid.Empty, "MailServerUsername")) {
+                output += CacheStore.GetCachedItem<string>(Guid.Empty, "MailServerUsername");
+            } else {
+                output += GetSetting<string>("MailServerUsername", DataObjects.SettingType.Text);
+                CacheStore.SetCacheItem(Guid.Empty, "MailServerUsername", output);
+            }
+            return output;
+        }
+    }
+
+    private bool MailServerUsesSSL {
+        get {
+            bool output = false;
+            if(CacheStore.ContainsKey(Guid.Empty, "MailServerUsesSSL")) {
+                output = CacheStore.GetCachedItem<bool>(Guid.Empty, "MailServerUsesSSL");
+            } else {
+                output = GetSetting<bool>("MailServerUseSSL", DataObjects.SettingType.Boolean);
+                CacheStore.SetCacheItem(Guid.Empty, "MailServerUsesSSL", output);
+            }
+            return output;
+        }
     }
 
     private string MaxStringLength(string? value, int maxLength)
@@ -285,8 +484,7 @@ public partial class DataAccess
 
     public double NowFromUnixEpoch()
     {
-        var unixEpoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
-        return Math.Round((DateTime.UtcNow - unixEpoch).TotalSeconds);
+        return (double)DateTimeOffset.UtcNow.ToUnixTimeSeconds();
     }
 
     public List<string> MessageToListOfString(string message)
@@ -319,7 +517,14 @@ public partial class DataAccess
         return output;
     }
 
-    public string Released {
+    public void Redirect(string url)
+    {
+        if (_httpContext != null) {
+            _httpContext.Response.Redirect(url);
+        }
+    }
+
+    public DateTime Released {
         get {
             return _released;
         }
@@ -370,13 +575,46 @@ public partial class DataAccess
         }
     }
 
-    public async Task<DataObjects.BooleanResponse> SendEmail(DataObjects.EmailMessage message, DataObjects.MailServerConfig? config = null)
+    private DataObjects.BooleanResponse SaveFile(string FullPath, string Contents)
+    {
+        DataObjects.BooleanResponse output = new DataObjects.BooleanResponse();
+
+        bool exists = System.IO.File.Exists(FullPath);
+        try {
+            System.IO.File.WriteAllText(FullPath, Contents);
+            output.Result = true;
+
+            if (exists) {
+                output.Messages.Add("File Updated");
+            } else {
+                output.Messages.Add("File Created");
+            }
+        } catch (Exception ex) {
+            output.Messages.Add("Error Saving File '" + FullPath + "' - " + ex.Message);
+        }
+
+        return output;
+    }
+
+    public DataObjects.BooleanResponse SendEmail(DataObjects.EmailMessage message, DataObjects.MailServerConfig? config = null)
     {
         if (config == null) {
-            config = await GetMailServerConfig();
+            config = GetMailServerConfig();
+        }
+
+        if (!String.IsNullOrWhiteSpace(config.Username)) {
+            config.Username = Decrypt(config.Username);
+        }
+
+        if (!String.IsNullOrWhiteSpace(config.Password)) {
+            config.Password = Decrypt(config.Password);
         }
 
         DataObjects.BooleanResponse output = new DataObjects.BooleanResponse();
+
+        if (String.IsNullOrWhiteSpace(message.From)) {
+            message.From = DefaultReplyToAddress;
+        }
 
         if (String.IsNullOrWhiteSpace(message.From)) {
             output.Messages.Add("Sending an email requires a valid From address.");
@@ -507,7 +745,7 @@ public partial class DataAccess
         return output;
     }
 
-    public string Serialize_ObjectToXml(object o, bool OmitXmlDeclaration)
+    public string Serialize_ObjectToXml(object o, bool OmitXmlDeclaration = true)
     {
         XmlSerializer serializer = new XmlSerializer(o.GetType());
 
@@ -547,9 +785,14 @@ public partial class DataAccess
         return output;
     }
 
-    public string SerializeObject(object Object)
+    public string SerializeObject(object? Object)
     {
-        string output = Newtonsoft.Json.JsonConvert.SerializeObject(Object);
+        string output = String.Empty;
+
+        if (Object != null) {
+            output += Newtonsoft.Json.JsonConvert.SerializeObject(Object);
+        }
+
         return output;
     }
 
@@ -560,7 +803,33 @@ public partial class DataAccess
         }
     }
 
-    public string StringOrEmpty(string? input)
+    private bool ShowTenantCodeFieldOnLoginForm {
+        get {
+            bool output = false;
+            if(CacheStore.ContainsKey(Guid.Empty, "ShowTenantCodeFieldOnLoginForm")) {
+                output = CacheStore.GetCachedItem<bool>(Guid.Empty, "ShowTenantCodeFieldOnLoginForm");
+            } else {
+                output = GetSetting<bool>("ShowTenantCodeFieldOnLoginForm", DataObjects.SettingType.Boolean);
+                CacheStore.SetCacheItem(Guid.Empty, "ShowTenantCodeFieldOnLoginForm", output);
+            }
+            return output;
+        }
+    }
+
+    private bool ShowTenantListingWhenMissingTenantCode {
+        get {
+            bool output = false;
+            if (CacheStore.ContainsKey(Guid.Empty, "ShowTenantListingWhenMissingTenantCode")) {
+                output = CacheStore.GetCachedItem<bool>(Guid.Empty, "ShowTenantListingWhenMissingTenantCode");
+            } else {
+                output = GetSetting<bool>("ShowTenantListingWhenMissingTenantCode", DataObjects.SettingType.Boolean);
+                CacheStore.SetCacheItem(Guid.Empty, "ShowTenantListingWhenMissingTenantCode", output);
+            }
+            return output;
+        }
+    }
+
+    public string StringValue(string? input)
     {
         return !String.IsNullOrEmpty(input) ? input : String.Empty;
     }
@@ -587,6 +856,19 @@ public partial class DataAccess
         return output;
     }
 
+    private bool UseTenantCodeInUrl {
+        get {
+            bool output = false;
+            if (CacheStore.ContainsKey(Guid.Empty, "UseTenantCodeInUrl")) {
+                output = CacheStore.GetCachedItem<bool>(Guid.Empty, "UseTenantCodeInUrl");
+            } else {
+                output = GetSetting<bool>("UseTenantCodeInUrl", DataObjects.SettingType.Boolean);
+                CacheStore.SetCacheItem(Guid.Empty, "UseTenantCodeInUrl", output);
+            }
+            return output;
+        }
+    }
+
     public string Version {
         get {
             return _version;
@@ -597,9 +879,44 @@ public partial class DataAccess
         get {
             return new DataObjects.VersionInfo {
                 Released = _released,
-                RunningSince = GlobalSettings.RunningSince,
+                RunningSince = RunningSince,
                 Version = _version
             };
         }
+    }
+
+    private string WebsiteName(string? url)
+    {
+        string output = WebsiteRoot(url);
+
+        if (output.ToLower().StartsWith("https://")) {
+            output = output.Substring(8);
+        } else if (output.ToLower().StartsWith("http://")) {
+            output = output.Substring(7);
+        }
+
+        if (output.EndsWith("/")) {
+            output = output.Substring(0, output.Length - 1);
+        }
+
+
+        return output;
+    }
+
+    private string WebsiteRoot(string? url)
+    {
+        string output = String.Empty;
+
+        if (!String.IsNullOrWhiteSpace(url)) {
+            int start = url.IndexOf("://");
+            if (start > -1) {
+                int end = url.IndexOf("/", start + 3);
+                if (end > -1) {
+                    output = url.Substring(0, end + 1);
+                }
+            }
+        }
+
+        return output;
     }
 }

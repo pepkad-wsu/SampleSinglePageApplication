@@ -3,10 +3,11 @@ public partial class DataAccess : IDisposable, IDataAccess
 {
     private int _accountLockoutMaxAttempts = 5;
     private int _accountLockoutMinutes = 10;
+    private string _appName = "SampleSinglePageApplication";
     private string _connectionString;
+    private string _copyright = "Company Name";
     private EFDataModel data;
-    private bool _databaseExists;
-    //private Encryption encryption = new Encryption(new byte[] { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28, 0x29, 0x30, 0x31, 0x32 });
+    private string _databaseType;
     private Guid _guid1 = new Guid("00000000-0000-0000-0000-000000000001");
     private Guid _guid2 = new Guid("00000000-0000-0000-0000-000000000002");
     private Microsoft.AspNetCore.Http.HttpContext? _httpContext;
@@ -15,38 +16,54 @@ public partial class DataAccess : IDisposable, IDataAccess
     private bool _localDb = false;
     private bool _open;
     private string _version = "1.0.0";
-    private string _released = "May 4, 2022";
+    private DateTime _released = Convert.ToDateTime("2/27/2023 12:37 PM");
 
-
-    public DataAccess(string ConnectionString = "")
+    public DataAccess(string ConnectionString = "", string DatabaseType = "")
     {
         _connectionString = ConnectionString;
+        _databaseType = DatabaseType;
+
         if (!String.IsNullOrWhiteSpace(_connectionString)) {
             _connectionString = ConnectionString;
-            GlobalSettings.DatabaseConnection = _connectionString;
-        } else {
-            _connectionString = GlobalSettings.DatabaseConnection;
         }
 
-        if (!String.IsNullOrEmpty(_connectionString)) {
-            var optionsBuilder = new DbContextOptionsBuilder<EFDataModel>();
+        var optionsBuilder = new DbContextOptionsBuilder<EFDataModel>();
 
-            if (_connectionString.ToLower() == "inmemory") {
-                optionsBuilder.UseInMemoryDatabase(_connectionString);
-                _inMemoryDatabase = true;
-            } else {
-                optionsBuilder.UseSqlServer(_connectionString, options => options.EnableRetryOnFailure());
+        // Both the Connection String and Database Type parameters are required.
+        // Otherwise the app will redirect to the page to configure the database connection.
+        if (!String.IsNullOrEmpty(_connectionString) && !String.IsNullOrWhiteSpace(_databaseType)) {
+            switch (_databaseType.ToLower()) {
+                case "inmemory":
+                    optionsBuilder.UseInMemoryDatabase("InMemory");
+                    _inMemoryDatabase = true;
+                    break;
+
+                case "mysql":
+                    optionsBuilder.UseMySQL(_connectionString, options => options.EnableRetryOnFailure());
+                    break;
+
+                case "postgresql":
+                    optionsBuilder.UseNpgsql(_connectionString, options => options.EnableRetryOnFailure());
+                    break;
+
+                case "sqlite":
+                    optionsBuilder.UseSqlite(_connectionString);
+                    break;
+
+                case "sqlserver":
+                    optionsBuilder.UseSqlServer(_connectionString, options => options.EnableRetryOnFailure());
+                    break;
             }
 
             data = new EFDataModel(optionsBuilder.Options);
 
-            //if(_connectionString.ToLower() == "inmemory") {
-            //    var created = data.Database.EnsureCreated();
-            //}
+            if (_inMemoryDatabase) {
+                // For the In-Memory database this creates the schema in memory.
+                data.Database.EnsureCreated();
+            }
 
             if (!GlobalSettings.StartupRun) {
                 if (data.Database.CanConnect()) {
-                    _databaseExists = true;
                     _open = true;
 
                     // See if any migrations need to be applied.
@@ -54,25 +71,36 @@ public partial class DataAccess : IDisposable, IDataAccess
                         DatabaseApplyLatestMigrations();
                     }
                 } else {
-                    // Try and create the database.
-                    var created = CreateDatabase();
-                    if (created.Result) {
-                        _databaseExists = true;
-                        // Try and apply the latest migrations
+                    // Try and create the database using the built-in EF command
+                    data.Database.EnsureCreated();
+
+                    // See if any migrations need to be applied.
+                    if (data.Database.CanConnect()) {
                         DatabaseApplyLatestMigrations();
-                        _databaseExists = true;
                         _open = true;
+                    } else {
+                        throw new Exception("Unable to connect to the database. Please check your connection string.");
                     }
                 }
 
-                // Make sure the default data exists and is up todate.
+                // Make sure the default data exists and is up to date.
                 SeedTestData();
 
                 GlobalSettings.StartupRun = true;
-                GlobalSettings.RunningSince = NowFromUnixEpoch();
+                GlobalSettings.RunningSince = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
             } else {
-                _databaseExists = true;
                 _open = true;
+            }
+        } else {
+            // To prevent errors just use an InMemory copy
+            optionsBuilder.UseInMemoryDatabase("InMemory");
+            data = new EFDataModel(optionsBuilder.Options);
+
+            if (!GlobalSettings.StartupRun) {
+                GlobalSettings.StartupError = true;
+                GlobalSettings.StartupErrorCode = "MissingConnectionString";
+            } else {
+                throw new NullReferenceException("Missing Connection String and/or Database Type");
             }
         }
     }

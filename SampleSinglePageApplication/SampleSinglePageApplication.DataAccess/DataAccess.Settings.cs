@@ -11,7 +11,7 @@ public partial class DataAccess
         var output = default(T);
 
         bool newSetting = false;
-        var rec = await data.Settings.FirstOrDefaultAsync(x => x.SettingName == SettingName);
+        var rec = await data.Settings.FirstOrDefaultAsync(x => x.SettingName != null && x.SettingName.ToLower() == SettingName.ToLower());
         if (rec == null) {
             // Setting does not yet exist, so add it
             rec = new Setting();
@@ -22,7 +22,7 @@ public partial class DataAccess
                 case "applicationurl":
                     rec.SettingName = "ApplicationURL";
                     rec.SettingType = "text";
-                    rec.SettingNotes = "The Base URL to the Help Desk";
+                    rec.SettingNotes = "The Base URL to the Application";
                     rec.SettingText = "https://your.app.url/";
                     break;
                 case "activedirectoryroot":
@@ -96,9 +96,9 @@ public partial class DataAccess
         }
         // Now, return the value based on the type of setting
 
-        string value = StringOrEmpty(rec.SettingText);
+        string value = StringValue(rec.SettingText);
 
-        switch (StringOrEmpty(rec.SettingType).ToLower()) {
+        switch (StringValue(rec.SettingType).ToLower()) {
             case "boolean":
             case "bool":
                 bool boolOut = value.ToLower() == "true";
@@ -136,35 +136,20 @@ public partial class DataAccess
         CacheStore.SetCacheItem(TenantId, "Settings", null);
     }
 
-    public async Task<DataObjects.MailServerConfig> GetMailServerConfig()
+    public DataObjects.MailServerConfig GetMailServerConfig()
     {
         // Try the cached settings first.
-        string? server = GlobalSettings.MailServer;
-        int? port = GlobalSettings.MailPort;
-        string? username = GlobalSettings.MailUsername;
-        string? password = GlobalSettings.MailPassword;
-        bool useSSL = GlobalSettings.MailServerUseSSL;
+        var server = MailServer;
+        var port = MailServerPort;
+        var username = MailServerUsername;
+        var password = MailServerPassword;
+        bool useSSL = MailServerUsesSSL;
 
-        if (String.IsNullOrEmpty(server)) {
-            server = GetSetting<string>("MailServer", DataObjects.SettingType.Text);
-            port = GetSetting<int>("MailServerPort", DataObjects.SettingType.NumberInt);
-            username = GetSetting<string>("MailServerUsername", DataObjects.SettingType.EncryptedText);
-            password = GetSetting<string>("MailServerPassword", DataObjects.SettingType.EncryptedText);
-            useSSL = GetSetting<bool>("MailServerUseSSL", DataObjects.SettingType.Boolean);
-
-            if(!port.HasValue || port == 0) { port = 25; }
-            if (!String.IsNullOrEmpty(server)) { GlobalSettings.MailServer = server; }
-            if (!String.IsNullOrEmpty(username)) { GlobalSettings.MailUsername = username; }
-            if (!String.IsNullOrEmpty(password)) { GlobalSettings.MailPassword = password; }
-            GlobalSettings.MailPort = (int)port;
-            GlobalSettings.MailServerUseSSL = useSSL;
-        }
-
-        if (port == null || port == 0) {port = 25; }
+        if (port == 0) {port = 25; }
 
         DataObjects.MailServerConfig output = new DataObjects.MailServerConfig {
             Server = server,
-            Port = (int)port,
+            Port = port,
             Username = username,
             Password = password,
             UseSSL = useSSL
@@ -178,12 +163,12 @@ public partial class DataAccess
         DataObjects.Setting output = new DataObjects.Setting();
 
         if (_open) {
-            var rec = await data.Settings.FirstOrDefaultAsync(x => x.SettingName == SettingName);
+            var rec = await data.Settings.FirstOrDefaultAsync(x => x.SettingName.ToLower() == SettingName.ToLower());
             if (rec == null) {
                 // Call the common function to see if this needs to be created
                 var result = await AppSetting<string>(SettingName);
                 // Now try to get the item
-                rec = await data.Settings.FirstOrDefaultAsync(x => x.SettingName == SettingName);
+                rec = await data.Settings.FirstOrDefaultAsync(x => x.SettingName.ToLower() == SettingName.ToLower());
                 if (rec == null) {
                     output.ActionResponse.Messages.Add("Setting '" + SettingName + "' Does Not Exist");
                     return output;
@@ -209,13 +194,13 @@ public partial class DataAccess
             Setting? rec = null;
 
             if (UserId != null && TenantId != null) {
-                rec = data.Settings.FirstOrDefault(x => x.SettingName == SettingName && x.TenantId == TenantId && x.UserId == UserId);
+                rec = data.Settings.FirstOrDefault(x => x.SettingName != null && x.SettingName.ToLower() == SettingName.ToLower() && x.TenantId == TenantId && x.UserId == UserId);
             } else if (TenantId != null) {
-                rec = data.Settings.FirstOrDefault(x => x.SettingName == SettingName && x.TenantId == TenantId && x.UserId == null);
+                rec = data.Settings.FirstOrDefault(x => x.SettingName != null && x.SettingName.ToLower() == SettingName.ToLower() && x.TenantId == TenantId && x.UserId == null);
             } else if (UserId != null) {
-                rec = data.Settings.FirstOrDefault(x => x.SettingName == SettingName && x.TenantId == null && x.UserId == UserId);
+                rec = data.Settings.FirstOrDefault(x => x.SettingName != null && x.SettingName.ToLower() == SettingName.ToLower() && x.TenantId == null && x.UserId == UserId);
             } else {
-                rec = data.Settings.FirstOrDefault(x => x.SettingName == SettingName && x.TenantId == null && x.UserId == null);
+                rec = data.Settings.FirstOrDefault(x => x.SettingName != null && x.SettingName.ToLower() == SettingName.ToLower() && x.TenantId == null && x.UserId == null);
             }
 
             if (rec != null) {
@@ -299,42 +284,52 @@ public partial class DataAccess
                         break;
 
                 }
+            } else {
+                // Record did not exist, so create it.
+                SaveSetting(SettingName, SettingType, output, TenantId, UserId);
             }
 
             // Certain settings get cached, so if this is one of those settings set the cache here.
             switch (SettingName.ToUpper()) {
                 case "USERLOOKUPCLIENTUSERNAME":
-                    GlobalSettings.UserLookupClientUsername = output != null ? (string)(object)output : String.Empty;
+                    var userLookupClientUsername = output != null ? (string)(object)output : String.Empty;
+                    CacheStore.SetCacheItem(Guid.Empty, "UserLookupClientUsername", userLookupClientUsername);
                     break;
 
                 case "USERLOOKUPCLIENTPASSWORD":
-                    GlobalSettings.UserLookupClientPassword = output != null ? (string)(object)output : String.Empty;
+                    var userLookupClientPassword = output != null ? (string)(object)output : String.Empty;
+                    CacheStore.SetCacheItem(Guid.Empty, "UserLookupClientPassword", userLookupClientPassword);
                     break;
 
                 case "USERLOOKUPCLIENTENDPOINT":
-                    GlobalSettings.UserLookupClientEndpoint = output != null ? (string)(object)output : String.Empty;
+                    var userLookupClientEndpoint = output != null ? (string)(object)output : String.Empty;
+                    CacheStore.SetCacheItem(Guid.Empty, "UserLookupClientEndpoint", userLookupClientEndpoint);
                     break;
 
                 case "MAILSERVER":
-                    GlobalSettings.MailServer = output != null ? (string)(object)output : String.Empty;
+                    var mailServer = output != null ? (string)(object)output : String.Empty;
+                    CacheStore.SetCacheItem(Guid.Empty, "MailServer", mailServer);
                     break;
 
-                case "MAILPORT":
-                    GlobalSettings.MailPort = output != null ? (int)(object)output : 25;
+                case "MAILSERVERPORT":
+                    var mailServerPort = output != null ? (int)(object)output : 25;
+                    CacheStore.SetCacheItem(Guid.Empty, "MailServerPort", mailServerPort);
                     break;
 
-                case "MAILUSERNAME":
-                    GlobalSettings.MailUsername = output != null ? (string)(object)output : String.Empty;
+                case "MAILSERVERUSERNAME":
+                    var mailServerUsername = output != null ? (string)(object)output : String.Empty;
+                    CacheStore.SetCacheItem(Guid.Empty, "MailServerUsername", mailServerUsername);
                     break;
 
-                case "MAILPASSWORD":
-                    GlobalSettings.MailPassword = output != null ? (string)(object)output : String.Empty;
+                case "MAILSERVERPASSWORD":
+                    var mailServerPassword = output != null ? (string)(object)output : String.Empty;
+                    CacheStore.SetCacheItem(Guid.Empty, "MailServerPassword", mailServerPassword);
                     break;
 
-                case "MAILSERVERUSESSL":
-                    GlobalSettings.MailServerUseSSL = output != null ? (bool)(object)output : false;
+                case "MAILSERVERUSESSSL":
+                    var mailServerUseSSL = output != null ? (bool)(object)output : false;
+                    CacheStore.SetCacheItem(Guid.Empty, "MailServerUsesSSL", mailServerUseSSL);
                     break;
-
             }
         }
 
@@ -387,16 +382,16 @@ public partial class DataAccess
                         // Only encrypt the value if it's not already encrypted. This can be tested
                         // by attempting to decrypt the current value. If that returns a valid string
                         // then this value is already encrypted, so just store it.
-                        string decrypted = Decrypt(StringOrEmpty(setting.SettingText));
+                        string decrypted = Decrypt(StringValue(setting.SettingText));
                         if (String.IsNullOrEmpty(decrypted)) {
-                            string encrypted = Encrypt(StringOrEmpty(setting.SettingText));
+                            string encrypted = Encrypt(StringValue(setting.SettingText));
                             if (!String.IsNullOrWhiteSpace(encrypted)) {
                                 rec.SettingText = encrypted;
                             } else {
                                 rec.SettingText = "";
                             }
                         } else {
-                            rec.SettingText = StringOrEmpty(setting.SettingText);
+                            rec.SettingText = StringValue(setting.SettingText);
                         }
                         break;
 
@@ -414,7 +409,7 @@ public partial class DataAccess
 
                         // Clear tenant cache
                         if (TenantId != null) {
-                            ClearTenantCache(GuidOrEmpty(TenantId));
+                            ClearTenantCache(GuidValue(TenantId));
                         }
 
                         await SignalRUpdate(new DataObjects.SignalRUpdate {
@@ -577,43 +572,64 @@ public partial class DataAccess
         if (output.Result) {
             // Certain settings get cached, so if this is one of those settings clear the cache here.
             switch (SettingName.ToUpper()) {
-                case "USERLOOKUPCLIENTUSERNAME":
-                    GlobalSettings.UserLookupClientUsername = String.Empty;
+                case "APPLICATIONURL":
+                    CacheStore.SetCacheItem(Guid.Empty, "ApplicationURL", null);
                     break;
 
-                case "USERLOOKUPCLIENTPASSWORD":
-                    GlobalSettings.UserLookupClientPassword = String.Empty;
+                case "DEFAULTREPLYTOADDRESS":
+                    CacheStore.SetCacheItem(Guid.Empty, "DefaultReplyToAddress", null);
                     break;
 
-                case "USERLOOKUPCLIENTENDPOINT":
-                    GlobalSettings.UserLookupClientEndpoint = String.Empty;
+                case "DEFAULTTENANTCODE":
+                    CacheStore.SetCacheItem(Guid.Empty, "DefaultTenantCode", null);
                     break;
 
                 case "MAILSERVER":
-                    GlobalSettings.MailServer = String.Empty;
+                    CacheStore.SetCacheItem(Guid.Empty, "MailServer", null);
                     break;
 
-                case "MAILPORT":
-                    GlobalSettings.MailPort = Value != null ? (int)Value : 25;
+                case "MAILSERVERPORT":
+                    CacheStore.SetCacheItem(Guid.Empty, "MailServerPort", null);
                     break;
 
-                case "MAILUSERNAME":
-                    GlobalSettings.MailUsername = String.Empty;
+                case "MAILSERVERUSERNAME":
+                    CacheStore.SetCacheItem(Guid.Empty, "MailServerUsername", null);
                     break;
 
-                case "MAILPASSWORD":
-                    GlobalSettings.MailPassword = String.Empty;
+                case "MAILSERVERPASSWORD":
+                    CacheStore.SetCacheItem(Guid.Empty, "MailServerPassword", null);
                     break;
 
                 case "MAILSERVERUSESSL":
-                    GlobalSettings.MailServerUseSSL = Value != null ? (bool)Value : false;
+                    CacheStore.SetCacheItem(Guid.Empty, "MailServerUsesSSL", null);
                     break;
 
+                case "SHOWTENANTCODEFIELDONLOGINFORM":
+                    CacheStore.SetCacheItem(Guid.Empty, "ShowTenantCodeFieldOnLoginForm", null);
+                    break;
+
+                case "SHOWTENANTLISTINGWHENMISSINGTENANTCODE":
+                    CacheStore.SetCacheItem(Guid.Empty, "ShowTenantListingWhenMissingTenantCode", null);
+                    break;
+
+                case "USERLOOKUPCLIENTUSERNAME":
+                    CacheStore.SetCacheItem(Guid.Empty, "UserLookupClientUsername", null);
+                    break;
+
+                case "USERLOOKUPCLIENTPASSWORD":
+                    CacheStore.SetCacheItem(Guid.Empty, "UserLookupClientPassword", null);
+                    break;
+
+                case "USERLOOKUPCLIENTENDPOINT":
+                    CacheStore.SetCacheItem(Guid.Empty, "UserLookupClientEndpoint", null);
+                    break;
+
+                case "USETENANTCODEINURL":
+                    CacheStore.SetCacheItem(Guid.Empty, "UseTenantCodeInUrl", null);
+                    break;
             }
         }
 
         return output;
     }
-
-
 }

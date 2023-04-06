@@ -24,6 +24,10 @@ var MainModel = /** @class */ (function () {
         var _this = this;
         this.AccessDeniedMessage = ko.observable("");
         this.Action = ko.observable("");
+        this.AppOnline = ko.observable(true);
+        this.Culture = ko.observable(window.culture);
+        this.Cultures = ko.observableArray([]);
+        this.CultureCodes = ko.observableArray([]);
         this.DefaultLanguageItems = ko.observableArray([]);
         this.Extra = ko.observableArray([]);
         this.GuidEmpty = ko.observable("00000000-0000-0000-0000-000000000000");
@@ -33,40 +37,133 @@ var MainModel = /** @class */ (function () {
         this.LanguageItems = ko.observableArray([]);
         this.Loaded = ko.observable(false);
         this.LoggedIn = ko.observable(false);
-        //MainLoader: KnockoutObservable<mainLoader> = ko.observable(new mainLoader);
         this.MessageText = ko.observable("");
         this.MessageClass = ko.observable("");
         this.MobileMenu = ko.observable(false);
+        this.PreferredColorScheme = ko.observable(null);
+        this.ShowTenantCodeFieldOnLoginForm = ko.observable(false);
+        this.ShowTenantListingWhenMissingTenantCode = ko.observable(false);
         this.SignalRUpdate = ko.observable(new signalRUpdate);
         this.StickyMenus = ko.observable(false);
         this.Tenant = ko.observable(new tenant);
         this.TenantCode = ko.observable("");
         this.TenantId = ko.observable("");
+        this.Tenants = ko.observableArray([]);
         this.Theme = ko.observable("");
         this.Token = ko.observable("");
         this.User = ko.observable(new user);
+        this.Users = ko.observableArray([]);
+        this.UseTenantCodeInUrl = ko.observable(false);
         this.View = ko.observable("");
         this.VersionInfo = ko.observable(new versionInfo);
         this.WindowHeight = ko.observable(0);
         this.WindowWidth = ko.observable(0);
+        this.AdminUser = ko.computed(function () {
+            var output = false;
+            if (_this.User() != null) {
+                if (_this.User().admin() || _this.User().appAdmin()) {
+                    output = true;
+                }
+            }
+            return output;
+        });
+        this.AvailableCultures = ko.computed(function () {
+            var output = [];
+            if (_this.CultureCodes() != null && _this.CultureCodes().length > 0) {
+                var cc_1 = _this.Cultures();
+                output = ko.utils.arrayFilter(_this.CultureCodes(), function (item) {
+                    return cc_1.indexOf(item.id()) == -1;
+                });
+            }
+            return output;
+        });
+        this.BlockedModules = ko.computed(function () {
+            var output = [];
+            if (_this.Tenant() != null && _this.Tenant().tenantSettings() != null && _this.Tenant().tenantSettings().moduleHideElements() != null) {
+                output = _this.Tenant().tenantSettings().moduleHideElements();
+            }
+            return output;
+        });
+        this.BlockModuleDepartments = ko.computed(function () {
+            var output = false;
+            if (_this.BlockedModules().length > 0) {
+                output = _this.BlockedModules().indexOf("departments") > -1;
+            }
+            return output;
+        });
+        this.BlockModuleEmployeeId = ko.computed(function () {
+            var output = false;
+            if (_this.BlockedModules().length > 0) {
+                output = _this.BlockedModules().indexOf("employeeid") > -1;
+            }
+            return output;
+        });
+        this.BlockModuleLocation = ko.computed(function () {
+            var output = false;
+            if (_this.BlockedModules().length > 0) {
+                output = _this.BlockedModules().indexOf("location") > -1;
+            }
+            return output;
+        });
+        this.BlockModuleUDF = ko.computed(function () {
+            var output = false;
+            if (_this.BlockedModules().length > 0) {
+                output = _this.BlockedModules().indexOf("udf") > -1;
+            }
+            return output;
+        });
+        this.BlockModuleUserGroups = ko.computed(function () {
+            var output = false;
+            if (_this.BlockedModules().length > 0) {
+                output = _this.BlockedModules().indexOf("usergroups") > -1;
+            }
+            return output;
+        });
         /**
          * Observable that applies the necessary styling to the body element for theme support.
          */
         this.BodyClass = ko.computed(function () {
             var output = "";
-            switch (_this.Theme()) {
-                case "dark":
-                    output = "dark-theme";
-                    break;
-                case "medium":
-                    output = "medium-theme";
-                    break;
-                default:
-                    output = "light-theme";
-                    break;
+            if (_this.PreferredColorScheme() != null) {
+                switch (_this.Theme()) {
+                    case "dark":
+                        output = "dark-theme";
+                        break;
+                    case "light":
+                        output = "light-theme";
+                        break;
+                    default:
+                        // Auto
+                        output = _this.PreferredColorScheme() + "-theme";
+                        _this.ThemeWatcher();
+                        break;
+                }
             }
             $("#body-element").removeClass();
             $("#body-element").addClass(output);
+        });
+        this.CurrentCultures = ko.computed(function () {
+            var output = [];
+            if (_this.Cultures() != null && _this.Cultures().length > 0) {
+                for (var x = 0; x < _this.Cultures().length; x++) {
+                    var code = _this.Cultures()[x];
+                    if (tsUtilities.HasValue(code)) {
+                        var name_1 = _this.LanguageName(code);
+                        if (tsUtilities.HasValue(name_1)) {
+                            var item = new optionPair();
+                            item.id(code);
+                            item.value(name_1);
+                            output.push(item);
+                        }
+                    }
+                }
+                if (output.length > 0) {
+                    output = output.sort(function (l, r) {
+                        return l.value() > r.value() ? 1 : -1;
+                    });
+                }
+            }
+            return output;
         });
         /**
          * An observable that always returns the current view as lowercase. Primarily used in the _Layout page
@@ -87,6 +184,9 @@ var MainModel = /** @class */ (function () {
             var view = _this.CurrentView();
             if (tsUtilities.HasValue(view)) {
                 switch (view.toLowerCase()) {
+                    // <BEGIN ADMIN MENU ITEMS>
+                    // <END ADMIN MENU ITEMS>
+                    case "appsettings":
                     case "departmentgroups":
                     case "departments":
                     case "editdepartment":
@@ -108,23 +208,44 @@ var MainModel = /** @class */ (function () {
             }
             return output;
         });
+        this.InvalidTenantCodeMessage = ko.computed(function () {
+            var msg = "<h1>" + _this.Language("InvalidTenantCode") + "</h1><p>" + _this.Language("InvalidTenantCodeMessage") + "</p>";
+            if (_this.ShowTenantListingWhenMissingTenantCode()) {
+                msg += "<div class='mb-2'>" + _this.Language("SelectTenant") + "</div>";
+                _this.Tenants().forEach(function (tenant) {
+                    msg += "<div><a href='" + window.baseURL + tenant.tenantCode() + "'>" + tenant.name() + "</a></div>";
+                });
+            }
+            $("#invalid-tenant-code-message").html(msg);
+        });
         tsUtilities.KnockoutCustomBindingHandlers();
         this.messageTimerInterval = 3000;
         this.Token(window.token);
+        this.Culture.subscribe(function () { return _this.CultureChanged(); });
+        var savedCulture = tsUtilities.CookieRead(window.appName + "-culture");
+        if (tsUtilities.HasValue(savedCulture)) {
+            this.Culture(savedCulture);
+        }
+        this.ShowTenantCodeFieldOnLoginForm(window.showTenantCodeFieldOnLoginForm);
+        this.ShowTenantListingWhenMissingTenantCode(window.showTenantListingWhenMissingTenantCode);
+        this.UseTenantCodeInUrl(window.useTenantCodeInUrl);
         if (window.loggedIn != undefined && window.loggedIn != null && window.loggedIn == true) {
             this.LoggedIn(true);
         }
+        DataLoader(window.objCultureCodes, this.CultureCodes, optionPair);
+        if (window.objCultures != null && window.objCultures.length > 0) {
+            this.Cultures(window.objCultures);
+        }
         this.LoadLanguage(window.objLanguage, window.objDefaultLanguage);
-        if (window.objExtra != null) {
+        if (window.objExtra != undefined && window.objExtra != null) {
             this.Extra(window.objExtra);
         }
         if (window.objTenant != undefined && window.objTenant != null) {
             this.Tenant().Load(window.objTenant);
-            window.objTenant = null;
         }
+        DataLoader(window.objTenantList, this.Tenants, tenantList);
         if (window.objUser != undefined && window.objUser != null) {
             this.User().Load(window.objUser);
-            window.objUser = null;
         }
         if (window.objVersionInfo != undefined && window.objVersionInfo != null) {
             this.VersionInfo().Load(window.objVersionInfo);
@@ -141,27 +262,33 @@ var MainModel = /** @class */ (function () {
         if (tsUtilities.HasValue(window.tenantId)) {
             this.TenantId(window.tenantId);
         }
-        var theme = tsUtilities.CookieRead("theme");
-        if (!tsUtilities.HasValue(theme)) {
-            theme = "";
-        }
-        this.Theme(theme);
-        this.Theme.subscribe(function (v) {
-            tsUtilities.CookieWrite("theme", v);
-        });
-        this.CheckLoad();
         this.UpdateWindowSettings();
         $(window).off("resize");
         $(window).on("resize", function () {
             _this.UpdateWindowSettings();
         });
-        var stickyMenus = tsUtilities.CookieRead("sticky-menus");
+        window.onpopstate = function () { _this.PopStateChanged(); };
+        var stickyMenus = window.localStorage.getItem(window.appName + "-sticky-menus");
         if (!tsUtilities.HasValue(stickyMenus)) {
             stickyMenus = "0";
         }
         this.StickyMenus(stickyMenus == "1");
-        window.onpopstate = function () { _this.PopStateChanged(); };
+        var colorScheme = getComputedStyle(document.body, ':after').content;
+        if (tsUtilities.HasValue(colorScheme)) {
+            this.PreferredColorScheme(colorScheme.indexOf("dark") > -1 ? "dark" : "light");
+        }
+        this.CheckLoad();
         this.CheckForUpdates();
+        var theme = window.localStorage.getItem(window.appName + "-theme");
+        if (!tsUtilities.HasValue(theme)) {
+            theme = "";
+        }
+        this.Theme(theme);
+        this.Theme.subscribe(function (v) {
+            window.localStorage.setItem(window.appName + "-theme", v);
+        });
+        setTimeout(function () { return _this.ThemeWatcher(); }, 1000);
+        this.GetTenantUsers();
     }
     MainModel.prototype.AccessDenied = function (message) {
         console.log("Access Denied", message);
@@ -171,9 +298,12 @@ var MainModel = /** @class */ (function () {
         }
         this.Nav("AccessDenied");
     };
-    MainModel.prototype.AjaxUserAutocomplete = function (element, callbackHandler) {
+    MainModel.prototype.AjaxUserAutocomplete = function (element, callbackHandler, localResultsOnly) {
+        if (localResultsOnly == undefined || localResultsOnly == null) {
+            localResultsOnly = false;
+        }
         $("#" + element).autocomplete({
-            source: this.AjaxUserSearch,
+            source: localResultsOnly ? this.AjaxUserSearchLocalOnly : this.AjaxUserSearch,
             minLength: 3,
             select: function (event, ui) {
                 event.preventDefault();
@@ -201,6 +331,31 @@ var MainModel = /** @class */ (function () {
         lookup.TenantId(window.tenantId);
         $.ajax({
             url: window.baseURL + "api/Data/AjaxUserSearch/",
+            type: 'POST',
+            data: ko.toJSON(lookup),
+            beforeSend: setRequestHeaders,
+            contentType: "application/json; charset=utf-8",
+            success: function (data) {
+                var results = [];
+                if (data != null) {
+                    if (data.results != null) {
+                        data.results.forEach(function (element) {
+                            var item = new ajaxResults();
+                            item.Load(element);
+                            results.push(item);
+                        });
+                    }
+                }
+                callbackHandler(JSON.parse(ko.toJSON(results)));
+            }
+        });
+    };
+    MainModel.prototype.AjaxUserSearchLocalOnly = function (req, callbackHandler) {
+        var lookup = new ajaxLookup();
+        lookup.Search(req.term);
+        lookup.TenantId(window.tenantId);
+        $.ajax({
+            url: window.baseURL + "api/Data/AjaxUserSearchLocalOnly/",
             type: 'POST',
             data: ko.toJSON(lookup),
             beforeSend: setRequestHeaders,
@@ -263,27 +418,47 @@ var MainModel = /** @class */ (function () {
         return output;
     };
     /**
+     * Checks the VersionInfo from the server to see if the server has restarted or been updated.
+     */
+    MainModel.prototype.CheckForUpdates = function () {
+        var _this = this;
+        var success = function (data) {
+            var reload = false;
+            if (data != null) {
+                if (tsUtilities.HasValue(data.version)) {
+                    _this.AppOnline(true);
+                }
+                if (_this.VersionInfo().released() != data.released || _this.VersionInfo().runningSince() != data.runningSince || _this.VersionInfo().version() != data.version) {
+                    reload = true;
+                }
+            }
+            if (reload) {
+                _this.Nav("ServerUpdated");
+            }
+            else {
+                setTimeout(function () { return _this.CheckForUpdates(); }, 10000);
+            }
+        };
+        var failure = function () {
+            _this.AppOnline(false);
+            setTimeout(function () { return _this.CheckForUpdates(); }, 2000);
+        };
+        tsUtilities.AjaxData(window.baseURL + "api/Data/GetVersionInfo", null, success, failure);
+    };
+    /**
      * Make sure all required models have been loaded before performing the first navigation.
      */
     MainModel.prototype.CheckLoad = function () {
         var _this = this;
+        // Get the models from the window object. Since this model is loaded first, the
+        // object might not contain any values initially. If that is the case, set a small
+        // delay to check again.
         var models = [];
-        models.push("LoginModel");
-        if (this.LoggedIn()) {
-            models.push("HomeModel");
-            models.push("ProfileModel");
-            models.push("Page1Model");
-            models.push("Page2Model");
-            // Depending on the user type various models will be loaded (other than this MainModel).
-            if (this.User().admin()) {
-                models.push("LanguageModel");
-                models.push("SettingsModel");
-                models.push("UdfLabelsModel");
-                models.push("UsersModel");
-                if (this.User().appAdmin()) {
-                    models.push("TenantsModel");
-                }
-            }
+        if (window.models != undefined && window.models != null && window.models.length > 0) {
+            models = window.models;
+        }
+        else {
+            setTimeout(function () { return _this.CheckLoad(); }, 500);
         }
         var missingModels = [];
         models.forEach(function (model) {
@@ -292,6 +467,7 @@ var MainModel = /** @class */ (function () {
             }
         });
         if (missingModels.length > 0) {
+            console.log("missingModels", missingModels);
             setTimeout(function () { return _this.CheckLoad(); }, 200);
         }
         else {
@@ -301,36 +477,37 @@ var MainModel = /** @class */ (function () {
             setTimeout(function () { return _this.Nav(_this.Action(), _this.Id()); }, 500);
         }
     };
-    /**
-     * Checks the VersionInfo from the server to see if the server has restarted or been updated.
-     */
-    MainModel.prototype.CheckForUpdates = function () {
+    MainModel.prototype.CsvToListOfString = function (csv) {
+        var output = [];
+        if (tsUtilities.HasValue(csv)) {
+            var items = csv.split(',');
+            if (items != null && items.length > 0) {
+                items.forEach(function (e) {
+                    var value = $.trim(e);
+                    if (tsUtilities.HasValue(value)) {
+                        output.push(value);
+                    }
+                });
+            }
+        }
+        return output;
+    };
+    MainModel.prototype.CultureChanged = function () {
         var _this = this;
         var success = function (data) {
-            var reload = false;
             if (data != null) {
-                if (_this.VersionInfo().released() != data.released || _this.VersionInfo().runningSince() != data.runningSince || _this.VersionInfo().version() != data.version) {
-                    reload = true;
-                }
-            }
-            if (reload) {
-                _this.Nav("ServerUpdated");
-            }
-            else {
-                setTimeout(function () { return _this.CheckForUpdates(); }, 60000);
+                tsUtilities.CookieWrite(window.appName + "-culture", _this.Culture());
+                _this.LoadLanguage(data, null);
             }
         };
-        var failure = function () {
-            setTimeout(function () { return _this.CheckForUpdates(); }, 60000);
-        };
-        tsUtilities.AjaxData(window.baseURL + "api/Data/GetVersionInfo", null, success, failure);
+        tsUtilities.AjaxData(window.baseURL + "api/Data/GetLanguage/" + this.Culture(), null, success);
     };
     /**
      * The current page URL
      */
     MainModel.prototype.CurrentUrl = function () {
         var url = window.baseURL;
-        if (window.useTenantCodeInUrl) {
+        if (window.useTenantCodeInUrl && this.Tenant() != null && tsUtilities.HasValue(this.Tenant().tenantCode())) {
             url += this.Tenant().tenantCode() + "/";
         }
         if (tsUtilities.HasValue(this.Action())) {
@@ -372,6 +549,21 @@ var MainModel = /** @class */ (function () {
         }
         return output;
     };
+    MainModel.prototype.GetTenantUsers = function () {
+        var _this = this;
+        var success = function (data) {
+            DataLoader(data, _this.Users, user);
+        };
+        tsUtilities.AjaxData(window.baseURL + "api/Data/GetUsers/" + this.TenantId(), null, success);
+    };
+    MainModel.prototype.HtmlEditorFocus = function (element) {
+        if (tsUtilities.HtmlEditorExists(element)) {
+            tsUtilities.HtmlEditorFocus(element);
+        }
+        else {
+            $("#" + element).focus();
+        }
+    };
     /**
      * I wanted a simpler way to manage my interface icons, so that if I decided to change an icon for an action (eg: save) I can
      * simply change it in one place and all the calls to get the icon returns the icon. Currently I'm using FontAwesome icons.
@@ -382,20 +574,36 @@ var MainModel = /** @class */ (function () {
         var output = "";
         if (tsUtilities.HasValue(module)) {
             switch (module.toLowerCase()) {
+                // <BEGIN ICON ITEMS>
+                // <END ICON ITEMS>
                 case "accessdenied":
                     output = '<i class="fa-regular fa-shield-exclamation"></i>';
+                    break;
+                case "addmodule":
+                    output = '<i class="fa-solid fa-code"></i>';
                     break;
                 case "addnewuser":
                     output = '<i class="fas fa-user-plus"></i>';
                     break;
+                case "add":
                 case "addnewdepartmentgroup":
+                case "addlanguage":
+                case "addnewusergroup":
                 case "addtenant":
                     output = '<i class="fas fa-plus-square"></i>';
                     break;
                 case "admin":
                     output = '<i class="fa-solid fa-sliders"></i>';
                     break;
+                case "allitems":
+                case "showfilter":
+                    output = '<i class="fa-solid fa-filter-circle-xmark"></i>';
+                    break;
+                case "appsettings":
+                    output = '<i class="fa-solid fa-shield-keyhole"></i>';
+                    break;
                 case "back":
+                case "backtologin":
                     output = '<i class="fas fa-arrow-left"></i>';
                     break;
                 case "cancel":
@@ -403,13 +611,19 @@ var MainModel = /** @class */ (function () {
                     break;
                 case "changepassword":
                 case "passwordchanged":
+                case "useradmin":
                     output = '<i class="fa-solid fa-lock"></i>';
                     break;
                 case "clear":
                     output = '<i class="fas fa-broom"></i>';
                     break;
+                case "close":
                 case "closedialog":
                     output = '<i class="fas fa-times"></i>';
+                    break;
+                case "code":
+                case "html":
+                    output = '<i class="fa-solid fa-code"></i>';
                     break;
                 case "delete":
                 case "deletetenant":
@@ -432,7 +646,11 @@ var MainModel = /** @class */ (function () {
                 case "edittenant":
                     output = '<i class="fas fa-users-cog"></i>';
                     break;
+                case "forgotpassword":
+                    output = '<i class="fas fa-unlock"></i>';
+                    break;
                 case "hidefilter":
+                case "modifieditems":
                     output = '<i class="fa-solid fa-filter"></i>';
                     break;
                 case "hidehelp":
@@ -449,8 +667,23 @@ var MainModel = /** @class */ (function () {
                 case "loginwithlocalaccount":
                     output = '<i class="fas fa-sign-in-alt"></i>';
                     break;
+                case "loginwithcustom":
+                    output = '<i class="fa-solid fa-user-lock"></i>';
+                    break;
                 case "loginwitheitsso":
                     output = '<i class="okta-logo"></i>';
+                    break;
+                case "loginwithfacebook":
+                    output = '<i class="fa-brands fa-facebook"></i>';
+                    break;
+                case "loginwithgoogle":
+                    output = '<i class="fa-brands fa-google"></i>';
+                    break;
+                case "loginwithmicrosoftaccount":
+                    output = '<i class="fa-brands fa-microsoft"></i>';
+                    break;
+                case "loginwithopenid":
+                    output = '<i class="fa-brands fa-openid"></i>';
                     break;
                 case "logout":
                     output = '<i class="fas fa-sign-out-alt"></i>';
@@ -465,15 +698,25 @@ var MainModel = /** @class */ (function () {
                 case "newtenant":
                     output = '<i class="fas fa-users-cog"></i>';
                     break;
-                case "page1":
-                    output = '<i class="fa-regular fa-face-smile"></i>';
+                case "photo":
+                    output = '<i class="fa-regular fa-image"></i>';
                     break;
-                case "page2":
-                    output = '<i class="fa-regular fa-face-laugh"></i>';
+                case "samplepage":
+                    output = '<i class="fa-regular fa-file-lines"></i>';
+                    break;
+                case "recordstableiconadmin":
+                    output = '<i class="fa-solid fa-user-lock"></i>';
+                    break;
+                case "recordstableiconenabled":
+                    output = '<i class="fa-solid fa-user-check"></i>';
                     break;
                 case "refresh":
                     output = '<i class="fas fa-sync-alt"></i>';
                     break;
+                case "reset":
+                    output = '<i class="fa-solid fa-rotate-left"></i>';
+                    break;
+                case "resetpassword":
                 case "resetuserpassword":
                 case "updatepassword":
                     output = '<i class="fas fa-lock"></i>';
@@ -488,7 +731,11 @@ var MainModel = /** @class */ (function () {
                     output = '<i class="fa-solid fa-sliders"></i>';
                     break;
                 case "selected":
+                case "userenabled":
                     output = '<i class="fa-solid fa-circle-check"></i>';
+                    break;
+                case "usergroups":
+                    output = '<i class="fa-solid fa-people-group"></i>';
                     break;
                 case "serverupdated":
                     output = '<i class="fa-solid fa-server"></i>';
@@ -498,6 +745,9 @@ var MainModel = /** @class */ (function () {
                     break;
                 case "showhelp":
                     output = '<i class="fas fa-arrow-down"></i>';
+                    break;
+                case "signup":
+                    output = '<i class="fa-solid fa-signature"></i>';
                     break;
                 case "stickymenus":
                     output = '<i class="fa-solid fa-thumbtack sticky"></i>';
@@ -515,7 +765,10 @@ var MainModel = /** @class */ (function () {
                     output = '<i class="fa-solid fa-circle-user"></i>';
                     break;
                 case "users":
-                    output = '<i class="fas fa-users"></i>';
+                    output = '<i class="fa-solid fa-user"></i>';
+                    break;
+                case "validateconfirmationcode":
+                    output = '<i class="fa-solid fa-shield"></i>';
                     break;
             }
         }
@@ -539,6 +792,20 @@ var MainModel = /** @class */ (function () {
      */
     MainModel.prototype.InsertAtCursor = function (field, value) {
         insertAtCursor(field, value);
+    };
+    MainModel.prototype.IsGuid = function (value) {
+        var output = false;
+        if (tsUtilities.HasValue(value)) {
+            if (value.indexOf("-") > -1) {
+                var parts = value.split("-");
+                if (parts.length == 5) {
+                    if (parts[0].length == 8 && parts[1].length == 4 && parts[2].length == 4 && parts[3].length == 4 && parts[4].length == 12) {
+                        output = true;
+                    }
+                }
+            }
+        }
+        return output;
     };
     /**
      * Gets the language text for a given language item.
@@ -575,6 +842,20 @@ var MainModel = /** @class */ (function () {
         output = output.replace(/(?:\r\n|\r|\n)/g, '<br>');
         return output;
     };
+    MainModel.prototype.LanguageName = function (code) {
+        var output = "";
+        if (tsUtilities.HasValue(code)) {
+            if (this.CultureCodes() != null && this.CultureCodes().length > 0) {
+                var cc = ko.utils.arrayFirst(this.CultureCodes(), function (item) {
+                    return item.id().toLowerCase() == code.toLowerCase();
+                });
+                if (cc != null) {
+                    output = cc.value();
+                }
+            }
+        }
+        return output;
+    };
     /**
      * Gets the language text for a given language item and marked it as a required field.
      * @param item {string} - The unique id of the language item.
@@ -585,6 +866,16 @@ var MainModel = /** @class */ (function () {
     MainModel.prototype.LanguageRequired = function (item, defaultValue, removeSpaces, replaceValues) {
         var output = this.Language(item, defaultValue, removeSpaces, replaceValues);
         return "<span class='required'>* " + output + "</span>";
+    };
+    MainModel.prototype.LinesInText = function (text) {
+        var output = 1;
+        if (tsUtilities.HasValue(text)) {
+            output = text.split(/\r\n|\r|\n/).length;
+        }
+        if (output < 3) {
+            output = 3;
+        }
+        return output;
     };
     MainModel.prototype.ListItemNameFromId = function (itemId) {
         var output = "";
@@ -598,15 +889,30 @@ var MainModel = /** @class */ (function () {
         }
         return output;
     };
+    MainModel.prototype.ListOfStringsToCSV = function (list) {
+        var output = "";
+        if (list != null && list.length > 0) {
+            list.forEach(function (e) {
+                var item = $.trim(e);
+                if (tsUtilities.HasValue(item)) {
+                    if (output != "") {
+                        output += ", ";
+                    }
+                    output += item;
+                }
+            });
+        }
+        return output;
+    };
     /**
      * Called when the page loads to load the language and default language. Also called when SignalR recieves language updates.
-     * @param language {server.optionPair[]} - An array of optionPair values for the tenant language.
+     * @param language {server.language} - An array of optionPair values for the tenant language.
      * @param defaults {server.optionPair[]} - An array of optionPair values for the default language.
      */
     MainModel.prototype.LoadLanguage = function (language, defaults) {
-        if (language != undefined && language != null) {
+        if (language != undefined && language != null && language.phrases != null && language.phrases.length > 0) {
             var options_1 = [];
-            language.forEach(function (e) {
+            language.phrases.forEach(function (e) {
                 var item = new optionPair();
                 item.Load(e);
                 options_1.push(item);
@@ -630,6 +936,13 @@ var MainModel = /** @class */ (function () {
         // Hide the interface
         $("#main-model").hide();
         $("#page-view-model-area").hide();
+        // Remove the local token cookies
+        tsUtilities.CookieWrite("Token-" + this.TenantId(), "");
+        if (this.User() != null && this.User().userTenants() != null && this.User().userTenants().length > 0) {
+            this.User().userTenants().forEach(function (tenant) {
+                tsUtilities.CookieWrite("Token-" + tenant.tenantId(), "");
+            });
+        }
         // Redirect to the local logout page
         var returnUrl = window.baseURL;
         if (window.useTenantCodeInUrl) {
@@ -817,7 +1130,14 @@ var MainModel = /** @class */ (function () {
             action = "";
         }
         if (!tsUtilities.HasValue(action)) {
-            action = this.LoggedIn() ? "" : "Login";
+            if (!this.LoggedIn()) {
+                if (window.useTenantCodeInUrl && !tsUtilities.HasValue(window.tenantCode)) {
+                    action = "MissingTenantCode";
+                }
+                else {
+                    action = "Login";
+                }
+            }
         }
         // If we have a requested URL cookie then clear that cookie and redirect to that page.
         var requestedUrl = tsUtilities.CookieRead("requested-url");
@@ -834,7 +1154,7 @@ var MainModel = /** @class */ (function () {
             id = "";
         }
         var url = window.baseURL;
-        if (window.useTenantCodeInUrl) {
+        if (window.useTenantCodeInUrl && this.Tenant() != null && tsUtilities.HasValue(this.Tenant().tenantCode())) {
             url += this.Tenant().tenantCode() + "/";
         }
         if (tsUtilities.HasValue(action)) {
@@ -864,17 +1184,20 @@ var MainModel = /** @class */ (function () {
             switch (action.toLowerCase()) {
                 case "accessdenied":
                 case "login":
-                case "otherpages":
-                case "thatcanbe":
-                case "accessedwhen":
-                case "notloggedin":
+                case "missingtenantcode":
                 case "serverupdated":
+                case "other pages":
+                case "that can be":
+                case "accessed when":
+                case "not logged in":
                     allowAnonymousAccess = true;
                     break;
                 default:
                     tsUtilities.CookieWrite("requested-url", url);
                     if (window.useTenantCodeInUrl) {
-                        window.location.href = window.baseURL + this.TenantCode() + "/Login";
+                        if (tsUtilities.HasValue(this.TenantCode())) {
+                            window.location.href = window.baseURL + this.TenantCode() + "/Login";
+                        }
                     }
                     else {
                         window.location.href = window.baseURL + "Login";
@@ -887,16 +1210,24 @@ var MainModel = /** @class */ (function () {
         if (!allowAnonymousAccess) {
             // This is where you would test various actions to make sure the user has access.
             switch (action.toLowerCase()) {
-                case "changepassword":
-                    if (this.User().preventPasswordChange()) {
-                        accessDenied = true;
-                    }
+                case "appsettings":
+                case "tenants":
+                    accessDenied = !this.User().appAdmin();
                     break;
+                case "changepassword":
+                    accessDenied = this.User().preventPasswordChange();
+                    break;
+                case "departments":
+                    accessDenied = !this.User().admin() && !this.BlockModuleDepartments();
+                    break;
+                case "language":
+                case "settings":
                 case "udflabels":
                 case "users":
-                    if (!this.User().admin()) {
-                        accessDenied = true;
-                    }
+                    accessDenied = !this.User().admin();
+                    break;
+                case "usergroups":
+                    accessDenied = !this.User().admin() && !this.BlockModuleUserGroups();
                     break;
             }
         }
@@ -950,6 +1281,13 @@ var MainModel = /** @class */ (function () {
             option.text = item.id().replace(/ /g, '\u00A0');
         }
     };
+    MainModel.prototype.Parse = function (item) {
+        var output = "";
+        if (item != null) {
+            output = JSON.parse(ko.toJSON(item));
+        }
+        return output;
+    };
     /**
      * The method that gets called when the window.onpopstate event fires so navigation can be updated.
      */
@@ -993,6 +1331,22 @@ var MainModel = /** @class */ (function () {
         else {
             this.Nav(action, id, true);
         }
+    };
+    /**
+     * Gets a value from the querystring
+     * @param {string} name - The key for the value to get.
+     * @returns {string} - The value or an emtpy string.
+     */
+    MainModel.prototype.QuerystringValue = function (name) {
+        var output = "";
+        name = name.replace(/[\[\]]/g, '\\$&');
+        var regex = new RegExp('[?&]' + name + '(=([^&#]*)|&|#|$)'), results = regex.exec(window.location.href);
+        if (results) {
+            if (results[2]) {
+                output = decodeURIComponent(results[2].replace(/\+/g, ' '));
+            }
+        }
+        return output;
     };
     /**
      * Reloads the User object for the current user.
@@ -1128,6 +1482,7 @@ var MainModel = /** @class */ (function () {
         this.SignalRUpdate.notifySubscribers();
         var updateType = this.SignalRUpdate().updateTypeString();
         var message = this.SignalRUpdate().message();
+        var itemId = this.SignalRUpdate().itemId();
         switch (updateType.toLowerCase()) {
             case "setting":
                 switch (message.toLowerCase()) {
@@ -1148,7 +1503,16 @@ var MainModel = /** @class */ (function () {
                         }
                         break;
                     case "language":
-                        this.LoadLanguage(JSON.parse(update.object), null);
+                        // Only load if the culture matches the current user's culture
+                        var l = new language();
+                        l.Load(JSON.parse(update.object));
+                        if (l != undefined && l != null && tsUtilities.HasValue(l.culture())) {
+                            if (navigator != null && tsUtilities.HasValue(navigator.language)) {
+                                if (l.culture().toLowerCase() == navigator.language.toLowerCase()) {
+                                    this.LoadLanguage(JSON.parse(update.object), null);
+                                }
+                            }
+                        }
                         break;
                     case "saveddepartment":
                         var savedDept_1 = new department();
@@ -1202,9 +1566,19 @@ var MainModel = /** @class */ (function () {
                     case "tenantsaved":
                         this.TenantSaved(update.object);
                         break;
+                    case "usetenantcodeinurl":
+                        var useTenantCodeInUrl = itemId == "1";
+                        if (window.useTenantCodeInUrl != useTenantCodeInUrl) {
+                            window.location.href = window.baseURL;
+                        }
+                        break;
                 }
                 break;
         }
+    };
+    MainModel.prototype.Spacer = function (width) {
+        var output = '<img src="' + window.baseURL + 'images/spacer.png" width="' + width.toString() + '" height="1" />';
+        return output;
     };
     /**
      * Renders the sticky icon at the top of fixed menu areas.
@@ -1266,17 +1640,31 @@ var MainModel = /** @class */ (function () {
             }
         }
     };
+    MainModel.prototype.ThemeWatcher = function () {
+        var _this = this;
+        var colorScheme = getComputedStyle(document.body, ':after').content;
+        if (tsUtilities.HasValue(colorScheme)) {
+            this.PreferredColorScheme(colorScheme.indexOf("dark") > -1 ? "dark" : "light");
+        }
+        // If we are in auto-mode then constantly watch for system changes.
+        // Some OS's will automatically move from light mode to dark mode later in the day.
+        // This will allow the page to automatically switch between modes when the
+        // system changes.
+        if (this.Theme() == "") {
+            setTimeout(function () { return _this.ThemeWatcher(); }, 1000);
+        }
+    };
     /**
      * Toggles the sticky state of the top fixed menus
      */
     MainModel.prototype.ToggleStickyMenus = function () {
         if (this.StickyMenus()) {
             this.StickyMenus(false);
-            tsUtilities.CookieWrite("sticky-menus", "0");
+            window.localStorage.setItem(window.appName + "-sticky-menus", "0");
         }
         else {
             this.StickyMenus(true);
-            tsUtilities.CookieWrite("sticky-menus", "1");
+            window.localStorage.setItem(window.appName + "-sticky-menus", "1");
         }
     };
     /**
@@ -1380,7 +1768,6 @@ var MainModel = /** @class */ (function () {
      * @param dataObject {any} - The object that contains the UDF fields (eg: a User object).
      */
     MainModel.prototype.UDFFieldsRender = function (element, module, dataObject) {
-        //console.log("UDFFieldsRender", element, module, dataObject);
         var output = "";
         if (this.Loaded() == true) {
             var m = module.toLowerCase();
@@ -1679,6 +2066,34 @@ var MainModel = /** @class */ (function () {
         }
         return output;
     };
+    MainModel.prototype.UpdatePagedRecordsetColumnIcons = function (data) {
+        var output = data;
+        if (output.columns() != null && output.columns().length > 0) {
+            for (var x = 0; x < output.columns().length; x++) {
+                var column = output.columns()[x];
+                if (tsUtilities.HasValue(column.booleanIcon())) {
+                    var booleanIcon = this.Icon(column.booleanIcon());
+                    if (tsUtilities.HasValue(booleanIcon)) {
+                        column.booleanIcon(booleanIcon);
+                    }
+                }
+                if (tsUtilities.HasValue(column.label()) && column.label().toLowerCase().indexOf("icon:") > -1) {
+                    var label = column.label().toLowerCase().replace("icon:", "");
+                    var icon = this.Icon(label);
+                    if (tsUtilities.HasValue(icon)) {
+                        column.label(icon);
+                        if (!tsUtilities.HasValue(column.booleanIcon())) {
+                            column.booleanIcon(icon);
+                        }
+                    }
+                    else {
+                        column.label(column.label().substring(5));
+                    }
+                }
+            }
+        }
+        return output;
+    };
     /**
      * Called on load and when the window resizes to keep track of whether the mobile menu is visible or not, as well as the window width and height.
      */
@@ -1686,6 +2101,32 @@ var MainModel = /** @class */ (function () {
         this.MobileMenu($("#menu-bar-toggler").is(":visible"));
         this.WindowHeight($(window).height());
         this.WindowWidth($(window).width());
+    };
+    MainModel.prototype.UserDisplayName = function (userId, includeEmail) {
+        var output = "";
+        if (includeEmail == undefined || includeEmail == null) {
+            includeEmail = false;
+        }
+        if (this.Users() != null && this.Users().length > 0) {
+            var u = ko.utils.arrayFirst(this.Users(), function (item) {
+                return item.userId() == userId;
+            });
+            if (u != null) {
+                if (tsUtilities.HasValue(u.firstName())) {
+                    output += u.firstName();
+                    if (tsUtilities.HasValue(u.lastName())) {
+                        output += " " + u.lastName();
+                    }
+                }
+                if (includeEmail && tsUtilities.HasValue(u.email())) {
+                    if (output != "") {
+                        output += " ";
+                    }
+                    output += "[" + u.email() + "]";
+                }
+            }
+        }
+        return output;
     };
     /**
      * Views a file. If the file is an image it will be viewed in place with the colorbox plugin.
@@ -1696,7 +2137,6 @@ var MainModel = /** @class */ (function () {
         var success = function (data) {
             if (data != null) {
                 if (data.actionResponse.result) {
-                    //console.log("View File", data);
                     var ext = "";
                     if (tsUtilities.HasValue(data.extension)) {
                         ext = data.extension.replace(".", "").toLowerCase();
@@ -1708,7 +2148,22 @@ var MainModel = /** @class */ (function () {
                         case "gif":
                             _this.ViewImage(window.baseURL + "File/View/" + fileId);
                             break;
+                        case "txt":
+                            $.colorbox({
+                                href: window.baseURL + "File/View/" + fileId,
+                                title: data.fileName,
+                                maxWidth: "95%",
+                                maxHeight: "95%",
+                                width: "95%",
+                                height: "75%",
+                                scalePhotos: true,
+                                photo: false,
+                                transition: "none",
+                                className: "colorbox-text"
+                            });
+                            break;
                         default:
+                            window.open(window.baseURL + "File/View/" + fileId);
                             break;
                     }
                 }
@@ -1730,7 +2185,8 @@ var MainModel = /** @class */ (function () {
         $.colorbox({
             href: url,
             photo: true,
-            maxWidth: "95%"
+            maxWidth: "95%",
+            transition: "none"
         });
     };
     return MainModel;

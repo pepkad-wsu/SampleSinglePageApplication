@@ -13,7 +13,7 @@ public partial class DataAccess
 
     public string JsonWebTokenKey(Guid TenantId)
     {
-        string output = StringOrEmpty(CacheStore.GetCachedItem<string>(TenantId, "JasonWebTokenKey"));
+        string output = StringValue(CacheStore.GetCachedItem<string>(TenantId, "JasonWebTokenKey"));
 
         if (String.IsNullOrEmpty(output)) {
             var settings = GetTenantSettings(TenantId);
@@ -52,8 +52,8 @@ public partial class DataAccess
 
             }
         }
-        return output;
 
+        return output;
     }
 
     public string JwtEncode(Guid TenantId, Dictionary<string, object> Payload)
@@ -62,7 +62,7 @@ public partial class DataAccess
 
         // Add in the payload options that are missing
         if (!Payload.ContainsKey("iss")) {
-            payload.Add("iss", "SampleSinglePageApplication");
+            payload.Add("iss", _appName);
         }
         if (!Payload.ContainsKey("iat")) {
             payload.Add("iat", NowFromUnixEpoch());
@@ -101,6 +101,4 @@ public partial class DataAccess
 
         return output;
     }
-
-
 }

@@ -3,15 +3,14 @@ public partial class DataAccess
 {
     public async Task SignalRUpdate(DataObjects.SignalRUpdate update)
     {
-        var baseURL = await AppSetting<string>("ApplicationURL");
+        var baseURL = ApplicationURL;
         if (String.IsNullOrEmpty(baseURL)) {
             baseURL = String.Empty;
         }
 
         if (!baseURL.EndsWith("/")) { baseURL += "/"; }
 
-        var client = new HttpClient();
-        //client.BaseAddress = new Uri(baseURL);
+        HttpClient client = Utilities.GetHttpClient(baseURL);
         client.DefaultRequestHeaders.Accept.Clear();
         client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
@@ -20,8 +19,10 @@ public partial class DataAccess
             update.Object = Utilities.SerializeObjectToJsonCamelCase(update.Object);
         }
 
+        string updateData = Newtonsoft.Json.JsonConvert.SerializeObject(update);
+
         await client.PostAsync(baseURL + "api/Data/SignalRUpdate/",
-            new StringContent(Newtonsoft.Json.JsonConvert.SerializeObject(update), System.Text.Encoding.UTF8, "application/json"));
+            new StringContent(updateData, System.Text.Encoding.UTF8, "application/json"));
     }
 
     public DataObjects.SignalRUpdateType SignalRUpdateTypeFromString(string updateType)
@@ -31,12 +32,6 @@ public partial class DataAccess
         switch (updateType.ToUpper()) {
             case "SETTING":
                 output = DataObjects.SignalRUpdateType.Setting;
-                break;
-            case "THIS":
-                output = DataObjects.SignalRUpdateType.This;
-                break;
-            case "THAT":
-                output = DataObjects.SignalRUpdateType.That;
                 break;
         }
 
@@ -51,16 +46,8 @@ public partial class DataAccess
             case DataObjects.SignalRUpdateType.Setting:
                 output = "Setting";
                 break;
-            case DataObjects.SignalRUpdateType.This:
-                output = "This";
-                break;
-            case DataObjects.SignalRUpdateType.That:
-                output = "That";
-                break;
         }
 
         return output;
     }
-
-
 }

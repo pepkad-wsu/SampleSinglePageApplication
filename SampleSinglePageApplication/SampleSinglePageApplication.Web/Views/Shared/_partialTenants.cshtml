@@ -1,21 +1,21 @@
 ﻿<script src="~/js/viewModels/tenants.js?v=@Html.Raw(Guid.NewGuid().ToString().Replace("-", ""))"></script>
 <div id="view-tenants">
     <div data-bind="visible:MainModel().CurrentView() == 'tenants'">
-        <div class="padbottom" data-bind="css:{fixed: MainModel().StickyMenus() == true}">
+        <div class="mb-2" data-bind="css:{fixed: MainModel().StickyMenus() == true}">
             <i class="sticky-menu-icon" data-bind="html:MainModel().StickyIcon(), click:function(){MainModel().ToggleStickyMenus()}"></i>
             <h1 class="display-7"><i data-bind="html:MainModel().IconAndText('Tenants')"></i></h1>
 
             <div data-bind="visible:Tenants() == null || Tenants().length == 0, html:MainModel().Language('LoadingWait')"></div>
 
-            <div data-bind="visible:Tenants() != null && Tenants().length > 0" class="padbottom-5">
-                <button type="button" class="btn btn-success" data-bind="click:function(){ MainModel().Nav('NewTenant') }">
+            <div data-bind="visible:Tenants() != null && Tenants().length > 0" class="mb-2">
+                <button type="button" class="btn btn-success" id="add-new-tenant-button" data-bind="click:function(){ MainModel().Nav('NewTenant') }">
                     <i data-bind="html:MainModel().IconAndText('AddTenant')"></i>
                 </button>
             </div>
         </div>
 
         <div data-bind="visible:Tenants() != null && Tenants().length > 0">
-            <table class="table">
+            <table class="table" id="tenant-records">
                 <thead>
                     <tr class="table-dark">
                         <th style="width:1%;" class="no-pad-right"></th>
@@ -44,48 +44,48 @@
     </div>
 
     <div data-bind="visible:Loading() == false && MainModel().CurrentView() == 'newtenant'">
-        <div class="padbottom" data-bind="css:{fixed: MainModel().StickyMenus() == true}">
+        <div class="mb-2" data-bind="css:{fixed: MainModel().StickyMenus() == true}">
             <i class="sticky-menu-icon" data-bind="html:MainModel().StickyIcon(), click:function(){MainModel().ToggleStickyMenus()}"></i>
             <h1 class="display-7"><i data-bind="html:MainModel().IconAndText('NewTenant')"></i></h1>
 
-            <div class="padbottom-5">
+            <div class="mb-2">
                 <button type="button" class="btn btn-dark" data-bind="click:function(){ MainModel().Nav('Tenants') }">
                     <i data-bind="html:MainModel().IconAndText('Back')"></i>
                 </button>
-                <button type="button" class="btn btn-success" data-bind="click:function(){ SaveTenant(true) }">
+                <button type="button" class="btn btn-success" id="save-new-tenant-button" data-bind="click:function(){ SaveTenant(true) }">
                     <i data-bind="html:MainModel().IconAndText('Save')"></i>
                 </button>
             </div>
         </div>
 
-        <div class="padbottom">
+        <div class="mb-2">
             To add a new tenant enter the Tenant Name and Tenant Code for this tenant. 
-            The Tenant Code is the portion used in the beginning of the URL to differentiate help desk tenant instances.
+            The Tenant Code is the portion used in the beginning of the URL to differentiate various tenant instances.
             When saving a new tenant record some default data will be seeded for things
             like Categories, Priorities, Resolutions, and Statuses.
             Also, default settings will be set for this tenant.
         </div>
 
-        <div class="padbottom">
-            <label for="new-tenant-name">Tenant Name</label>
+        <div class="mb-2">
+            <label for="new-tenant-name" data-bind="html:MainModel().LanguageRequired('TenantName')"></label>
             <input type="text" class="form-control" id="new-tenant-name" data-bind="value:Tenant().name" />
         </div>
 
-        <div class="padbottom">
-            <label for="new-tenant-tenantCode">Tenant Code</label>
+        <div class="mb-2">
+            <label for="new-tenant-tenantCode" data-bind="html:MainModel().LanguageRequired('TenantCode')"></label>
             <input type="text" class="form-control" id="new-tenant-tenantCode" data-bind="value:Tenant().tenantCode" />
         </div>
     </div>
 
     <div data-bind="visible:Loading() == false && MainModel().CurrentView() == 'edittenant'">
-        <div class="padbottom" data-bind="css:{fixed: MainModel().StickyMenus() == true}">
+        <div class="mb-2" data-bind="css:{fixed: MainModel().StickyMenus() == true}">
             <i class="sticky-menu-icon" data-bind="html:MainModel().StickyIcon(), click:function(){MainModel().ToggleStickyMenus()}"></i>
             <h1 class="display-7">
                 <i data-bind="html:MainModel().IconAndText('EditTenant')"></i>
                 <span class="element-id" data-bind="visible:Loading() == false">&ldquo;<span data-bind="text:MainModel().Id"></span>&rdquo;</span>
             </h1>
 
-            <div class="padbottom-5">
+            <div class="mb-2">
                 <button type="button" class="btn btn-dark" data-bind="click:function(){ MainModel().Nav('Tenants') }">
                     <i data-bind="html:MainModel().IconAndText('Back')"></i>
                 </button>
@@ -93,53 +93,60 @@
                     <i data-bind="html:MainModel().IconAndText('Save')"></i>
                 </button>
                 <!-- ko if: AllowDelete() == true -->
-                <button type="button" class="btn btn-danger" data-bind="click:function(){ MainModel().Nav('DeleteTenant', Tenant().tenantId()) }">
+                <button type="button" class="btn btn-danger" id="delete-tenant-button" data-bind="click:function(){ MainModel().Nav('DeleteTenant', Tenant().tenantId()) }">
                     <i data-bind="html:MainModel().IconAndText('DeleteTenant')"></i>
                 </button>
                 <!-- /ko -->
             </div>
         </div>
 
-        <div class="padbottom form-check form-switch">
+        <div class="mb-2 form-check form-switch">
             <input type="checkbox" role="switch" class="form-check-input" id="edit-tenant-enabled" data-bind="checked:Tenant().enabled" />
-            <label for="edit-tenant-enabled" class="form-check-label">Enabled</label>
+            <label for="edit-tenant-enabled" class="form-check-label" data-bind="html:MainModel().Language('Enabled')"></label>
         </div>
 
-        <div class="padbottom">
-            <label for="edit-tenant-name">Name</label>
+        <div class="mb-2">
+            <label for="edit-tenant-name" data-bind="html:MainModel().LanguageRequired('TenantName')"></label>
             <input type="text" class="form-control" id="edit-tenant-name" data-bind="value:Tenant().name" />
         </div>
 
         <!-- ko if: Tenant().tenantId() != $root.MainModel().Guid1() -->
-        <div class="padbottom">
-            <label for="edit-tenant-tenantCode">Code</label>
+        <div class="mb-2">
+            <label for="edit-tenant-tenantCode" data-bind="html:MainModel().LanguageRequired('TenantCode')"></label>
             <input type="text" class="form-control" id="edit-tenant-tenantCode" data-bind="value:Tenant().tenantCode" />
         </div>
         <!-- /ko -->
 
-        <div class="padbottom form-check form-switch">
+        <div class="mb-2">
+            <label for="edit-tenant-defaultCultureCode" data-bind="html:MainModel().Language('DefaultCultureCode')"></label>
+            <select id="edit-tenant-defaultCultureCode" class="form-select"
+                data-bind="value:Tenant().tenantSettings().defaultCultureCode,
+                    options:MainModel().CultureCodes(),
+                    optionsText:function(item){return item.value() + ' (' + item.id() + ')'},
+                    optionsValue:function(item){return item.id},
+                    optionsCaption: ''">
+            </select>
+        </div>
+
+        <div class="mb-2 form-check form-switch">
             <input type="checkbox" role="switch" class="form-check-input" id="edit-tenant-requirePreExistingAccountToLogIn" data-bind="checked:Tenant().tenantSettings().requirePreExistingAccountToLogIn" />
-            <label for="edit-tenant-requirePreExistingAccountToLogIn" class="form-check-label">Require Pre-Existing Account to Log In</label>
-            <div class="note indented">
-                If this is set to true then a user cannot login unless a user account already exists in the database. For applications that
-                should allow any user to log in set this to false and a new user account will be created when they log in if there is no user
-                account already in the users table.
-            </div>
+            <label for="edit-tenant-requirePreExistingAccountToLogIn" class="form-check-label" data-bind="html:MainModel().Language('RequirePreExistingAccount')"></label>
+            <div class="note indented" data-bind="html:MainModel().Language('RequirePreExistingAccountInfo')"></div>
         </div>
 
-        <div class="padbottom form-check form-switch">
+        <div class="mb-2 form-check form-switch">
             <input type="checkbox" role="switch" class="form-check-input" id="edit-tenant-allowUsersToManageAvatars" data-bind="checked:Tenant().tenantSettings().allowUsersToManageAvatars" />
-            <label for="edit-tenant-allowUsersToManageAvatars" class="form-check-label">Allow Users to Manage Avatars</label>
+            <label for="edit-tenant-allowUsersToManageAvatars" class="form-check-label" data-bind="html:MainModel().Language('AllowUsersToManageAvatar')"></label>
         </div>
 
-        <div class="padbottom">
+        <div class="mb-2">
             <div class="form-check form-switch">
                 <input type="checkbox" role="switch" class="form-check-input" id="edit-tenant-allowUsersToManageBasicProfileInfo" data-bind="checked:Tenant().tenantSettings().allowUsersToManageBasicProfileInfo" />
-                <label for="edit-tenant-allowUsersToManageBasicProfileInfo" class="form-check-label">Allow Users to Manage Basic Profile Info</label>
+                <label for="edit-tenant-allowUsersToManageBasicProfileInfo" class="form-check-label" data-bind="html:MainModel().Language('AllowUsersToManageBasicProfileInfo')"></label>
             </div>
 
             <div data-bind="visible:Tenant().tenantSettings().allowUsersToManageBasicProfileInfo() == true">
-                <label for="edit-tenant-allowUsersToManageBasicProfileInfoElements">Select the User Profile Elements Users Can Edit</label>
+                <label for="edit-tenant-allowUsersToManageBasicProfileInfoElements" data-bind="html:MainModel().Language('AllowUsersToManageBasicProfileInfoElements')"></label>
                 <select id="allowUsersToManageBasicProfileInfoElements" class="form-select" multiple size="8" 
                     data-bind="selectedOptions:Tenant().tenantSettings().allowUsersToManageBasicProfileInfoElements">
                     <option value="name">Name</option>
@@ -153,38 +160,246 @@
             </div>
         </div>
 
-        <div class="padbottom">
-            <label for="edit-tenant-allowedFileTypes">Allowed File Types</label>
-            <span class="note">- a comma-separated list of file extensions with the leading period</span>
-            <textarea id="edit-tenant-allowedFileTypes" class="form-control" data-bind="value:AllowedFileTypes"></textarea>
+        <div class="mb-2">
+            <label for="edit-tenant-defaultReplyToAddress" data-bind="html:MainModel().Language('DefaultReplyToAddress')"></label>
+            <input type="text" class="form-control" id="edit-tenant-defaultReplyToAddress" data-bind="value:Tenant().tenantSettings().defaultReplyToAddress" />
         </div>
 
-        <div class="padbottom">
-            <label for="edit-tenant-cookieDomain">Cookie Domain</label>
+        <div class="mb-2">
+            <label for="edit-tenant-cookieDomain" data-bind="html:MainModel().Language('CookieDomain')"></label>
             <span class="note">- an optional domain to add to cookies when not running locally (eg: ".yourdomain.com")</span>
             <input type="text" class="form-control" id="edit-tenant-cookieDomain" data-bind="value:Tenant().tenantSettings().cookieDomain" />
         </div>
 
-        <div class="padbottom">
-            <label for="edit-tenant-jasonWebTokenKey">JSON Web Token Key</label>
+        <div class="mb-2">
+            <label for="edit-tenant-jasonWebTokenKey" data-bind="html:MainModel().Language('JsonWebTokenKey')"></label>
             <span class="note">- A unique key used to encrypt JWT items. Resetting this will void all current logins and require re-authentication.</span>
             <input type="text" class="form-control" id="edit-tenant-jasonWebTokenKey" data-bind="value:Tenant().tenantSettings().jasonWebTokenKey" />
         </div>
 
-        <div class="padbottom">
-            <label for="edit-tenant-loginOptions">Login Options</label>
-            <select id="edit-tenant-loginOptions" class="form-select" size="2" multiple data-bind="selectedOptions:Tenant().tenantSettings().loginOptions">
+        <div class="mb-2">
+            <label for="edit-tenant-loginOptions" data-bind="html:MainModel().Language('LoginOptions')"></label>
+            <select id="edit-tenant-loginOptions" class="form-select" size="7" multiple data-bind="selectedOptions:Tenant().tenantSettings().loginOptions">
                 <option value="local">Local Login</option>
                 <option value="eitsso">EIT Okta Single Sign-On</option>
+                <option value="facebook">Facebook</option>
+                <option value="google">Google</option>
+                <option value="microsoft">Microsoft Account</option>
+                <option value="openid">OpenId</option>
+                <option value="custom">Custom Provider</option>
             </select>
         </div>
 
-        <div class="padbottom">
+        <div class="mb-2" data-bind="visible:ShowEitSsoUrl() == true">
             <label for="edit-tenant-eitSsoUrl">EIT SSO URL</label>
             <input type="text" class="form-control" id="edit-tenant-eitSsoUrl" data-bind="value:Tenant().tenantSettings().eitSsoUrl" />
         </div>
 
-        <div class="card padbottom">
+        <div class="mb-2" data-bind="visible:ShowLocalLoginSignup() == true">
+            <div class="form-check form-switch">
+                <input type="checkbox" role="switch" class="form-check-input" id="edit-tenant-allowUsersToResetPasswordsForLocalLogin" data-bind="checked:Tenant().tenantSettings().allowUsersToResetPasswordsForLocalLogin" />
+                <label for="edit-tenant-allowUsersToResetPasswordsForLocalLogin" class="form-check-label" data-bind="html:MainModel().Language('AllowUsersToResetLocalPasswordsAtLogin')"></label>
+            </div>
+            <div class="form-check form-switch">
+                <input type="checkbox" role="switch" class="form-check-input" id="edit-tenant-allowUsersToSignUpForLocalLogin" data-bind="checked:Tenant().tenantSettings().allowUsersToSignUpForLocalLogin" />
+                <label for="edit-tenant-allowUsersToSignUpForLocalLogin" class="form-check-label" data-bind="html:MainModel().Language('AllowUsersToSignUpAtLogin')"></label>
+            </div>
+        </div>
+
+        <div class="mb-2" data-bind="visible:AuthOptionCustom() == true">
+            <div class="alert alert-warning">
+                <h2 class="display-8">Custom Authentication Provider Information</h2>
+                <div class="mb-2">
+                    To use a custom authentication provider requires some C# coding experience.
+                    Enter your custom C# code below. The code will have full access to the
+                    backend DataAccess library of this application, so you can test your code
+                    in a tool such as LINQPad (<a href="https://linqpad.net" target="_blank">https://linqpad.net</a>)
+                    by referencing the DataAccess libraries of this solution. Your code below needs to
+                    follow a structure of using a namespace named "CustomAuthenticationProvider", a public class
+                    named "Authentication", and a function named "Authenticate".
+                    Your code also needs to implement a Logout method that returns a bool and receives the
+                    same two objects passed. An example is:
+                </div>
+                <div class="mb-2">
+                    <pre>
+namespace CustomAuthenticationProvider {
+    using SampleSinglePageApplication;
+    using SampleSinglePageApplication.EFModels.EFModels;
+    using System;
+    using System.Data;
+    using System.Text;
+    using System.Text.RegularExpressions;
+    using System.Xml;
+    using System.Xml.Serialization;
+    using System.Net.Http;
+    using System.Net.Http.Headers;
+    using JWT;
+    using JWT.Algorithms;
+    using JWT.Serializers;
+    using Microsoft.EntityFrameworkCore;
+    using System.Net;
+    using System.Net.Mail;
+    using System.Data.SqlClient;
+    using Newtonsoft.Json;
+    using Newtonsoft.Json.Converters;
+    using System.Dynamic;
+    using System.Collections.Generic;
+    using System.Linq;
+
+    public class Authentication {
+        public DataObjects.User? Authenticate(DataAccess da, string CurrentUrl){
+            DataObjects.User? output = null;
+
+            // do your custom coding here. Your app might redirect to an external URL
+            // for authentication, so you can use the CurrentUrl property that is provided
+            // as your return URL to get back to this code to evaluate your authentication
+            // token or whatever you are checking for on return.
+            //
+            // Your function needs to return a User object with at least the following
+            // attributes set:
+            //
+            // .FirstName
+            // .LastName
+            // .Email
+            //
+            // You can also set the following attributes, but any other properties will be ignored:
+            //
+            // .Phone
+            // .EmployeeId
+            // .DepartmentName
+            // .Title
+            // .Location
+            //
+            // The Email property will be used as the unique property when determining if
+            // this user already has an account configured in the application. If not, and if the
+            // tenant setting allows for accounts to be created if they don't already exist, then
+            // a new account will be created with the email address you provide.
+        }
+
+        public bool Logout(DataAccess da, string CurrentUrl){
+            // Here is where you can redirect to your auth signout URL and return back here.
+            return true;
+        }
+    }
+}
+                    </pre>
+                </div>
+                <div class="mb-2">
+                    <label for="edit-tenant-customAuthenticationName">Custom Authentication Name</label>
+                    <span class="note">- The text that will be displayed on the log in button.</span>
+                    <input type="text" class="form-control" id="edit-tenant-customAuthenticationName" data-bind="value:Tenant().tenantSettings().customAuthenticationName" />
+                </div>
+                <div class="mb-2">
+                    <label for="edit-tenant-customAuthenticationCode">Custom Authentication C# Code</label>
+                    <textarea id="edit-tenant-customAuthenticationCode" class="form-control" rows="10" 
+                        data-bind="value:Tenant().tenantSettings().customAuthenticationCode,
+                            attr:{rows: MainModel().LinesInText(Tenant().tenantSettings().customAuthenticationCode())}"></textarea>
+                </div>
+            </div>
+        </div>
+
+        <div class="mb-2" data-bind="visible:AuthOptionFacebook() == true || AuthOptionGoogle() == true || AuthOptionMicrosoft() == true || AuthOptionOpenId() == true">
+            <div class="alert alert-primary">
+                <div data-bind="visible:AuthOptionFacebook() == true">
+                    <h2 class="display-8">Facebook Authentication Provider Information</h2>
+                    <div class="mb-2">
+                        When using the Facebook login option you must set the Facebook AppId and AppSecret
+                        in the AuthenticationProviders:Facebook section of the appsettings.json file.
+                    </div>
+                </div>
+
+                <div data-bind="visible:AuthOptionGoogle() == true">
+                    <h2 class="display-8">Google Authentication Provider Information</h2>
+                    <div class="mb-2">
+                        When using the Google login option you must set the ClientId and ClientSecret
+                        in the AuthenticationProviders:Google section of the appsettings.json file.
+                    </div>
+                </div>
+
+                <div data-bind="visible:AuthOptionMicrosoft() == true">
+                    <h2 class="display-8">Microsoft Account Authentication Provider Information</h2>
+                    <div class="mb-2">
+                        When using the Microsoft Account login option you must set the ClientId and ClientSecret
+                        in the AuthenticationProviders:MicrosoftAccount section of the appsettings.json file.
+                    </div>
+                </div>
+
+                <div data-bind="visible:AuthOptionOpenId() == true">
+                    <h2 class="display-8">OpenId Authentication Provider Information</h2>
+                    <div class="mb-2">
+                        When using the OpenId login option you must set the ClientId, ClientSecret, and
+                        Authority settings in the AuthenticationProviders:OpenId section of the appsettings.json file.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mb-2">
+            <div class="card-header">LDAP Info</div>
+            <div class="card-body">
+                <div class="mb-2">
+                    To use the option LDAP integration you must complete all of the required (*) fields below.
+                    When using LDAP location authentication will try to authenticate via LDAP if
+                    no local username and password matches. If you have configured the tenant to
+                    not require pre-existing accounts to log in users will be able to log in and
+                    create an account if they have a valid LDAP login. Also, even when authenticating
+                    with a local username and password LDAP will be checked and any user details that
+                    come from LDAP will update the local user account.
+                </div>
+
+                <div class="mb-2">
+                    <label for="edit-tenant-ldapLookupRoot">*LDAP Lookup Root (eg: your.domain.com)</label>
+                    <input type="text" class="form-control" id="edit-tenant-ldapLookupRoot" data-bind="value:Tenant().tenantSettings().ldapLookupRoot" />
+                </div>
+
+                <div class="mb-2">
+                    <label for="edit-tenant-ldapLookupSearchBase">*LDAP Lookup Search Base (eg: OU=Users,DC=your,DC=domain,DC=com)</label>
+                    <input type="text" class="form-control" id="edit-tenant-ldapLookupSearchBase" data-bind="value:Tenant().tenantSettings().ldapLookupSearchBase" />
+                </div>
+
+                <div class="mb-2">
+                    <label for="edit-tenant-ldapLookupUsername">*LDAP Lookup Username</label>
+                    <input type="text" class="form-control" id="edit-tenant-ldapLookupUsername" data-bind="value:Tenant().tenantSettings().ldapLookupUsername" />
+                </div>
+
+                <div class="mb-2">
+                    <label for="edit-tenant-ldapLookupPassword">*LDAP Lookup Password</label>
+                    <input type="text" class="form-control" id="edit-tenant-ldapLookupPassword" data-bind="value:Tenant().tenantSettings().ldapLookupPassword" />
+                </div>
+
+                <div class="mb-2">
+                    <label for="edit-tenant-ldapLookupLocationAttribute">LDAP Location Attribute (defaults to 'physicalDeliveryOfficeName')</label>
+                    <input type="text" class="form-control" id="edit-tenant-ldapLookupLocationAttribute" data-bind="value:Tenant().tenantSettings().ldapLookupLocationAttribute" />
+                </div>
+
+                <div class="mb-2">
+                    <label for="edit-tenant-ldapLookupPort">LDAP Port (defaults to 389)</label>
+                    <input type="number" class="form-control" id="edit-tenant-ldapLookupPort" data-bind="value:Tenant().tenantSettings().ldapLookupPort" />
+                </div>
+            </div>
+        </div>
+
+        <div class="card mb-2">
+            <div class="card-header">Disabled Features</div>
+            <div class="card-body">
+                <div class="mb-2">
+                    Use this option to disable features that might not be used in all tenants.
+                    By selecting items below you can hide these features from the application interface.
+                </div>
+                
+                <div class="mb-2">
+                    <select id="edit-tenant-loginOptions" class="form-select" size="5" multiple data-bind="selectedOptions:Tenant().tenantSettings().moduleHideElements">
+                        <option value="departments">Departments</option>
+                        <option value="employeeid">Employee ID</option>
+                        <option value="location">Location</option>
+                        <option value="udf">User-Defined Fields</option>
+                        <option value="usergroups">User Groups</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mb-2">
             <div class="card-header">Work Schedule</div>
             <div class="card-body">
                 <table class="table">
@@ -307,21 +522,112 @@
                 </table>
             </div>
         </div>
+
+        <div class="card mb-2">
+            <div class="card-header">External User Data Sources</div>
+            <div class="card-body">
+                <p>
+                    External data source are an optional method of updating user data from external sources. The source can either
+                    be an SQL query or a block of C# code. For an SQL query the query must return column names that match properties
+                    on the User object. For C# code the code must return a User object.
+                </p>
+                <p>
+                    For an SQL query your query text can contain the following tags which will be replaced with values known for the
+                    user: {{employeeid}}, {{username}} and {{email}}. The query must return a single row. If more than one row is
+                    returned then the application will assume an exact match could not be made and no updates will occur.
+                </p>
+                <p>
+                    For C# code you must follow the convention of using the namespace "CustomCode", a public class "CustomDynamicCode",
+                    and your function must be:
+                    <br /><br />
+                    public DataObjects.User? FindUser(string EmployeeId, string Username, string Email, DataAccess da)
+                    <br /><br />
+                    The 3 strings that will be passed in are EmployeeId, Username, and Email. In addition, a reference
+                    to the DataAccess library will be passed as well.
+                </p>
+                <p>
+                    The properties that will be evaluated to update details on the user record are FirstName, LastName, DepartmentName, and Location.
+                    These data sources will be evaluated when a user logs in and when a user is used on a ticket.
+                </p>
+
+                <div class="mb-2">
+                    <button type="button" class="btn btn-success" data-bind="click:function(){AddExternalUserDataSource('sql')}">Add External SQL Data Source</button>
+                    <button type="button" class="btn btn-success" data-bind="click:function(){AddExternalUserDataSource('csharp')}">Add External C# Data Source</button>
+                </div>
+
+                <div data-bind="visible:Tenant().tenantSettings().externalUserDataSources() == null || Tenant().tenantSettings().externalUserDataSources().length == 0">
+                    No External Data Sources Configured
+                </div>
+
+                <div data-bind="visible:Tenant().tenantSettings().externalUserDataSources() != null && Tenant().tenantSettings().externalUserDataSources().length > 0">
+                    <div class="row">
+                        <div class="col col-sm-1"></div>
+                        <div class="col col-sm-8 bold">Name</div>
+                        <div class="col col-sm-1 bold center">Type</div>
+                        <div class="col col-sm-1 bold center">Active</div>
+                        <div class="col col-sm-1 bold center">Sort</div>
+                    </div>
+
+                    <div data-bind="foreach:Tenant().tenantSettings().externalUserDataSources()">
+                        <hr />
+                        <div class="row mb-1">
+                            <div class="col col-sm-1">
+                                <button type="button" class="btn btn-sm btn-danger" data-bind="click:function(){$root.DeleteExternalUserDataSource($data)}">Delete</button>
+                            </div>
+                            <div class="col col-sm-8">
+                                <input type="text" class="form-control" placeholder="Name" data-bind="textInput:$data.name, css: {'missing-required': $data.name() == null || $data.name() == ''}" />
+                            </div>
+                            <div class="col col-sm-1 center">
+                                <span data-bind="visible:$data.type() == 'sql'">SQL</span>
+                                <span data-bind="visible:$data.type() == 'csharp'">C# Code</span>
+                            </div>
+                            <div class="col col-sm-1 center">
+                                <input type="checkbox" data-bind="checked:$data.active" />
+                            </div>
+                            <div class="col col-sm-1 center">
+                                <input type="number" class="form-control" placeholder="Sort Order" data-bind="value:$data.sortOrder" />
+                            </div>
+                        </div>
+
+                        <div class="row mb-1" data-bind="visible:$data.type() == 'sql'">
+                            <div class="col col-sm-1"></div>
+                            <div class="col col-sm-11">
+                                <span class="light">SQL Connection String</span>
+                                <input type="text" class="form-control" placeholder="Connection String"
+                                       data-bind="textInput:$data.connectionString, css: {'missing-required': $data.connectionString() == null || $data.connectionString() == ''}" />
+                            </div>
+                        </div>
+
+                        <div class="row mb-1" data-bind="visible:$data.type() != null && $data.type() != ''">
+                            <div class="col col-sm-1"></div>
+                            <div class="col col-sm-11">
+                                <span class="light" data-bind="visible:$data.type() == 'sql'">SQL Query</span>
+                                <span class="light" data-bind="visible:$data.type() == 'csharp'">C# Code</span>
+                                <textarea class="form-control"
+                                          data-bind="textInput:$data.source,
+                                            css: {'missing-required': $data.source() == null || $data.source() == ''},
+                                            attr: {rows:$root.MainModel().LinesInText($data.source())}"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <div data-bind="visible:MainModel().CurrentView() == 'deletetenant'">
         <h1 class="display-7"><i data-bind="html:MainModel().IconAndText('DeleteTenant')"></i></h1>
 
-        <div class="padbottom-5">
+        <div class="mb-2">
             <button type="button" class="btn btn-dark" data-bind="click:function(){ MainModel().Nav('Tenants') }">
                 <i data-bind="html:MainModel().IconAndText('Cancel')"></i>
             </button>
         </div>
 
         <div class="alert alert-danger">
-            <div class="padbottom" data-bind="html:MainModel().Language('DeleteTenantWarning')"></div>
+            <div class="mb-2" data-bind="html:MainModel().Language('DeleteTenantWarning')"></div>
 
-            <div class="padbottom">
+            <div class="mb-2">
                 <input type="text" class="form-control" id="confirm-delete-tenant" />
             </div>
 

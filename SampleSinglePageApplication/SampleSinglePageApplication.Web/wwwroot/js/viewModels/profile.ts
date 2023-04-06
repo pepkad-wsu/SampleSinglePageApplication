@@ -153,7 +153,11 @@
     ViewChanged(): void {
         switch (this.MainModel().CurrentView()) {
             case "changepassword":
-                this.ChangePassword();
+                if (this.MainModel().User().preventPasswordChange()) {
+                    this.MainModel().Nav("AccessDenied");
+                } else {
+                    this.ChangePassword();
+                }
                 break;
 
             case "profile":

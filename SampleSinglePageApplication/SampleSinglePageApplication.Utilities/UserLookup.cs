@@ -72,7 +72,7 @@ public class UserLookupClient
     {
         UserLookupResponse? output = null;
 
-        var client = new System.Net.Http.HttpClient();
+        var client = Utilities.GetHttpClient(url);
         client.DefaultRequestHeaders.Accept.Clear();
         client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
         client.DefaultRequestHeaders.Add("ApplicationUsername", _username);

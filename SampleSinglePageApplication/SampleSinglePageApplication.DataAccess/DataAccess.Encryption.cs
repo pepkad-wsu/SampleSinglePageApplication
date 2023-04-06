@@ -1,6 +1,49 @@
 ﻿namespace SampleSinglePageApplication;
 public partial class DataAccess
 {
+    /// <summary>
+    /// Converts a string byte array (eg: 0x01, 0x02, 0x03) to a shorter version (eg: 010203)
+    /// </summary>
+    /// <param name="byteArray">A string representation of a byte array</param>
+    /// <returns>A condensed version with just the byte values</returns>
+    public string CompressByteArrayString(string? byteArray)
+    {
+        string output = String.Empty;
+
+        if (!String.IsNullOrEmpty(byteArray)) {
+            output = byteArray.Substring(2)
+                .Replace(" ", "")
+                .Replace(",0x", "");
+        }
+
+        return output;
+    }
+
+    /// <summary>
+    /// Converts a compressed byte array string (eg: 010203) back to a standard byte array string (eg: 0x01, 0x02, 0x03)
+    /// </summary>
+    /// <param name="compressedByteArray">A compressed byte array string</param>
+    /// <returns>A standard byte array string</returns>
+    public string CompressedByteArrayStringToFullString(string? compressedByteArray)
+    {
+        System.Text.StringBuilder output = new System.Text.StringBuilder();
+
+        if (!String.IsNullOrWhiteSpace(compressedByteArray)) {
+            int len = compressedByteArray.Length;
+            int pos = 0;
+
+            while (pos < len) {
+                if (pos > 0) {
+                    output.Append(",");
+                }
+                output.Append("0x" + compressedByteArray.Substring(pos, 2));
+                pos += 2;
+            }
+        }
+
+        return output.ToString();
+    }
+
     private byte[] ConvertByteArrayStringToByteArray(string ByteArrayString)
     {
         byte[] output = new byte[] { };
@@ -51,6 +94,13 @@ public partial class DataAccess
         return output;
     }
 
+    public string GenerateChecksum(string input)
+    {
+        Encryption e = new Encryption(GetEncryptionKey);
+        string output = e.GenerateChecksum(input);
+        return output;
+    }
+
     private byte[] GetEncryptionKey {
         get {
             // The default key is hard-code here.
@@ -67,6 +117,8 @@ public partial class DataAccess
                 if (String.IsNullOrEmpty(settingsEncryptionKey)) {
                     Encryption enc = new Encryption(output);
                     missingSetting = true;
+                    settingsEncryptionKey = enc.GetNewEncryptionKeyAsString();
+                    output = enc.ConvertByteArrayStringToByteArray(settingsEncryptionKey);
                 }
             }
 
@@ -79,7 +131,7 @@ public partial class DataAccess
             }
 
             if (missingSetting) {
-                SaveSetting("Encryptionkey", DataObjects.SettingType.Text, ConvertByteArrayToString(output));
+                SaveSetting("EncryptionKey", DataObjects.SettingType.Text, ConvertByteArrayToString(output));
             }
 
             return output;
@@ -115,10 +167,10 @@ public partial class DataAccess
             Encryption encNew = new Encryption(newKeyAsByteArrayString);
 
             // Decrypt and re-encrypt all encrypted settings.
-            var settings = data.Settings.Where(x => x.SettingType == "EncryptedText" && x.SettingText != null && x.SettingText != "");
+            var settings = data.Settings.Where(x => x.SettingType != null && x.SettingType.ToLower() == "encryptedtext" && x.SettingText != null && x.SettingText != "");
             if (settings != null && settings.Any()) {
                 foreach (var rec in settings) {
-                    string currentValue = StringOrEmpty(rec.SettingText);
+                    string currentValue = StringValue(rec.SettingText);
                     if (!String.IsNullOrEmpty(currentValue)) {
                         string decrypted = encCurrent.Decrypt(currentValue);
                         rec.SettingText = encNew.Encrypt(decrypted);
@@ -131,7 +183,7 @@ public partial class DataAccess
             var users = data.Users.Where(x => x.Password != null && x.Password != "");
             if (users != null && users.Any()) {
                 foreach (var rec in users) {
-                    string currentValue = StringOrEmpty(rec.Password);
+                    string currentValue = StringValue(rec.Password);
                     if (!String.IsNullOrEmpty(currentValue)) {
                         string decrypted = encCurrent.Decrypt(currentValue);
                         rec.Password = encNew.Encrypt(decrypted);

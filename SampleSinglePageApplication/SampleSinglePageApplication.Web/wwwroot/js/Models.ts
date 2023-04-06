@@ -2,19 +2,49 @@
     action: string;
     appName: string;
     baseURL: string;
+    culture: string;
     id: string;
+    GuidEmpty: string;
     loggedIn: boolean;
     missingTenantCode: boolean;
+    models: string[];
+    objCultureCodes: server.optionPair[];
+    objCultures: string[];
     objDefaultLanguage: server.optionPair[];
     objExtra: string[];
-    objLanguage: server.optionPair[];
+    objLanguage: server.language;
     objTenant: server.tenant;
+    objTenantList: server.tenant[];
     objUser: server.user;
     objVersionInfo: server.versionInfo;
+    showTenantCodeFieldOnLoginForm: boolean;
+    showTenantListingWhenMissingTenantCode: boolean;
     tenantCode: string;
     tenantId: string;
     token: string;
+    useAuthProviderCustom: boolean;
+    useAuthProviderFacebook: boolean;
+    useAuthProviderGoogle: boolean;
+    useAuthProviderMicrosoftAccount: boolean;
+    useAuthProviderOpenId: boolean;
     useTenantCodeInUrl: boolean;
+}
+
+/**
+ * @param {any[]} data - The DTO data object that contains an array of data objects to load.
+ * @param {KnockoutObservableArray} - loadInto - The KnockoutObservableArray to load with the DTO dataType.
+ * @param {class} - dataType - The class type of the KnockoutObservableArray object.
+ */
+function DataLoader(data: any[], loadInto: KnockoutObservableArray<any>, dataType: any): void {
+    let d = [];
+    if (data != null && data.length > 0) {
+        data.forEach(function (e) {
+            var item = new dataType();
+            item.Load(e);
+            d.push(item);
+        });
+    }
+    loadInto(d);
 }
 
 declare function configureDatePickers(): void;
@@ -48,6 +78,18 @@ class actionResponseObject {
     }
 }
 
+class addModule {
+    module: KnockoutObservable<string> = ko.observable(null);
+    name: KnockoutObservable<string> = ko.observable(null);
+
+    Load(data: server.addModule) {
+        if (data != null) {
+            this.module(data.module);
+            this.name(data.name);
+        }
+    }
+}
+
 class ajaxLookup extends actionResponseObject {
     TenantId: KnockoutObservable<string> = ko.observable(null);
     Search: KnockoutObservable<string> = ko.observable(null);
@@ -58,25 +100,9 @@ class ajaxLookup extends actionResponseObject {
         if (data != null) {
             this.actionResponse().Load(data.actionResponse);
             this.TenantId(data.tenantId);
-
             this.Search(data.search);
-            this.Results([]);
-            let parameters: string[] = [];
-            if (data.parameters != null) {
-                data.parameters.forEach(function (element) {
-                    parameters.push(element);
-                });
-            }
-            this.Parameters(parameters);
-            if (data.results != null) {
-                let results: ajaxResults[] = [];
-                data.results.forEach(function (element) {
-                    let item: ajaxResults = new ajaxResults();
-                    item.Load(element);
-                    results.push(item);
-                });
-                this.Results(results);
-            }
+            this.Parameters(data.parameters);
+            DataLoader(data.results, this.Results, ajaxResults);
         }
     }
 }
@@ -103,17 +129,54 @@ class ajaxResults {
     }
 }
 
+class applicationSettings extends actionResponseObject {
+    applicationURL: KnockoutObservable<string> = ko.observable(null);
+    defaultTenantCode: KnockoutObservable<string> = ko.observable(null);
+    encryptionKey: KnockoutObservable<string> = ko.observable(null);
+    mailServer: KnockoutObservable<string> = ko.observable(null);
+    mailServerPassword: KnockoutObservable<string> = ko.observable(null);
+    mailServerPort: KnockoutObservable<number> = ko.observable(0);
+    mailServerUsername: KnockoutObservable<string> = ko.observable(null);
+    mailServerUseSSL: KnockoutObservable<boolean> = ko.observable(false);
+    defaultReplyToAddress: KnockoutObservable<string> = ko.observable(null);
+    useTenantCodeInUrl: KnockoutObservable<boolean> = ko.observable(false);
+    showTenantCodeFieldOnLoginForm: KnockoutObservable<boolean> = ko.observable(false);
+    showTenantListingWhenMissingTenantCode: KnockoutObservable<boolean> = ko.observable(false);
+
+
+    Load(data: server.applicationSettings) {
+        super.Load(data);
+        if (data != null) {
+            this.applicationURL(data.applicationURL);
+            this.defaultTenantCode(data.defaultTenantCode);
+            this.encryptionKey(data.encryptionKey);
+            this.mailServer(data.mailServer);
+            this.mailServerPassword(data.mailServerPassword);
+            this.mailServerPort(data.mailServerPort);
+            this.mailServerUsername(data.mailServerUsername);
+            this.mailServerUseSSL(data.mailServerUseSSL);
+            this.defaultReplyToAddress(data.defaultReplyToAddress);
+            this.useTenantCodeInUrl(data.useTenantCodeInUrl);
+            this.showTenantCodeFieldOnLoginForm(data.showTenantCodeFieldOnLoginForm);
+            this.showTenantListingWhenMissingTenantCode(data.showTenantListingWhenMissingTenantCode);
+        }
+    }
+}
+
 class authenticate {
     username: KnockoutObservable<string> = ko.observable(null);
     password: KnockoutObservable<string> = ko.observable(null);
+    tenantCode: KnockoutObservable<string> = ko.observable(null);
 
     Load(data: server.authenticate) {
         if (data != null) {
             this.username(data.username);
             this.password(data.password);
+            this.tenantCode(data.tenantCode);
         } else {
             this.username(null);
             this.password(null);
+            this.tenantCode(null);
         }
     }
 }
@@ -169,6 +232,38 @@ class departmentGroup extends actionResponseObject {
     }
 }
 
+class dictionary {
+    key: KnockoutObservable<string> = ko.observable(null);
+    value: KnockoutObservable<string> = ko.observable(null);
+
+    Load(data: server.dictionary) {
+        if (data != null) {
+            this.key(data.key);
+            this.value(data.value);
+        }
+    }
+}
+
+class externalDataSource {
+    name: KnockoutObservable<string> = ko.observable(null);
+    type: KnockoutObservable<string> = ko.observable(null);
+    connectionString: KnockoutObservable<string> = ko.observable(null);
+    source: KnockoutObservable<string> = ko.observable(null);
+    sortOrder: KnockoutObservable<number> = ko.observable(0);
+    active: KnockoutObservable<boolean> = ko.observable(false);
+
+    Load(data: server.externalDataSource) {
+        if (data != null) {
+            this.name(data.name);
+            this.type(data.type);
+            this.connectionString(data.connectionString);
+            this.source(data.source);
+            this.sortOrder(data.sortOrder);
+            this.active(data.active);
+        }
+    }
+}
+
 class fileStorage extends actionResponseObject {
     fileId: KnockoutObservable<string> = ko.observable(null);
     tenantId: KnockoutObservable<string> = ko.observable(null);
@@ -217,6 +312,7 @@ class filter extends actionResponseObject {
     tenants: KnockoutObservableArray<string> = ko.observableArray([]);
     columns: KnockoutObservableArray<filterColumn> = ko.observableArray([]);
     records: KnockoutObservableArray<any> = ko.observableArray([]);
+    cultureCode: KnockoutObservable<string> = ko.observable(null);
 
     Load(data: server.filter) {
         if (data != null) {
@@ -235,16 +331,8 @@ class filter extends actionResponseObject {
             this.page(data.page);
             this.tenants(data.tenants);
             this.records(data.records);
-
-            let c: filterColumn[] = [];
-            if (data.columns != null) {
-                data.columns.forEach(function (e) {
-                    let item: filterColumn = new filterColumn();
-                    item.Load(e);
-                    c.push(item);
-                });
-            }
-            this.columns(c);
+            DataLoader(data.columns, this.columns, filterColumn);
+            this.cultureCode(data.cultureCode);
         } else {
             this.actionResponse(new booleanResponse);
             this.start(null);
@@ -259,6 +347,7 @@ class filter extends actionResponseObject {
             this.tenants([]);
             this.records([]);
             this.columns([]);
+            this.cultureCode(null);
         }
     }
 }
@@ -270,6 +359,8 @@ class filterColumn {
     dataElementName: KnockoutObservable<string> = ko.observable(null);
     dataType: KnockoutObservable<string> = ko.observable(null);
     sortable: KnockoutObservable<boolean> = ko.observable(false);
+    class: KnockoutObservable<string> = ko.observable(null);
+    booleanIcon: KnockoutObservable<string> = ko.observable(null);
 
     Load(data: server.filterColumn) {
         if (data != null) {
@@ -279,6 +370,8 @@ class filterColumn {
             this.dataElementName(data.dataElementName);
             this.dataType(data.dataType);
             this.sortable(data.sortable);
+            this.class(data.class);
+            this.booleanIcon(data.booleanIcon);
         } else {
             this.align(null);
             this.label(null);
@@ -286,6 +379,8 @@ class filterColumn {
             this.dataElementName(null);
             this.dataType(null);
             this.sortable(false);
+            this.class(null);
+            this.booleanIcon(null);
         }
     }
 }
@@ -328,16 +423,7 @@ class filterUsers extends filter {
                 this.records([]);
             }
 
-            let c: filterColumn[] = [];
-            if (data.columns != null) {
-                data.columns.forEach(function (e) {
-                    let item: filterColumn = new filterColumn();
-                    item.Load(e);
-                    c.push(item);
-                });
-            }
-            this.columns(c);
-
+            DataLoader(data.columns, this.columns, filterColumn);
             this.filterDepartments(data.filterDepartments);
             this.enabled(data.enabled);
             this.admin(data.admin);
@@ -381,6 +467,18 @@ class filterUsers extends filter {
             this.udf08(null);
             this.udf09(null);
             this.udf10(null);
+        }
+    }
+}
+
+class language {
+    culture: KnockoutObservable<string> = ko.observable(null);
+    phrases: KnockoutObservableArray<optionPair> = ko.observableArray([]);
+
+    Load(data: server.language) {
+        if (data != null) {
+            this.culture(data.culture);
+            DataLoader(data.phrases, this.phrases, optionPair);
         }
     }
 }
@@ -495,6 +593,18 @@ class simplePost {
     }
 }
 
+class simpleResponse {
+    result: KnockoutObservable<boolean> = ko.observable(false);
+    message: KnockoutObservable<string> = ko.observable(null);
+
+    Load(data: server.simpleResponse) {
+        if (data != null) {
+            this.result(data.result);
+            this.message(data.message);
+        }
+    }
+}
+
 class tenant extends actionResponseObject {
     tenantId: KnockoutObservable<string> = ko.observable(null);
     name: KnockoutObservable<string> = ko.observable(null);
@@ -514,46 +624,10 @@ class tenant extends actionResponseObject {
             this.tenantCode(data.tenantCode);
             this.enabled(data.enabled);
             this.tenantSettings().Load(data.tenantSettings);
-
-            let d: department[] = [];
-            if (data.departments != null) {
-                data.departments.forEach(function (e) {
-                    let item: department = new department();
-                    item.Load(e);
-                    d.push(item);
-                });
-            }
-            this.departments(d);
-
-            let dG: departmentGroup[] = [];
-            if (data.departmentGroups != null) {
-                data.departmentGroups.forEach(function (e) {
-                    let item: departmentGroup = new departmentGroup();
-                    item.Load(e);
-                    dG.push(item);
-                });
-            }
-            this.departmentGroups(dG);
-
-            let li: listItem[] = [];
-            if (data.listItems != null) {
-                data.listItems.forEach(function (e) {
-                    let item: listItem = new listItem();
-                    item.Load(e);
-                    li.push(item);
-                });
-            }
-            this.listItems(li);
-
-            let u: udfLabel[] = [];
-            if (data.udfLabels != null) {
-                data.udfLabels.forEach(function (e) {
-                    let item: udfLabel = new udfLabel();
-                    item.Load(e);
-                    u.push(item);
-                });
-            }
-            this.udfLabels(u);
+            DataLoader(data.departments, this.departments, department);
+            DataLoader(data.departmentGroups, this.departmentGroups, departmentGroup);
+            DataLoader(data.listItems, this.listItems, listItem);
+            DataLoader(data.udfLabels, this.udfLabels, udfLabel);
         } else {
             this.actionResponse(new booleanResponse);
             this.tenantId(null);
@@ -569,38 +643,94 @@ class tenant extends actionResponseObject {
     }
 }
 
+class tenantList {
+    tenantId: KnockoutObservable<string> = ko.observable(null);
+    name: KnockoutObservable<string> = ko.observable(null);
+    tenantCode: KnockoutObservable<string> = ko.observable(null);
+
+    Load(data: server.tenantList) {
+        if (data != null) {
+            this.tenantId(data.tenantId);
+            this.name(data.name);
+            this.tenantCode(data.tenantCode);
+        }
+    }
+}
+
 class tenantSettings {
     allowUsersToManageAvatars: KnockoutObservable<boolean> = ko.observable(false);
     allowUsersToManageBasicProfileInfo: KnockoutObservable<boolean> = ko.observable(false);
     allowUsersToManageBasicProfileInfoElements: KnockoutObservableArray<string> = ko.observableArray([]);
+    allowUsersToResetPasswordsForLocalLogin: KnockoutObservable<boolean> = ko.observable(false);
+    allowUsersToSignUpForLocalLogin: KnockoutObservable<boolean> = ko.observable(false);
     cookieDomain: KnockoutObservable<string> = ko.observable(null);
+    customAuthenticationCode: KnockoutObservable<string> = ko.observable(null);
+    customAuthenticationName: KnockoutObservable<string> = ko.observable(null);
+    defaultCultureCode: KnockoutObservable<string> = ko.observable(null);
+    defaultReplyToAddress: KnockoutObservable<string> = ko.observable(null);
     eitSsoUrl: KnockoutObservable<string> = ko.observable(null);
     jasonWebTokenKey: KnockoutObservable<string> = ko.observable(null);
+    ldapLookupRoot: KnockoutObservable<string> = ko.observable(null);
+    ldapLookupUsername: KnockoutObservable<string> = ko.observable(null);
+    ldapLookupPassword: KnockoutObservable<string> = ko.observable(null);
+    ldapLookupSearchBase: KnockoutObservable<string> = ko.observable(null);
+    ldapLookupLocationAttribute: KnockoutObservable<string> = ko.observable(null);
+    ldapLookupPort: KnockoutObservable<number> = ko.observable(0);
     loginOptions: KnockoutObservableArray<string> = ko.observableArray([]);
+    moduleHideElements: KnockoutObservableArray<string> = ko.observableArray([]);
     workSchedule: KnockoutObservable<workSchedule> = ko.observable(new workSchedule);
     requirePreExistingAccountToLogIn: KnockoutObservable<boolean> = ko.observable(false);
+    externalUserDataSources: KnockoutObservableArray<externalDataSource> = ko.observableArray([]);
 
     Load(data: server.tenantSettings) {
         if (data != null) {
             this.allowUsersToManageAvatars(data.allowUsersToManageAvatars);
             this.allowUsersToManageBasicProfileInfo(data.allowUsersToManageBasicProfileInfo);
             this.allowUsersToManageBasicProfileInfoElements(data.allowUsersToManageBasicProfileInfoElements);
+            this.allowUsersToResetPasswordsForLocalLogin(data.allowUsersToResetPasswordsForLocalLogin);
+            this.allowUsersToSignUpForLocalLogin(data.allowUsersToSignUpForLocalLogin);
             this.cookieDomain(data.cookieDomain);
+            this.customAuthenticationCode(data.customAuthenticationCode);
+            this.customAuthenticationName(data.customAuthenticationName);
+            this.defaultCultureCode(data.defaultCultureCode);
+            this.defaultReplyToAddress(data.defaultReplyToAddress);
             this.eitSsoUrl(data.eitSsoUrl);
             this.jasonWebTokenKey(data.jasonWebTokenKey);
+            this.ldapLookupRoot(data.ldapLookupRoot);
+            this.ldapLookupUsername(data.ldapLookupUsername);
+            this.ldapLookupPassword(data.ldapLookupPassword);
+            this.ldapLookupSearchBase(data.ldapLookupSearchBase);
+            this.ldapLookupLocationAttribute(data.ldapLookupLocationAttribute);
+            this.ldapLookupPort(data.ldapLookupPort);
             this.loginOptions(data.loginOptions);
+            this.moduleHideElements(data.moduleHideElements);
             this.workSchedule().Load(data.workSchedule);
             this.requirePreExistingAccountToLogIn(data.requirePreExistingAccountToLogIn);
+            DataLoader(data.externalUserDataSources, this.externalUserDataSources, externalDataSource);
         } else {
             this.allowUsersToManageAvatars(null);
             this.allowUsersToManageBasicProfileInfo(null);
             this.allowUsersToManageBasicProfileInfoElements([]);
+            this.allowUsersToResetPasswordsForLocalLogin(null);
+            this.allowUsersToSignUpForLocalLogin(null);
             this.cookieDomain(null);
+            this.customAuthenticationCode(null);
+            this.customAuthenticationName(null);
+            this.defaultCultureCode(null);
+            this.defaultReplyToAddress(null);
             this.eitSsoUrl(null);
             this.jasonWebTokenKey(null);
+            this.ldapLookupRoot(null);
+            this.ldapLookupUsername(null);
+            this.ldapLookupPassword(null);
+            this.ldapLookupSearchBase(null);
+            this.ldapLookupLocationAttribute(null);
+            this.ldapLookupPort(0);
             this.loginOptions(null);
+            this.moduleHideElements(null);
             this.workSchedule(new workSchedule);
             this.requirePreExistingAccountToLogIn(true);
+            this.externalUserDataSources([]);
         }
     }
 }
@@ -658,6 +788,7 @@ class user extends actionResponseObject {
     lastLockoutDate: KnockoutObservable<Date> = ko.observable(null);
     tenants: KnockoutObservableArray<tenant> = ko.observableArray([]);
     userTenants: KnockoutObservableArray<userTenant> = ko.observableArray([]);
+    source: KnockoutObservable<string> = ko.observable(null);
     udf01: KnockoutObservable<string> = ko.observable(null);
     udf02: KnockoutObservable<string> = ko.observable(null);
     udf03: KnockoutObservable<string> = ko.observable(null);
@@ -695,27 +826,9 @@ class user extends actionResponseObject {
             this.hasLocalPassword(data.hasLocalPassword);
             this.authToken(data.authToken);
             this.lastLockoutDate(data.lastLockoutDate);
-
-            let t: tenant[] = [];
-            if (data.tenants != null) {
-                data.tenants.forEach(function (e) {
-                    let item: tenant = new tenant();
-                    item.Load(e);
-                    t.push(item);
-                });
-            }
-            this.tenants(t);
-
-            let ut: userTenant[] = [];
-            if (data.userTenants != null) {
-                data.userTenants.forEach(function (e) {
-                    let item: userTenant = new userTenant();
-                    item.Load(e);
-                    ut.push(item);
-                });
-            }
-            this.userTenants(ut);
-
+            DataLoader(data.tenants, this.tenants, tenant);
+            DataLoader(data.userTenants, this.userTenants, userTenant);
+            this.source(data.source);
             this.udf01(data.udf01);
             this.udf02(data.udf02);
             this.udf03(data.udf03);
@@ -753,6 +866,7 @@ class user extends actionResponseObject {
             this.lastLockoutDate(null);
             this.tenants([]);
             this.userTenants([]);
+            this.source(null);
             this.udf01(null);
             this.udf02(null);
             this.udf03(null);
@@ -763,6 +877,38 @@ class user extends actionResponseObject {
             this.udf08(null);
             this.udf09(null);
             this.udf10(null);
+        }
+    }
+}
+
+class userGroup extends actionResponseObject {
+    groupId: KnockoutObservable<string> = ko.observable(null);
+    tenantId: KnockoutObservable<string> = ko.observable(null);
+    name: KnockoutObservable<string> = ko.observable(null);
+    enabled: KnockoutObservable<boolean> = ko.observable(false);
+    users: KnockoutObservableArray<string> = ko.observableArray([]);
+    settings: KnockoutObservable<userGroupSettings> = ko.observable(new userGroupSettings);
+
+    Load(data: server.userGroup) {
+        super.Load(data);
+
+        if (data != null) {
+            this.groupId(data.groupId);
+            this.tenantId(data.tenantId);
+            this.name(data.name);
+            this.enabled(data.enabled);
+            this.users(data.users);
+            this.settings().Load(data.settings);
+        }
+    }
+}
+
+class userGroupSettings {
+    someSetting: KnockoutObservable<string> = ko.observable(null);
+
+    Load(data: server.userGroupSettings) {
+        if (data != null) {
+            this.someSetting(data.someSetting);
         }
     }
 }
@@ -812,7 +958,7 @@ class userTenant {
 }
 
 class versionInfo {
-    released: KnockoutObservable<string> = ko.observable(null);
+    released: KnockoutObservable<Date> = ko.observable(null);
     runningSince: KnockoutObservable<number> = ko.observable(0);
     version: KnockoutObservable<string> = ko.observable(null);
 

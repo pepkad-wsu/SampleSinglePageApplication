@@ -10,7 +10,7 @@ public partial class DataAccess
         int Local = 0;
         var recs = data.Users.Where(x => x.TenantId == Lookup.TenantId && x.Enabled == true);
 
-        string search = StringOrEmpty(Lookup.Search);
+        string search = StringValue(Lookup.Search).ToLower();
 
         string LastName = String.Empty;
         string FirstName = String.Empty;
@@ -23,13 +23,13 @@ public partial class DataAccess
                 LastName += Names[0];
                 FirstName += Names[1];
             } catch { }
-            LastName = LastName.Trim();
-            FirstName = FirstName.Trim();
+            LastName = LastName.Trim().ToLower();
+            FirstName = FirstName.Trim().ToLower();
 
             if (!String.IsNullOrWhiteSpace(LastName) && !String.IsNullOrWhiteSpace(FirstName)) {
-                recs = recs.Where(x => x.LastName != null && x.LastName.StartsWith(LastName) && x.FirstName != null && x.FirstName.StartsWith(FirstName));
+                recs = recs.Where(x => x.LastName != null && x.LastName.ToLower().StartsWith(LastName) && x.FirstName != null && x.FirstName.ToLower().StartsWith(FirstName));
             } else {
-                recs = recs.Where(x => x.LastName != null && x.LastName.StartsWith(LastName));
+                recs = recs.Where(x => x.LastName != null && x.LastName.ToLower().StartsWith(LastName));
             }
         } else if (search.Contains(" ")) {
             // Check "First Last"
@@ -38,29 +38,29 @@ public partial class DataAccess
                 FirstName += Names[0];
                 LastName += Names[1];
             } catch { }
-            LastName = LastName.Trim();
-            FirstName = FirstName.Trim();
+            LastName = LastName.Trim().ToLower();
+            FirstName = FirstName.Trim().ToLower();
 
             if (!String.IsNullOrWhiteSpace(LastName) && !String.IsNullOrWhiteSpace(FirstName)) {
-                recs = recs.Where(x => x.LastName != null && x.LastName.StartsWith(LastName) && x.FirstName != null && x.FirstName.StartsWith(FirstName));
+                recs = recs.Where(x => x.LastName != null && x.LastName.ToLower().StartsWith(LastName) && x.FirstName != null && x.FirstName.ToLower().StartsWith(FirstName));
             } else {
-                recs = recs.Where(x => x.FirstName != null && x.FirstName.StartsWith(FirstName));
+                recs = recs.Where(x => x.FirstName != null && x.FirstName.ToLower().StartsWith(FirstName));
             }
         } else {
             recs = recs.Where(
-                x => (x.FirstName != null && x.FirstName.Contains(search)) ||
-                (x.LastName != null && x.LastName.Contains(search)) ||
-                (x.Email != null && x.Email.Contains(search))
+                x => (x.FirstName != null && x.FirstName.ToLower().Contains(search)) ||
+                (x.LastName != null && x.LastName.ToLower().Contains(search)) ||
+                (x.Email != null && x.Email.ToLower().Contains(search))
                 );
         }
 
         recs = recs.OrderBy(x => x.LastName).ThenBy(x => x.FirstName);
 
         if (recs != null && recs.Count() > 0) {
-            results.Add(new DataObjects.AjaxResults {
-                value = Guid.Empty.ToString(),
-                label = "--- Local Help Desk Users ---"
-            });
+            //results.Add(new DataObjects.AjaxResults {
+            //	value = Guid.Empty.ToString(),
+            //	label = "--- Local ---"
+            //});
             foreach (var rec in recs) {
                 Local += 1;
                 if (Local < 26) {
@@ -82,62 +82,51 @@ public partial class DataAccess
         }
 
         // Next, see if there are any ad results to add
-        int AD = 0;
+        int ldapResults = 0;
 
         if (_localDb) {
             LocalOnly = true;
         }
 
+
         if (!LocalOnly) {
-            var ldapRoot = GetSetting<string>("activedirectoryroot", DataObjects.SettingType.Text);
-
-            if (!String.IsNullOrWhiteSpace(ldapRoot)) {
-                var ldapQueryUsername = GetSetting<string>("LdapUsername", DataObjects.SettingType.EncryptedText);
-                var ldapQueryPassword = GetSetting<string>("LdapPassword", DataObjects.SettingType.EncryptedText);
-
-                if (String.IsNullOrWhiteSpace(ldapQueryUsername) || String.IsNullOrWhiteSpace(ldapQueryPassword)) {
-                    ldapQueryUsername = "";
-                    ldapQueryPassword = "";
-                }
-
-                List<string> excludeEmails = new List<string>();
-                if (results.Count() > 0) {
-                    foreach (var item in results.Where(x => !String.IsNullOrWhiteSpace(x.email))) {
-                        if (!String.IsNullOrEmpty(item.email)) {
-                            excludeEmails.Add(item.email.ToLower());
-                        }
+            // See if there are any LDAP results. This will return null if this tenant isn't configured for LDAP.
+            List<string> excludeEmails = new List<string>();
+            if (results.Count() > 0) {
+                foreach (var item in results.Where(x => !String.IsNullOrWhiteSpace(x.email))) {
+                    if (!String.IsNullOrEmpty(item.email)) {
+                        excludeEmails.Add(item.email.ToLower());
                     }
                 }
+            }
 
-                string ldapOptionalLocationAttribute = GetLdapOptionalLocationAttribute();
-                List<DataObjects.ActiveDirectorySearchResults>? adResults = GetActiveDirectorySearchResults(StringOrEmpty(Lookup.Search), 25, excludeEmails, ldapRoot, ldapQueryUsername, ldapQueryPassword, ldapOptionalLocationAttribute);
-                if (adResults != null && adResults.Count() > 0) {
-                    results.Add(new DataObjects.AjaxResults {
-                        value = Guid.Empty.ToString(),
-                        label = "--- Active Directory Results ---"
-                    });
+            var ldapLookupResults = GetActiveDirectorySearchResults(Lookup.TenantId, search, 25, excludeEmails);
+            if (ldapLookupResults != null && ldapLookupResults.Any()) {
+                results.Add(new DataObjects.AjaxResults {
+                    value = Guid.Empty.ToString(),
+                    label = "--- LDAP Results ---"
+                });
 
-                    foreach (var adUser in adResults) {
-                        // Only add if we don't already have this user
-                        var match = results.FirstOrDefault(x => x.email == adUser.Email);
-                        if (match == null) {
-                            AD += 1;
-                            if (AD < 26) {
-                                results.Add(new DataObjects.AjaxResults {
-                                    value = adUser.UserId.HasValue ? ((Guid)adUser.UserId).ToString() : Guid.Empty.ToString(),
-                                    label = DisplayNameFromLastAndFirst(adUser.LastName, adUser.FirstName, adUser.Email, adUser.Department, adUser.Location) + " [AD]" +
-                                        (!String.IsNullOrWhiteSpace(adUser.Email) ? " (" + adUser.Email + ")" : ""),
-                                    email = adUser.Email
-                                });
-                            }
+                foreach (var ldapUser in ldapLookupResults) {
+                    // Only add if we don't already have this user
+                    var match = results.FirstOrDefault(x => x.email == ldapUser.Email);
+                    if (match == null) {
+                        ldapResults += 1;
+                        if (ldapResults < 26) {
+                            results.Add(new DataObjects.AjaxResults {
+                                value = ldapUser.UserId.HasValue ? ((Guid)ldapUser.UserId).ToString() : Guid.Empty.ToString(),
+                                label = DisplayNameFromLastAndFirst(ldapUser.LastName, ldapUser.FirstName, ldapUser.Email, ldapUser.Department, ldapUser.Location) + " [LDAP]" +
+                                    (!String.IsNullOrWhiteSpace(ldapUser.Email) ? " (" + ldapUser.Email + ")" : ""),
+                                email = ldapUser.Email
+                            });
                         }
                     }
-                    //results = results.OrderBy(x => x.label).ToList();
                 }
             }
         }
 
-        if (Local > 25 || AD > 25) {
+
+        if (Local > 25 || ldapResults > 25) {
             // We limited the results
             results.Insert(0, new DataObjects.AjaxResults {
                 value = Guid.Empty.ToString(),

@@ -1,0 +1,5 @@
+﻿The only change made to the editor is that the ckeditor.js file has been modified and the
+style applied to the placeholder text (search for 'data-cke-editorplaceholder') has been
+modified to change the "::before" style color from "#aaa" to "#333" to better work with
+the themes used in this app, especially when the editor is flagged as required and the
+content is missing, so the background has the pink missing-required style applied.

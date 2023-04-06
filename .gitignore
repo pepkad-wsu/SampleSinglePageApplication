@@ -361,3 +361,29 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+/SampleSinglePageApplication/SampleSinglePageApplication.Web/wwwroot/js/viewModels/autos/ViewModelBindingAutos.js.map
+/SampleSinglePageApplication/SampleSinglePageApplication.Web/wwwroot/js/viewModels/autos/ViewModelBindingAutos.js
+/SampleSinglePageApplication/SampleSinglePageApplication.Web/wwwroot/js/viewModels/autos/userAutos.js.map
+/SampleSinglePageApplication/SampleSinglePageApplication.Web/wwwroot/js/viewModels/autos/userAutos.js
+/SampleSinglePageApplication/SampleSinglePageApplication.Web/wwwroot/js/viewModels/autos/tenantAutos.js.map
+/SampleSinglePageApplication/SampleSinglePageApplication.Web/wwwroot/js/viewModels/autos/tenantAutos.js
+/SampleSinglePageApplication/SampleSinglePageApplication.Web/wwwroot/js/viewModels/autos/settingAutos.js.map
+/SampleSinglePageApplication/SampleSinglePageApplication.Web/wwwroot/js/viewModels/autos/settingAutos.js
+/SampleSinglePageApplication/SampleSinglePageApplication.Web/wwwroot/js/viewModels/autos/fileStorageAutos.js.map
+/SampleSinglePageApplication/SampleSinglePageApplication.Web/wwwroot/js/viewModels/autos/fileStorageAutos.js
+/SampleSinglePageApplication/SampleSinglePageApplication.Web/wwwroot/js/viewModels/autos/departmentGroupAutos.js.map
+/SampleSinglePageApplication/SampleSinglePageApplication.Web/wwwroot/js/viewModels/autos/departmentGroupAutos.js
+/SampleSinglePageApplication/SampleSinglePageApplication.Web/wwwroot/js/viewModels/autos/departmentAutos.js.map
+/SampleSinglePageApplication/SampleSinglePageApplication.Web/wwwroot/js/viewModels/autos/departmentAutos.js
+/SampleSinglePageApplication/SampleSinglePageApplication.Web/wwwroot/js/viewModels/appSettings.js
+/SampleSinglePageApplication/SampleSinglePageApplication.Web/wwwroot/js/viewModels/appSettings.js.map
+/SampleSinglePageApplication/SampleSinglePageApplication.Web/wwwroot/js/viewModels/samplePage.js
+/SampleSinglePageApplication/SampleSinglePageApplication.Web/wwwroot/js/viewModels/samplePage.js.map
+/SampleSinglePageApplication/SampleSinglePageApplication.Web/wwwroot/js/viewModels/login.js.map
+/SampleSinglePageApplication/SampleSinglePageApplication.Web/wwwroot/js/viewModels/login.js
+/SampleSinglePageApplication/SampleSinglePageApplication.Web/wwwroot/js/viewModels/language.js
+/SampleSinglePageApplication/SampleSinglePageApplication.Web/wwwroot/js/viewModels/language.js.map
+/SampleSinglePageApplication/SampleSinglePageApplication.Web/wwwroot/js/viewModels/departments.js.map
+/SampleSinglePageApplication/SampleSinglePageApplication.Web/wwwroot/js/viewModels/departments.js
+/SampleSinglePageApplication/SampleSinglePageApplication.Web/wwwroot/js/Models.js.map
+/SampleSinglePageApplication/SampleSinglePageApplication.Web/wwwroot/js/Models.js

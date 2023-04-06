@@ -1,0 +1,130 @@
+<script src="~/js/viewModels/usergroups.js?v=@Html.Raw(Guid.NewGuid().ToString().Replace("-", ""))"></script>
+<div id="view-usergroups">
+    <div data-bind="visible:MainModel().CurrentView() == 'usergroups'">
+        <div data-bind="visible:View() == ''">
+            <div data-bind="css:{fixed: MainModel().StickyMenus() == true}">
+                <i class="sticky-menu-icon" data-bind="html:MainModel().StickyIcon(), click:function(){MainModel().ToggleStickyMenus()}"></i>
+                <h1 class="display-7"><i data-bind="html:MainModel().IconAndText('UserGroups')"></i></h1>
+            </div>
+
+            <div class="mb-2" data-bind="visible:Loading, html:MainModel().Language('LoadingWait')"></div>
+
+            <div class="mb-2" data-bind="visible:Loading() == false">
+                <div class="mb-2">
+                    <button type="button" class="btn btn-success" data-bind="html:MainModel().IconAndText('AddNewUserGroup'), click:function(){MainModel().Nav('UserGroups', 'Add')}"></button>
+                </div>
+
+                <div class="mb-2" data-bind="visible:Groups() == null || Groups().length == 0, html:MainModel().Language('NoItemsToShow')"></div>
+
+                <div class="mb-2" data-bind="visible:Groups() != null && Groups().length > 0">
+                    <table class="table">
+                        <thead>
+                            <tr class="table-dark">
+                                <th style="width:1%;"></th>
+                                <th data-bind="html:MainModel().Language('Name')"></th>
+                                <th class="center" style="width:1%;" data-bind="html:MainModel().Language('Users')"></th>
+                                <th class="center" style="width:1%;" data-bind="html:MainModel().Language('Enabled')"></th>
+                            </tr>
+                        </thead>
+                        <tbody data-bind="foreach:Groups">
+                            <tr>
+                                <td>
+                                    <button type="button" class="btn btn-sm btn-primary nowrap"
+                                            data-bind="html:$root.MainModel().IconAndText('Edit'), click:function(){$root.MainModel().Nav('UserGroups', $data.groupId())}"></button>
+                                </td>
+                                <td data-bind="text:$data.name"></td>
+                                <td class="center" data-bind="text:$data.users() != null ? $data.users().length : 0"></td>
+                                <td class="center" data-bind="html:$root.MainModel().BooleanToIcon($data.enabled())"></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+
+
+
+
+        <div data-bind="visible:View() == 'edit' || View() == 'add'">
+            <div data-bind="css:{fixed: MainModel().StickyMenus() == true}">
+                <i class="sticky-menu-icon" data-bind="html:MainModel().StickyIcon(), click:function(){MainModel().ToggleStickyMenus()}"></i>
+                <h1 class="display-7">
+                    <i data-bind="html:MainModel().Icon('UserGroups')"></i>
+                    <i data-bind="html:MainModel().Language('EditUserGroup'), visible:View() == 'edit'"></i>
+                    <i data-bind="html:MainModel().Language('NewUserGroup'), visible:View() == 'add'"></i>
+                </h1>
+            </div>
+
+            <div class="mb-2">
+                <button type="button" class="btn btn-dark" data-bind="html:MainModel().IconAndText('Back'), click:function(){MainModel().Nav('UserGroups')}"></button>
+                <button type="button" class="btn btn-success" data-bind="html:MainModel().IconAndText('Save'), click:Save"></button>
+                <!-- ko if: View() == 'edit' -->
+                    <!-- ko if: Confirm() != Group().groupId() -->
+                    <button type="button" class="btn btn-danger" data-bind="html:MainModel().IconAndText('Delete'), click:function(){Confirm(Group().groupId())}"></button>
+                    <!-- /ko -->
+                    <!-- ko if: Confirm() == Group().groupId() -->
+                    <div class="btn-group" role="group">
+                        <button type="button" class="btn btn-dark" data-bind="html:MainModel().IconAndText('Cancel'), click:function(){Confirm('')}"></button>
+                        <button type="button" class="btn btn-danger" data-bind="html:MainModel().IconAndText('ConfirmDelete'), click:Delete"></button>
+                    </div>
+                    <!-- /ko -->
+
+                <!-- /ko -->
+            </div>
+
+            <div class="mb-2" data-bind="visible:Loading, html:MainModel().Language('LoadingWait')"></div>
+
+            <div class="mb-2" data-bind="visible:Loading() == false">
+                <div class="mb-2 form-check form-switch">
+                    <input type="checkbox" role="switch" class="form-check-input" id="edit-group-enabled" data-bind="checked:Group().enabled" />
+                    <label for="edit-group-enabled" class="form-check-label" data-bind="html:MainModel().Language('Enabled')"></label>
+                </div>
+
+                <div class="mb-2">
+                    <label for="edit-group-name" data-bind="html:MainModel().Language('Name')"></label>
+                    <input type="text" class="form-control" id="edit-group-name" data-bind="textInput:Group().name, css:{'missing-required': Group().name() == null || Group().name() == ''}" />
+                </div>
+
+                <div class="mb-2">
+                    <label for="edit-group-setting-someSetting">Some Setting</label>
+                    <input type="text" class="form-control" id="edit-group-setting-someSetting" data-bind="value:Group().settings().someSetting" />
+                </div>
+
+                <div class="mb-2">
+                    <hr />
+                </div>
+
+                <div class="row">
+                    <div class="col-sm-6 mb-2">
+                        <strong data-bind="html:MainModel().Language('UsersInGroup')"></strong>
+
+                        <div data-bind="visible:Group().users() == null || Group().users().length == 0, html:MainModel().Language('NoItemsToShow')"></div>
+
+                        <div data-bind="visible:Group().users() != null && Group().users().length > 0, foreach:Group().users">
+                            <div class="user-listing">
+                                <button type="button" class="btn btn-sm btn-danger"
+                                    data-bind="html:$root.MainModel().Icon('Delete'), click:function(){$root.RemoveUserFromGroup($data)}"></button>
+                                <span data-bind="html:$root.MainModel().UserDisplayName($data, true)"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-sm-6 mb-2">
+                        <strong data-bind="html:MainModel().Language('AddUsersToGroup')"></strong>
+
+                        <div data-bind="visible:AvailableUsers().length == 0, html:MainModel().Language('NoItemsToShow')"></div>
+
+                        <div data-bind="visible:AvailableUsers().length > 0, foreach:AvailableUsers">
+                            <div class="user-listing">
+                                <button type="button" class="btn btn-sm btn-success"
+                                    data-bind="html:$root.MainModel().Icon('Add'), click:function(){$root.AddUserToGroup($data.userId())}"></button>
+                                <span data-bind="html:$root.MainModel().UserDisplayName($data.userId(), true)"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

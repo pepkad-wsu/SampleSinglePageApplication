@@ -1,0 +1,54 @@
+﻿@using SampleSinglePageApplication;
+@model DataObjects.ConnectionStringConfig
+@inject IHttpContextAccessor context;
+@inject IDataAccess data;
+@{
+    Layout = "_LayoutNotLoggedIn";
+
+    data.SetHttpContext(context.HttpContext);
+    string title = data.GetLanguageItem("Logout");
+    ViewBag.Title = title;
+
+    var settings = data.GetApplicationSettings();
+    RouteHelper routeHelper = new RouteHelper(context.HttpContext, settings.UseTenantCodeInUrl);
+    string baseUrl = routeHelper.GetBaseUrl();
+    string id = routeHelper.Id;
+
+    string errorMessage = "<div class='container-fluid'><h1 class='display-7'>{0}</h1><a href='" + baseUrl + "' class='btn btn-dark'><i class='fas fa-arrow-left'></i> Back</a></div>";
+
+    Guid tenantId = Guid.Empty;
+    try {
+        tenantId = new Guid(id);
+    } catch { }
+
+    if (tenantId == Guid.Empty) {
+        // Check the Extra routeHelper items.
+        if (routeHelper.Extra != null && routeHelper.Extra.Any()) {
+            foreach (var item in routeHelper.Extra) {
+                if (tenantId == Guid.Empty) {
+                    try {
+                        tenantId = new Guid(item);
+                    } catch { }
+                }
+            }
+        }
+    }
+
+    if (tenantId == Guid.Empty) {
+        @Html.Raw(errorMessage.Replace("{0}", "Invalid TenantId in URL"))
+        return;
+    }
+
+    var tenantSettings = data.GetTenantSettings(tenantId);
+    string customCode = data.StringValue(tenantSettings.CustomAuthenticationCode);
+
+    if (String.IsNullOrWhiteSpace(customCode)) {
+        @Html.Raw(errorMessage.Replace("{0}", "No Custom Authentication Code Detected in the Tenant Settings"))
+        return;
+    }
+
+    @Html.Raw("Logout Here")
+
+    bool loggedOut = data.ExecuteDynamicCSharpCode<bool>(customCode,
+        new object[] { data, baseUrl }, null, "CustomAuthenticationProvider", "Authentication", "Logout");
+}

@@ -4,31 +4,32 @@
         <div data-bind="css:{fixed: MainModel().StickyMenus() == true}">
             <i class="sticky-menu-icon" data-bind="html:MainModel().StickyIcon(), click:function(){MainModel().ToggleStickyMenus()}"></i>
             <h1 class="display-7"><i data-bind="html:MainModel().IconAndText('Users')"></i></h1>
-        </div>
 
-        <div class="btn-group padbottom" role="group">
-            <button type="button" class="btn btn-success" data-bind="click:function(){ MainModel().Nav('NewUser') }">
-                <i data-bind="html:MainModel().IconAndText('AddNewUser')"></i>
-            </button>
-            <button type="button" class="btn btn-primary" data-bind="click:ClearFilter">
-                <i data-bind="html:MainModel().IconAndText('Clear')"></i>
-            </button>
-            <button type="button" class="btn btn-dark" data-bind="visible:Filter().showFilters() == false, click:ToggleShowFilter">
-                <i data-bind="html:MainModel().IconAndText('ShowFilter')"></i>
-            </button>
-            <button type="button" class="btn btn-dark" data-bind="visible:Filter().showFilters() == true, click:ToggleShowFilter">
-                <i data-bind="html:MainModel().IconAndText('HideFilter')"></i>
-            </button>
-            <button type="button" class="btn btn-dark" data-bind="click:RefreshFilter">
-                <i data-bind="html:MainModel().IconAndText('Refresh')"></i>
-            </button>
-        </div>
-        <div class="keyword-search padbottom" data-bind="visible:Filter().showFilters() == true && Filter().loading() == false">
-            <label for="users-filter-keyword">Keyword</label>
-            <div class="fixed-200">
-                <input type="text" id="users-filter-keyword" class="form-control" data-bind="value:Filter().keyword" placeholder="Search Users" />
+            <div class="btn-group mb-2" role="group">
+                <button type="button" class="btn btn-success" data-bind="click:function(){ MainModel().Nav('NewUser') }">
+                    <i data-bind="html:MainModel().IconAndText('AddNewUser')"></i>
+                </button>
+                <button type="button" class="btn btn-primary" data-bind="click:ClearFilter">
+                    <i data-bind="html:MainModel().IconAndText('Clear')"></i>
+                </button>
+                <button type="button" class="btn btn-dark" data-bind="visible:Filter().showFilters() == false, click:ToggleShowFilter">
+                    <i data-bind="html:MainModel().IconAndText('ShowFilter')"></i>
+                </button>
+                <button type="button" class="btn btn-dark" data-bind="visible:Filter().showFilters() == true, click:ToggleShowFilter">
+                    <i data-bind="html:MainModel().IconAndText('HideFilter')"></i>
+                </button>
+                <button type="button" class="btn btn-dark" data-bind="click:RefreshFilter">
+                    <i data-bind="html:MainModel().IconAndText('Refresh')"></i>
+                </button>
+            </div>
+            <div class="keyword-search mb-2" data-bind="visible:Filter().showFilters() == true && Filter().loading() == false">
+                <label for="users-filter-keyword">Keyword</label>
+                <div class="fixed-200">
+                    <input type="text" id="users-filter-keyword" class="form-control" data-bind="value:Filter().keyword" placeholder="Search Users" />
+                </div>
             </div>
         </div>
+
 
         <div class="row" data-bind="visible:Filter().loading() == true">
             <div class="col-sm-12" data-bind="html:MainModel().Language('LoadingWait');"></div>
@@ -36,8 +37,8 @@
 
         <div class="row" data-bind="visible:Filter().loading() == false">
             <div data-bind="visible:Filter().showFilters() == true">
-                <div class="row padbottom">
-                    <div class="col-sm-3">
+                <div class="row mb-2">
+                    <div class="col-sm-3" data-bind="visible:MainModel().BlockModuleDepartments() == false">
                         <label for="users-filter-departments">Department</label>
                         <select class="form-control" multiple="multiple" id="users-filter-departments" size="4"
                                 data-bind="selectedOptions:Filter().filterDepartments,
@@ -48,7 +49,7 @@
                     </div>
 
                     <div class="col-sm-3">
-                        <label for="users-filter-enabled">Enabled</label>
+                        <label for="users-filter-enabled" data-bind="html:MainModel().Language('Enabled')"></label>
                         <select class="form-control" size="4" id="users-filter-enabled" data-bind="value:Filter().enabled, valueAllowUnset: true">
                             <option value="">All</option>
                             <option value="enabled">Enabled Users Only</option>
@@ -57,7 +58,7 @@
                     </div>
 
                     <div class="col-sm-3">
-                        <label for="users-filter-admin">Admin</label>
+                        <label for="users-filter-admin" data-bind="html:MainModel().Language('Admin')"></label>
                         <select class="form-control" size="4" id="users-filter-admin" data-bind="value:Filter().admin, valueAllowUnset: true">
                             <option value="">All</option>
                             <option value="admin">Admin Users Only</option>
@@ -65,7 +66,7 @@
                         </select>
                     </div>
 
-                    <div class="col-3 padbottom" data-bind="visible:MainModel().UDFShowInFilter('Users', 1) == true">
+                    <div class="col-3 mb-2" data-bind="visible:MainModel().UDFShowInFilter('Users', 1) == true">
                         <label for="users-filter-udf01" data-bind="text:MainModel().UDFLabel('Users', 1)"></label>
                         <select class="form-control" id="users-filter-udf01" size="4"
                                 data-bind="value:Filter().udf01,
@@ -75,7 +76,7 @@
                         </select>
                     </div>
 
-                    <div class="col-3 padbottom" data-bind="visible:MainModel().UDFShowInFilter('Users', 2) == true">
+                    <div class="col-3 mb-2" data-bind="visible:MainModel().UDFShowInFilter('Users', 2) == true">
                         <label for="users-filter-udf02" data-bind="text:MainModel().UDFLabel('Users', 2)"></label>
                         <select class="form-control" id="users-filter-udf02" size="4"
                                 data-bind="value:Filter().udf02,
@@ -85,7 +86,7 @@
                         </select>
                     </div>
 
-                    <div class="col-3 padbottom" data-bind="visible:MainModel().UDFShowInFilter('Users', 3) == true">
+                    <div class="col-3 mb-2" data-bind="visible:MainModel().UDFShowInFilter('Users', 3) == true">
                         <label for="users-filter-udf03" data-bind="text:MainModel().UDFLabel('Users', 3)"></label>
                         <select class="form-control" id="users-filter-udf03" size="4"
                                 data-bind="value:Filter().udf03,
@@ -95,7 +96,7 @@
                         </select>
                     </div>
 
-                    <div class="col-3 padbottom" data-bind="visible:MainModel().UDFShowInFilter('Users', 4) == true">
+                    <div class="col-3 mb-2" data-bind="visible:MainModel().UDFShowInFilter('Users', 4) == true">
                         <label for="users-filter-udf04" data-bind="text:MainModel().UDFLabel('Users', 4)"></label>
                         <select class="form-control" id="users-filter-udf04" size="4"
                                 data-bind="value:Filter().udf04,
@@ -105,7 +106,7 @@
                         </select>
                     </div>
 
-                    <div class="col-3 padbottom" data-bind="visible:MainModel().UDFShowInFilter('Users', 5) == true">
+                    <div class="col-3 mb-2" data-bind="visible:MainModel().UDFShowInFilter('Users', 5) == true">
                         <label for="users-filter-udf05" data-bind="text:MainModel().UDFLabel('Users', 5)"></label>
                         <select class="form-control" id="users-filter-udf05" size="4"
                                 data-bind="value:Filter().udf05,
@@ -115,7 +116,7 @@
                         </select>
                     </div>
 
-                    <div class="col-3 padbottom" data-bind="visible:MainModel().UDFShowInFilter('Users', 6) == true">
+                    <div class="col-3 mb-2" data-bind="visible:MainModel().UDFShowInFilter('Users', 6) == true">
                         <label for="users-filter-udf06" data-bind="text:MainModel().UDFLabel('Users', 6)"></label>
                         <select class="form-control" id="users-filter-udf06" size="4"
                                 data-bind="value:Filter().udf06,
@@ -125,7 +126,7 @@
                         </select>
                     </div>
 
-                    <div class="col-3 padbottom" data-bind="visible:MainModel().UDFShowInFilter('Users', 7) == true">
+                    <div class="col-3 mb-2" data-bind="visible:MainModel().UDFShowInFilter('Users', 7) == true">
                         <label for="users-filter-udf07" data-bind="text:MainModel().UDFLabel('Users', 7)"></label>
                         <select class="form-control" id="users-filter-udf07" size="4"
                                 data-bind="value:Filter().udf07,
@@ -135,7 +136,7 @@
                         </select>
                     </div>
 
-                    <div class="col-3 padbottom" data-bind="visible:MainModel().UDFShowInFilter('Users', 8) == true">
+                    <div class="col-3 mb-2" data-bind="visible:MainModel().UDFShowInFilter('Users', 8) == true">
                         <label for="users-filter-udf08" data-bind="text:MainModel().UDFLabel('Users', 8)"></label>
                         <select class="form-control" id="users-filter-udf08" size="4"
                                 data-bind="value:Filter().udf08,
@@ -145,7 +146,7 @@
                         </select>
                     </div>
 
-                    <div class="col-3 padbottom" data-bind="visible:MainModel().UDFShowInFilter('Users', 9) == true">
+                    <div class="col-3 mb-2" data-bind="visible:MainModel().UDFShowInFilter('Users', 9) == true">
                         <label for="users-filter-udf09" data-bind="text:MainModel().UDFLabel('Users', 9)"></label>
                         <select class="form-control" id="users-filter-udf09" size="4"
                                 data-bind="value:Filter().udf09,
@@ -155,7 +156,7 @@
                         </select>
                     </div>
 
-                    <div class="col-3 padbottom" data-bind="visible:MainModel().UDFShowInFilter('Users', 10) == true">
+                    <div class="col-3 mb-2" data-bind="visible:MainModel().UDFShowInFilter('Users', 10) == true">
                         <label for="users-filter-udf10" data-bind="text:MainModel().UDFLabel('Users', 10)"></label>
                         <select class="form-control" id="users-filter-udf10" size="4"
                                 data-bind="value:Filter().udf10,
@@ -180,13 +181,13 @@
             <i class="sticky-menu-icon" data-bind="html:MainModel().StickyIcon(), click:function(){MainModel().ToggleStickyMenus()}"></i>
             <h1 class="display-7" data-bind="html:MainModel().IconAndText('ResetUserPassword')"></h1>
 
-            <div class="padbottom-5">
+            <div class="mb-2">
                 <button type="button" class="btn btn-dark" data-bind="html:MainModel().IconAndText('Cancel'), click:function(){ ResettingUserPassword(false) }"></button>
                 <button type="button" class="btn btn-warning" data-bind="html:MainModel().IconAndText('UpdatePassword'), click:ResetUserPasswordUpdate"></button>
             </div>
         </div>
 
-        <div class="padbottom">
+        <div class="mb-2">
             <label for="reset-user-password" data-bind="html:MainModel().Language('NewPassword')"></label>
             <br /><input type="text" class="form-control fixed-300" id="reset-user-password" data-bind="value:NewPassword" />
         </div>
@@ -197,32 +198,32 @@
             <i class="sticky-menu-icon" data-bind="html:MainModel().StickyIcon(), click:function(){MainModel().ToggleStickyMenus()}"></i>
             <h1 class="display-7">
                 <!-- ko if: MainModel().CurrentView() == 'edituser' -->
-                    <i data-bind="html:MainModel().IconAndText('EditUser')"></i>
-                    <span class="element-id" data-bind="visible:Loading() == false">&ldquo;<span data-bind="text:MainModel().Id()"></span>&rdquo;</span>
+                <i data-bind="html:MainModel().IconAndText('EditUser')"></i>
+                <span class="element-id" data-bind="visible:Loading() == false">&ldquo;<span data-bind="text:MainModel().Id()"></span>&rdquo;</span>
                 <!-- /ko -->
                 <!-- ko if: MainModel().CurrentView() == 'newuser' -->
-                    <i data-bind="html:MainModel().Icon('Users')"></i><span class="icon-text" data-bind="html:MainModel().Language('AddNewUser')"></span>
-                    <span class="element-id" data-bind="visible:User().userId() != null && User().userId() != MainModel().GuidEmpty()">
-                        &ldquo;<span data-bind="text:User().userId"></span>&rdquo;
-                    </span>
+                <i data-bind="html:MainModel().Icon('Users')"></i><span class="icon-text" data-bind="html:MainModel().Language('AddNewUser')"></span>
+                <span class="element-id" data-bind="visible:User().userId() != null && User().userId() != MainModel().GuidEmpty()">
+                    &ldquo;<span data-bind="text:User().userId"></span>&rdquo;
+                </span>
                 <!-- /ko -->
             </h1>
 
-            <div class="padbottom">
+            <div class="mb-2">
                 <button type="button" class="btn btn-dark" data-bind="click:function(){ MainModel().Nav('Users') }, html:MainModel().IconAndText('Back')"></button>
                 <button type="button" class="btn btn-success" data-bind="click:SaveUser, html:MainModel().IconAndText('Save')"></button>
                 <!-- ko if: MainModel().Id() != null && MainModel().Id() != '' -->
-                    <button type="button" class="btn btn-warning" data-bind="html:MainModel().IconAndText('ResetUserPassword'), click:ResetUserPassword"></button>
+                <button type="button" class="btn btn-warning" data-bind="html:MainModel().IconAndText('ResetUserPassword'), click:ResetUserPassword"></button>
 
-                    <!-- ko if: ConfirmDelete() != MainModel().Id() -->
-                    <button type="button" class="btn btn-danger" data-bind="html:MainModel().IconAndText('Delete'), click:function(){ ConfirmDelete(MainModel().Id()) }"></button>
-                    <!-- /ko -->
-                    <!-- ko if: ConfirmDelete() == MainModel().Id() -->
-                    <div class="btn-group" role="group">
-                        <button type="button" class="btn btn-dark" data-bind="html:MainModel().IconAndText('Cancel'), click:function(){ ConfirmDelete('') }"></button>
-                        <button type="button" class="btn btn-danger" data-bind="html:MainModel().IconAndText('ConfirmDelete'), click:DeleteUser"></button>
-                    </div>
-                    <!-- /ko -->
+                <!-- ko if: ConfirmDelete() != MainModel().Id() -->
+                <button type="button" class="btn btn-danger" data-bind="html:MainModel().IconAndText('Delete'), click:function(){ ConfirmDelete(MainModel().Id()) }"></button>
+                <!-- /ko -->
+                <!-- ko if: ConfirmDelete() == MainModel().Id() -->
+                <div class="btn-group" role="group">
+                    <button type="button" class="btn btn-dark" data-bind="html:MainModel().IconAndText('Cancel'), click:function(){ ConfirmDelete('') }"></button>
+                    <button type="button" class="btn btn-danger" data-bind="html:MainModel().IconAndText('ConfirmDelete'), click:DeleteUser"></button>
+                </div>
+                <!-- /ko -->
                 <!-- /ko -->
             </div>
         </div>
@@ -232,7 +233,7 @@
         <div data-bind="visible:User().userId() != null && Loading() == false">
             <!-- ko if: User().lastLockoutDate() != null -->
             <div class="alert alert-danger">
-                <div class="padbottom" data-bind="html:MainModel().Language('UserLockedOut', '', false, [tsUtilities.FormatDateTime(User().lastLockoutDate())])"></div>
+                <div class="mb-2" data-bind="html:MainModel().Language('UserLockedOut', '', false, [tsUtilities.FormatDateTime(User().lastLockoutDate())])"></div>
 
                 <button type="button" class="btn btn-danger" data-bind="html:MainModel().IconAndText('UnlockUserAccount'), click:UnlockUserAccount"></button>
             </div>
@@ -255,21 +256,43 @@
                     <td><label for="edit-user-username" data-bind="html:MainModel().Language('Username', null, true)"></label></td>
                     <td><input type="text" id="edit-user-username" class="form-control" data-bind="value:User().username" /></td>
                 </tr>
+                <!-- ko if: MainModel().BlockModuleEmployeeId() == false -->
                 <tr>
                     <td><label for="edit-user-employeeId" data-bind="html:MainModel().Language('EmployeeId', null, true)"></label></td>
                     <td><input type="text" id="edit-user-employeeId" class="form-control" data-bind="value:User().employeeId" /></td>
                 </tr>
+                <!-- /ko -->
+                <tr>
+                    <td><label for="edit-user-title" data-bind="html:MainModel().Language('Title', null, true)"></label></td>
+                    <td><input type="text" id="edit-user-title" class="form-control" data-bind="value:User().title" /></td>
+                </tr>
+                <!-- ko if: MainModel().BlockModuleLocation() == false -->
+                <tr>
+                    <td><label for="edit-user-location" data-bind="html:MainModel().Language('Location', null, true)"></label></td>
+                    <td><input type="text" id="edit-user-location" class="form-control" data-bind="value:User().location" /></td>
+                </tr>
+                <!-- /ko -->
+                <tr>
+                    <td><label for="edit-user-phone" data-bind="html:MainModel().Language('PhoneNumber', null, true)"></label></td>
+                    <td><input type="text" id="edit-user-phone" class="form-control" data-bind="value:User().phone" /></td>
+                </tr>
+                <!-- ko if: MainModel().BlockModuleDepartments() == false -->
                 <tr>
                     <td><label for="edit-user-department" data-bind="html:MainModel().Language('Department', null, true)"></label></td>
                     <td>
-                        <select id="edit-user-department" class="form-select" 
-                            data-bind="value:User().departmentId,
+                        <select id="edit-user-department" class="form-select"
+                                data-bind="value:User().departmentId,
                             options: MainModel().Tenant().departments(),
                             optionsText: function(item){return item.departmentName()},
                             optionsValue: function(item){return item.departmentId},
                             optionsCaption: '',
                             valueAllowUnset: true"></select>
                     </td>
+                </tr>
+                <!-- /ko -->
+                <tr>
+                    <td><label for="edit-user-source" data-bind="html:MainModel().Language('Source', null, true)"></label></td>
+                    <td><input type="text" id="edit-user-source" class="form-control" data-bind="value:User().source" /></td>
                 </tr>
                 <tr>
                     <td>
@@ -295,17 +318,17 @@
                     </td>
                     <td><label for="edit-user-admin" class="form-check-label" data-bind="html:MainModel().Language('Admin')"></label></td>
                 </tr>
-                <tr>
+                <tr data-bind="visible:User().userId() != MainModel().GuidEmpty()">
                     <td><label for="edit-user-photo" data-bind="html:MainModel().Language('Photo')"></label></td>
                     <td>
                         <table class="full padded">
                             <tr>
                                 <td style="width:1%;" class="center" data-bind="visible:User().photo() != null && User().photo() != ''">
-                                    <button type="button" class="btn btn-danger btn-xs" data-bind="click:DeleteUserPhoto">
+                                    <button type="button" class="btn btn-danger btn-xs nowrap" data-bind="click:DeleteUserPhoto">
                                         <i data-bind="html:MainModel().IconAndText('Delete')"></i>
                                     </button>
                                     <!-- ko if: User().photo() != null && User().photo() != '' -->
-                                    <img class="user-icon-small" data-bind="attr: { src: window.baseURL + 'File/View/' + User().photo() }"/>
+                                    <img class="user-icon-small" data-bind="attr: { src: window.baseURL + 'File/View/' + User().photo() }" />
                                     <!-- /ko -->
                                 </td>
                                 <td style="width:99%;">
@@ -320,7 +343,10 @@
                                             <div class="dz-message">
                                                 <span data-bind="html:MainModel().Language('ManageAvatarInstructionsAdmin')"></span>
                                                 <br />
-                                                <span class="note">Allowed File Types: GIF, JPG, PNG</span>
+                                                <span class="note">
+                                                    <span data-bind="html:MainModel().Language('AllowedFileTypes')"></span>:
+                                                    GIF, JPG, PNG
+                                                </span>
                                             </div>
                                         </form>
                                     </div>
@@ -358,7 +384,7 @@
             success: function (file) {
                 this.removeFile(file);
             },
-            complete: function(e){
+            complete: function (e) {
                 window.usersModel.PhotoUploadComplete(e.xhr.response);
             }
         };

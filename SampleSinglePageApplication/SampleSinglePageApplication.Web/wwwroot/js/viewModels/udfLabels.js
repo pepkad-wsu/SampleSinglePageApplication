@@ -55,9 +55,15 @@ var UdfLabelsModel = /** @class */ (function () {
         tsUtilities.AjaxData(window.baseURL + "api/Data/SaveUDFLabels/" + this.MainModel().TenantId(), ko.toJSON(this.UDFLabels), success);
     };
     UdfLabelsModel.prototype.ViewChanged = function () {
+        var allowed = this.MainModel().AdminUser();
         switch (this.MainModel().CurrentView()) {
             case "udflabels":
-                this.GetUdfLabels();
+                if (allowed) {
+                    this.GetUdfLabels();
+                }
+                else {
+                    this.MainModel().Nav("AccessDenied");
+                }
                 break;
         }
     };

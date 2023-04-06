@@ -3,20 +3,16 @@ public partial class DataAccess
 {
     public string DefaultTenantCode {
         get {
-            string output = String.Empty;
+            string output = StringValue(CacheStore.GetCachedItem<string>(Guid.Empty, "DefaultTenantCode"));
 
-            if (_open) {
-                var defaultTenantCode = GetSetting<string>("DefaultTenantCode", DataObjects.SettingType.Text);
-                if (!String.IsNullOrEmpty(defaultTenantCode)) {
-                    output = defaultTenantCode;
-                }
-
-                if (String.IsNullOrEmpty(defaultTenantCode)) {
-                    var rec = data.Tenants.FirstOrDefault(x => x.TenantId == _guid2);
-                    if (rec != null) {
-                        output = rec.TenantCode;
+            if (String.IsNullOrWhiteSpace(output)) {
+                if (_open) {
+                    var defaultTenantCode = GetSetting<string>("DefaultTenantCode", DataObjects.SettingType.Text);
+                    if (!String.IsNullOrEmpty(defaultTenantCode)) {
+                        output = defaultTenantCode;
                     }
                 }
+                CacheStore.SetCacheItem(Guid.Empty, "DefaultTenantCode", output);
             }
 
             return output;
@@ -36,31 +32,22 @@ public partial class DataAccess
         }
 
         try {
-            if (_inMemoryDatabase) {
-                data.FileStorages.RemoveRange(data.FileStorages.Where(x => x.TenantId == TenantId));
-                await data.SaveChangesAsync();
-                data.Settings.RemoveRange(data.Settings.Where(x => x.TenantId == TenantId));
-                await data.SaveChangesAsync();
-                data.DepartmentGroups.RemoveRange(data.DepartmentGroups.Where(x => x.TenantId == TenantId));
-                await data.SaveChangesAsync();
-                data.Departments.RemoveRange(data.Departments.Where(x => x.TenantId == TenantId));
-                await data.SaveChangesAsync();
-                data.Users.RemoveRange(data.Users.Where(x => x.TenantId == TenantId));
-                await data.SaveChangesAsync();
-                data.UDFLabels.RemoveRange(data.UDFLabels.Where(x => x.TenantId == TenantId));
-                await data.SaveChangesAsync();
-                data.Tenants.RemoveRange(data.Tenants.Where(x => x.TenantId == TenantId));
-                await data.SaveChangesAsync();
-            } else {
-                // Delete from all tables
-                await data.Database.ExecuteSqlRawAsync("DELETE FROM FileStorage WHERE TenantId={0}", TenantId);
-                await data.Database.ExecuteSqlRawAsync("DELETE FROM Settings WHERE TenantId={0}", TenantId);
-                await data.Database.ExecuteSqlRawAsync("DELETE FROM DepartmentGroups WHERE TenantId={0}", TenantId);
-                await data.Database.ExecuteSqlRawAsync("DELETE FROM Departments WHERE TenantId={0}", TenantId);
-                await data.Database.ExecuteSqlRawAsync("DELETE FROM Users WHERE TenantId={0}", TenantId);
-                await data.Database.ExecuteSqlRawAsync("DELETE FROM UDFLabels WHERE TenantId={0}", TenantId);
-                await data.Database.ExecuteSqlRawAsync("DELETE FROM Tenants WHERE TenantId={0}", TenantId);
-            }
+            var users = data.Users.Where(x => x.TenantId == TenantId).Select(o => o.UserId).ToList();
+
+            data.FileStorages.RemoveRange(data.FileStorages.Where(x => x.TenantId == TenantId || users.Contains((Guid)x.UserId!)));
+            await data.SaveChangesAsync();
+            data.Settings.RemoveRange(data.Settings.Where(x => x.TenantId == TenantId));
+            await data.SaveChangesAsync();
+            data.DepartmentGroups.RemoveRange(data.DepartmentGroups.Where(x => x.TenantId == TenantId));
+            await data.SaveChangesAsync();
+            data.Departments.RemoveRange(data.Departments.Where(x => x.TenantId == TenantId));
+            await data.SaveChangesAsync();
+            data.Users.RemoveRange(data.Users.Where(x => x.TenantId == TenantId));
+            await data.SaveChangesAsync();
+            data.UDFLabels.RemoveRange(data.UDFLabels.Where(x => x.TenantId == TenantId));
+            await data.SaveChangesAsync();
+            data.Tenants.RemoveRange(data.Tenants.Where(x => x.TenantId == TenantId));
+            await data.SaveChangesAsync();
         } catch (Exception ex) {
             output.Messages.Add("An error occurred attempting to delete the tenant '" + TenantId.ToString() + "' - " + ex.Message);
         }
@@ -119,7 +106,7 @@ public partial class DataAccess
         DataObjects.Tenant output = new DataObjects.Tenant();
 
         Guid tenantId = Guid.Empty;
-        var rec = await data.Tenants.FirstOrDefaultAsync(x => x.TenantCode == tenantCode);
+        var rec = await data.Tenants.FirstOrDefaultAsync(x => x.TenantCode != null && x.TenantCode.ToLower() == tenantCode.ToLower());
         if (rec != null) {
             tenantId = rec.TenantId;
         }
@@ -138,7 +125,7 @@ public partial class DataAccess
         Guid output = Guid.Empty;
 
         if (!String.IsNullOrEmpty(tenantCode)) {
-            var rec = data.Tenants.FirstOrDefault(x => x.TenantCode == tenantCode);
+            var rec = data.Tenants.FirstOrDefault(x => x.TenantCode != null && x.TenantCode.ToLower() == tenantCode.ToLower());
             if (rec != null) {
                 output = rec.TenantId;
             }
@@ -147,17 +134,15 @@ public partial class DataAccess
         return output;
     }
 
-    public List<DataObjects.OptionPair> GetTenantLanguage(Guid TenantId)
+    public DataObjects.Language GetTenantLanguage(Guid TenantId, string Culture = "en-US")
     {
         var output = GetDefaultLanguage();
-
-        // During development just use the default language as changes are being made too often.
-        // return output;
+        output.Culture = Culture;
 
         bool updated = false;
 
         // See if there is a saved language object for this tenant.
-        var language = GetSetting<List<DataObjects.OptionPair>>("Language", DataObjects.SettingType.Object, TenantId);
+        var language = GetSetting<List<DataObjects.OptionPair>>("Language_" + Culture, DataObjects.SettingType.Object, TenantId);
         if (language != null) {
 
             // Go through each item in the defaults.
@@ -165,10 +150,10 @@ public partial class DataAccess
             // and flag that it's been updated so we can save.
             List<DataObjects.OptionPair> missing = new List<DataObjects.OptionPair>();
 
-            foreach (var item in output) {
-                var tenantItem = language.FirstOrDefault(x => StringOrEmpty(x.Id).ToLower() == StringOrEmpty(item.Id).ToLower());
+            foreach (var item in output.Phrases) {
+                var tenantItem = language.FirstOrDefault(x => StringValue(x.Id).ToLower() == StringValue(item.Id).ToLower());
                 if (tenantItem != null) {
-                    string value = StringOrEmpty(tenantItem.Value);
+                    string value = StringValue(tenantItem.Value);
                     if (item.Value != value) {
                         item.Value = value;
                         updated = true;
@@ -179,11 +164,11 @@ public partial class DataAccess
                 }
             }
 
-            if(missing.Count() > 0) {
-                foreach(var item in missing) {
-                    output.Add(item);
+            if (missing.Count() > 0) {
+                foreach (var item in missing) {
+                    output.Phrases.Add(item);
                 }
-                output = output.OrderBy(x => x.Id).ToList();
+                output.Phrases = output.Phrases.OrderBy(x => x.Id).ToList();
             }
         } else {
             // Need to save for this Tenant with the defaults since they didn't have a value.
@@ -191,7 +176,7 @@ public partial class DataAccess
         }
 
         if (updated) {
-            SaveSetting("Language", DataObjects.SettingType.Object, output, TenantId);
+            SaveSetting("Language_" + Culture, DataObjects.SettingType.Object, output.Phrases, TenantId);
         }
 
         return output;
@@ -335,8 +320,14 @@ public partial class DataAccess
             output.ActionResponse.Messages.Add(newRecord ? "New Tenant Added" : "Tenant Updated");
 
             if (newRecord) {
+                SeedTestData();
                 SeedTestData_CreateDefaultTenantData(output.TenantId);
             } else {
+                if (output.TenantSettings.ExternalUserDataSources != null && output.TenantSettings.ExternalUserDataSources.Any()) {
+                    output.TenantSettings.ExternalUserDataSources =
+                        output.TenantSettings.ExternalUserDataSources.OrderBy(x => x.SortOrder).ThenBy(x => x.Name).ToList();
+                }
+
                 SaveTenantSettings(output.TenantId, output.TenantSettings);
             }
 
@@ -362,5 +353,8 @@ public partial class DataAccess
         }
 
         SaveSetting("Settings", DataObjects.SettingType.Object, settings, TenantId);
+
+        // Clear the cache
+        CacheStore.SetCacheItem(TenantId, "FullTenant", null);
     }
 }

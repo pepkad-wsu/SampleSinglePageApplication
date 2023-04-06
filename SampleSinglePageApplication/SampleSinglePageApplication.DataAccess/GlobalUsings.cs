@@ -1,5 +1,4 @@
 ﻿global using System.Data;
-global using System.DirectoryServices;
 global using System.Drawing;
 global using System.Text;
 global using System.Text.RegularExpressions;

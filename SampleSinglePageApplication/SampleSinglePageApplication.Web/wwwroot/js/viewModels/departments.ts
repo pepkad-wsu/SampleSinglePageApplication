@@ -249,23 +249,41 @@
     ViewChanged(): void {
         this.Loading(false);
 
+        let allowAccess: boolean = this.MainModel().AdminUser() && !this.MainModel().BlockModuleDepartments();
+
         switch (this.MainModel().CurrentView()) {
             case "departmentgroups":
-                this.GetDepartmentGroups();
+                if (allowAccess) {
+                    this.GetDepartmentGroups();
+                } else {
+                    this.MainModel().Nav("AccessDenied");
+                }
                 break;
 
             case "departments":
-                this.GetDepartments();
+                if (allowAccess) {
+                    this.GetDepartments();
+                } else {
+                    this.MainModel().Nav("AccessDenied");
+                }
                 break;
 
             case "editdepartment":
             case "newdepartment":
-                this.Edit();
+                if (allowAccess) {
+                    this.Edit();
+                } else {
+                    this.MainModel().Nav("AccessDenied");
+                }
                 break;
 
             case "editdepartmentgroup":
             case "newdepartmentgroup":
-                this.EditDepartmentGroup();
+                if (allowAccess) {
+                    this.EditDepartmentGroup();
+                } else {
+                    this.MainModel().Nav("AccessDenied");
+                }
                 break;
         }
     }

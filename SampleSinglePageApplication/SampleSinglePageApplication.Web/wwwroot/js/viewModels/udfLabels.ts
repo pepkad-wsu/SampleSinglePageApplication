@@ -58,9 +58,15 @@
     }
 
     ViewChanged() {
+        let allowed: boolean = this.MainModel().AdminUser();
+
         switch (this.MainModel().CurrentView()) {
             case "udflabels":
-                this.GetUdfLabels();
+                if (allowed) {
+                    this.GetUdfLabels();
+                } else {
+                    this.MainModel().Nav("AccessDenied");
+                }
                 break;
         }
     }

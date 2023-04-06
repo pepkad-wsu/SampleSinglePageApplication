@@ -1,0 +1,30 @@
+﻿@using SampleSinglePageApplication;
+@using Microsoft.AspNetCore.Localization;
+@model DataObjects.ConnectionStringConfig
+@inject IHttpContextAccessor context;
+@inject IDataAccess data;
+@{
+    Layout = "_LayoutNotLoggedIn";
+
+    string title = data.GetLanguageItem("InvalidLogin");
+    string message = data.GetLanguageItem("InvalidLoginNoLocalAccount");
+    string back = data.GetLanguageItem("Back");
+
+    var settings = data.GetApplicationSettings();
+
+    RouteHelper routeHelper = new RouteHelper(context.HttpContext, settings.UseTenantCodeInUrl);
+    string baseUrl = routeHelper.GetBaseUrl();
+
+    if (String.IsNullOrEmpty(message)) {
+        message = "No local account configured. Please contact the application admin.";
+    }
+
+    ViewBag.Title = title;
+}
+<div class="container-fluid">
+    <h1 class="display-7">@Html.Raw(title)</h1>
+
+    <div class="mb-2">@Html.Raw(message)</div>
+
+    <a href="@Html.Raw(baseUrl)" class="btn btn-dark"><i class="fas fa-arrow-left"></i> @Html.Raw(back)</a>
+</div>
