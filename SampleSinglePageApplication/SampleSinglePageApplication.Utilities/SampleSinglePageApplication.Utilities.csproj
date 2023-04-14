@@ -9,13 +9,20 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.2.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
-    <PackageReference Include="System.Data.SqlClient" Version="4.8.3" />
+    <PackageReference Include="System.Data.SqlClient" Version="4.8.5" />
     <PackageReference Include="WSU_EIT_ActiveDirectoryClient" Version="1.0.1" />
     <PackageReference Include="WSU_EIT_SSO2" Version="1.0.1" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\SampleSinglePageApplication.DataObjects\SampleSinglePageApplication.DataObjects.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Properties\launchSettings.json">
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+      <CopyToPublishDirectory>Never</CopyToPublishDirectory>
+    </None>
   </ItemGroup>
 
 </Project>

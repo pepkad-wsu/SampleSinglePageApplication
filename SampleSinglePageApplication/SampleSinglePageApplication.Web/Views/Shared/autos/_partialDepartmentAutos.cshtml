@@ -1,0 +1,211 @@
+<script src="~/js/viewModels/autos/departmentAutos.js?v=@Html.Raw(Guid.NewGuid().ToString().Replace("-", ""))"></script>
+<div id="view-departments-auto">
+	<div data-bind="visible:MainModel().CurrentView() == 'departmentsauto'">
+		<div data-bind="css:{fixed: MainModel().StickyMenus() == true}">
+			<i class="sticky-menu-icon" data-bind="html:MainModel().StickyIcon(), click:function() {MainModel().ToggleStickyMenus()}"></i>
+			<h1 class="display-7"><i data-bind="html:MainModel().IconAndText('Departments')"></i></h1>
+			<div class="padbottom-5">
+				<div class="btn-group" role="group">
+					<button type="button" class="btn btn-success" data-bind="click:function() { MainModel().Nav('newdepartmentauto') }">
+						<i data-bind="html:MainModel().IconAndText('Department.AddNew')"></i>
+					</button>
+					
+					<button type="button" class="btn btn-primary" data-bind="click:ClearDepartmentFilter">
+						<i data-bind="html:MainModel().IconAndText('Department.Clear')"></i>
+					</button>
+					
+					<button type="button" class="btn btn-dark" data-bind="visible:Filter().showFilters() == false, click:ToggleShowDepartmentFilter, enable:Loading() == false">
+						<i data-bind="html:MainModel().IconAndText('Department.ShowFilter')"></i>
+					</button>
+					<button type="button" class="btn btn-dark" data-bind="visible:Filter().showFilters() == true, click:ToggleShowDepartmentFilter, enable:Loading()  == false">
+						<i data-bind="html:MainModel().IconAndText('Department.HideFilter')"></i>
+					</button>
+					<button type="button" class="btn btn-dark" data-bind="click:RefreshDepartmentFilter, enable:Loading()  == false">
+						<i data-bind="html:MainModel().IconAndText('Department.Refresh')"></i>
+					</button>
+				</div>
+			</div>
+		</div>
+
+		<div data-bind="visible:GettingSavedDepartmentFilterName() == true">
+		    <label for="saved-departmentfilter-name" data-bind="html:MainModel().Language('Department.SavedFilterName')"></label>
+		    <div class="input-group">
+		        <button type="button" class="btn btn-outline-dark" data-bind="html:MainModel().IconAndText('Cancel'), click:function(){GettingSavedDepartmentFilterName(false)}"></button>
+		        <button type="button" class="btn btn-outline-success" data-bind="html:MainModel().IconAndText('Save'), click:SaveDepartmentFilterRecord"></button>
+		        <input type="text" class="form-control" id="saved-departmentfilter-name" data-bind="value:SavedDepartmentFilterName" />
+		    </div>
+		</div>
+		<div class="row" data-bind="visible:Loading() == true">
+		 <div class="col-sm-12" data-bind="html:MainModel().Language('Department.Loading');"></div>
+		</div>
+		<div class="row" data-bind="visible:Loading() == false">
+		 <div data-bind="visible:Filter().showFilters() == true">
+		  <div class="row padbottom">
+				@* String ActiveDirectoryNames *@
+					<div class="col-sm-3 padbottom" data-bind="visible:Filter().showFilters() == true && Loading() == false">
+						<label for="departments-filter-activedirectorynames" data-bind="html:MainModel().Language('Department.ActiveDirectoryNames')">Active Directory Names</label>
+						<div class="form-check form-switch right">
+							<input type="checkbox" id="departments-filter-activedirectorynamesfilterexact" role="switch" class="form-check-input"  data-bind="checked:Filter().activeDirectoryNamesFilterExact">
+							<label for="departments-filter-activedirectorynamesfilterexact" class="unbold" data-bind="html:MainModel().Language('Department.ActiveDirectoryNamesFilterExact')">Filter Exact</label>
+						</div>
+						<input type="text" id="departments-filter-activedirectorynames" class="form-control" data-bind="value:Filter().activeDirectoryNames" placeholder="Search Active Directory Names" />
+					</div>
+				@* String DepartmentName *@
+					<div class="col-sm-3 padbottom" data-bind="visible:Filter().showFilters() == true && Loading() == false">
+						<label for="departments-filter-departmentname" data-bind="html:MainModel().Language('Department.DepartmentName')">Department Name</label>
+						<div class="form-check form-switch right">
+							<input type="checkbox" id="departments-filter-departmentnamefilterexact" role="switch" class="form-check-input"  data-bind="checked:Filter().departmentNameFilterExact">
+							<label for="departments-filter-departmentnamefilterexact" class="unbold" data-bind="html:MainModel().Language('Department.DepartmentNameFilterExact')">Filter Exact</label>
+						</div>
+						<input type="text" id="departments-filter-departmentname" class="form-control" data-bind="value:Filter().departmentName" placeholder="Search Department Name" />
+					</div>
+				@* Boolean Enabled *@
+					<div class="col-sm-3" data-bind="visible:Filter().showFilters() == true && Loading() == false">
+						<label for="departments-filter-enabled" data-bind="html:MainModel().Language('Department.Enabled')"></label>
+						<select class="form-control" size="4" id="departments-filter-enabled" data-bind="value:Filter().enabled">
+							<option value="">All</option>
+							<option value="true">Is Enabled</option>
+							<option value="false">Is not Enabled </option>
+						</select>
+					</div>
+				@* Guid DepartmentGroupId *@
+					<!-- ERROR_ISGUID   DepartmentGroupId   -->
+				@* Guid DepartmentId *@
+					<!-- ERROR_ISGUID   DepartmentId   -->
+				@* Guid TenantId *@
+					<!-- ERROR_ISGUID   TenantId   -->
+				@* BooleanResponse ActionResponse *@
+					<!-- !ERROR_IsOnEFModel   ActionResponse   -->
+				@* UDF 1 *@
+					<div class="col-3 padbottom" data-bind="visible:MainModel().UDFShowInFilter('Departments', 1) == true">
+						<label for="departments-filter-udf01" data-bind="text:MainModel().UDFLabel('Departments', 1)"></label>
+						<select class="form-control" id="departments-filter-udf01" size="4"data-bind="value:Filter().udf01,options: MainModel().UDFFilterOptions('Departments', 1),optionsCaption: '',valueAllowUnset: true"></select>
+					</div>
+				@* UDF 2 *@
+					<div class="col-3 padbottom" data-bind="visible:MainModel().UDFShowInFilter('Departments', 2) == true">
+						<label for="departments-filter-udf02" data-bind="text:MainModel().UDFLabel('Departments', 2)"></label>
+						<select class="form-control" id="departments-filter-udf02" size="4"data-bind="value:Filter().udf02,options: MainModel().UDFFilterOptions('Departments', 2),optionsCaption: '',valueAllowUnset: true"></select>
+					</div>
+				@* UDF 3 *@
+					<div class="col-3 padbottom" data-bind="visible:MainModel().UDFShowInFilter('Departments', 3) == true">
+						<label for="departments-filter-udf03" data-bind="text:MainModel().UDFLabel('Departments', 3)"></label>
+						<select class="form-control" id="departments-filter-udf03" size="4"data-bind="value:Filter().udf03,options: MainModel().UDFFilterOptions('Departments', 3),optionsCaption: '',valueAllowUnset: true"></select>
+					</div>
+				@* UDF 4 *@
+					<div class="col-3 padbottom" data-bind="visible:MainModel().UDFShowInFilter('Departments', 4) == true">
+						<label for="departments-filter-udf04" data-bind="text:MainModel().UDFLabel('Departments', 4)"></label>
+						<select class="form-control" id="departments-filter-udf04" size="4"data-bind="value:Filter().udf04,options: MainModel().UDFFilterOptions('Departments', 4),optionsCaption: '',valueAllowUnset: true"></select>
+					</div>
+				@* UDF 5 *@
+					<div class="col-3 padbottom" data-bind="visible:MainModel().UDFShowInFilter('Departments', 5) == true">
+						<label for="departments-filter-udf05" data-bind="text:MainModel().UDFLabel('Departments', 5)"></label>
+						<select class="form-control" id="departments-filter-udf05" size="4"data-bind="value:Filter().udf05,options: MainModel().UDFFilterOptions('Departments', 5),optionsCaption: '',valueAllowUnset: true"></select>
+					</div>
+				@* UDF 6 *@
+					<div class="col-3 padbottom" data-bind="visible:MainModel().UDFShowInFilter('Departments', 6) == true">
+						<label for="departments-filter-udf06" data-bind="text:MainModel().UDFLabel('Departments', 6)"></label>
+						<select class="form-control" id="departments-filter-udf06" size="4"data-bind="value:Filter().udf06,options: MainModel().UDFFilterOptions('Departments', 6),optionsCaption: '',valueAllowUnset: true"></select>
+					</div>
+				@* UDF 7 *@
+					<div class="col-3 padbottom" data-bind="visible:MainModel().UDFShowInFilter('Departments', 7) == true">
+						<label for="departments-filter-udf07" data-bind="text:MainModel().UDFLabel('Departments', 7)"></label>
+						<select class="form-control" id="departments-filter-udf07" size="4"data-bind="value:Filter().udf07,options: MainModel().UDFFilterOptions('Departments', 7),optionsCaption: '',valueAllowUnset: true"></select>
+					</div>
+				@* UDF 8 *@
+					<div class="col-3 padbottom" data-bind="visible:MainModel().UDFShowInFilter('Departments', 8) == true">
+						<label for="departments-filter-udf08" data-bind="text:MainModel().UDFLabel('Departments', 8)"></label>
+						<select class="form-control" id="departments-filter-udf08" size="4"data-bind="value:Filter().udf08,options: MainModel().UDFFilterOptions('Departments', 8),optionsCaption: '',valueAllowUnset: true"></select>
+					</div>
+				@* UDF 9 *@
+					<div class="col-3 padbottom" data-bind="visible:MainModel().UDFShowInFilter('Departments', 9) == true">
+						<label for="departments-filter-udf09" data-bind="text:MainModel().UDFLabel('Departments', 9)"></label>
+						<select class="form-control" id="departments-filter-udf09" size="4"data-bind="value:Filter().udf09,options: MainModel().UDFFilterOptions('Departments', 9),optionsCaption: '',valueAllowUnset: true"></select>
+					</div>
+				@* UDF 10 *@
+					<div class="col-3 padbottom" data-bind="visible:MainModel().UDFShowInFilter('Departments', 10) == true">
+						<label for="departments-filter-udf10" data-bind="text:MainModel().UDFLabel('Departments', 10)"></label>
+						<select class="form-control" id="departments-filter-udf10" size="4"data-bind="value:Filter().udf10,options: MainModel().UDFFilterOptions('Departments', 10),optionsCaption: '',valueAllowUnset: true"></select>
+					</div>
+				</div>
+			</div>
+		
+			<div data-bind="visible:Filter().recordCount() == 0, html:MainModel().Language('Department.DepartmentNoRecords')"></div>
+		
+			<div data-bind="visible:Filter().recordCount() > 0">
+				<div id="department-records-auto"></div>
+			</div>
+		</div>
+	</div>
+
+	<div data-bind="visible:(MainModel().CurrentView() == 'editdepartmentauto' || MainModel().CurrentView() == 'newdepartmentauto')">
+		<div data-bind="css:{fixed: MainModel().StickyMenus() == true}">
+			<i class="sticky-menu-icon" data-bind="html:MainModel().StickyIcon(), click:function() {MainModel().ToggleStickyMenus()}"></i>
+			<h1 class="display-7">
+				<!-- ko if: MainModel().CurrentView() == 'editdepartmentauto' -->
+				<i data-bind="html:MainModel().IconAndText('Department.Edit')"></i>
+				<span class="element-id" data-bind="visible:Loading() == false">&ldquo;<span data-bind="text:MainModel().Id()"></span>&rdquo;</span>
+				<!-- /ko -->
+				<!-- ko if: MainModel().CurrentView() == 'newdepartmentauto' -->
+				<i data-bind="html:MainModel().Icon('Departments')"></i><span class="icon-text" data-bind="html:MainModel().Language('Department.AddNew')"></span>
+				<span class="element-id" data-bind="visible:Department().departmentId() != null && Department().departmentId() != MainModel().GuidEmpty()">
+					&ldquo;<span data-bind="text:Department().departmentId"></span>&rdquo;
+				</span>
+				<!-- /ko -->
+			</h1>
+	
+			<div class="padbottom">
+				<button type="button" class="btn btn-dark" data-bind="click:function() { MainModel().Nav('departmentsauto') }, html:MainModel().IconAndText('Department.Back')"></button>
+				<button type="button" class="btn btn-success" data-bind="click:SaveDepartment, html:MainModel().IconAndText('Department.Save')"></button>
+				<!-- ko if: MainModel().Id() != null && MainModel().Id() != '' -->
+				<!-- ko if: ConfirmDeleteDepartment() != MainModel().Id() -->
+				<button type="button" class="btn btn-danger" data-bind="html:MainModel().IconAndText('Department.ConfirmDelete'), click:function() { ConfirmDeleteDepartment(MainModel().Id()) }"></button>
+				<!-- /ko -->
+				<!-- ko if: ConfirmDeleteDepartment() == MainModel().Id() -->
+				<div class="btn-group" role="group">
+					<button type="button" class="btn btn-dark" data-bind="html:MainModel().IconAndText('Department.Cancel'), click:function() { ConfirmDeleteDepartment('') }"></button>
+					<button type="button" class="btn btn-danger" data-bind="html:MainModel().IconAndText('Department.ConfirmDelete'), click:DeleteDepartment"></button>
+				</div>
+				<!-- /ko -->
+				<!-- /ko -->
+			</div>
+		</div>
+	
+		<div data-bind="visible:Loading() == true, html:MainModel().Language('Department.Loading')"></div>
+	
+		<div data-bind="visible:Department().departmentId() != null && Loading() == false">
+	
+			<table class="table first-column-small first-column-bold first-column-right">
+				@* String ActiveDirectoryNames *@
+				<tr>
+					<td><label for="edit-department-activedirectorynames" data-bind="html:MainModel().Language('Department.ActiveDirectoryNames', null, true)"></label></td>
+					<td><input type="text" id="edit-department-activedirectorynames"class="form-control" data-bind="value:Department().activeDirectoryNames" /></td>
+				</tr>
+				@* String DepartmentName *@
+				<tr>
+					<td><label for="edit-department-departmentname" data-bind="html:MainModel().Language('Department.DepartmentName', null, true)"></label></td>
+					<td><input type="text" id="edit-department-departmentname"class="form-control" data-bind="value:Department().departmentName" /></td>
+				</tr>
+				@* Boolean Enabled *@
+				<tr>
+					<td><label for="edit-department-enabled" data-bind="html:MainModel().Language('Department.Enabled', null, true)"></label></td>
+					<td><input type="checkbox" id="edit-department-enabled" role="switch" class="form-check-input" data-bind="checked:Department().enabled" /></td>
+				</tr>
+				@* Guid DepartmentGroupId *@
+				<tr>
+					<td><label for="edit-department-departmentgroupid" data-bind="html:MainModel().Language('Department.DepartmentGroupId', null, true)"></label></td>
+					<td><input type="text" id="edit-department-departmentgroupid"class="form-control" data-bind="value:Department().departmentGroupId" /></td>
+				</tr>
+				@* Guid DepartmentId *@
+				@* Guid TenantId *@
+				@* BooleanResponse ActionResponse *@
+			</table>
+		</div>
+	
+		<div id="edit-department-udf-fields" data-bind="visible:Loading() == false"></div>
+	</div>
+	<form id="department-filter-download" method="post" action="/File/DownloadDepartments/" target="_blank" style="display:none;">
+		<textarea name="department-filter" id="department-filter" aria-hidden="true"></textarea>
+		<input type="hidden" name="department-filter-tenantid" id="department-filter-tenantid" data-bind="value:MainModel().TenantId()" />
+		<input type="hidden" name="department-filter-user-token" id="department-filter-user-token" data-bind="value:MainModel().Token()" />
+	</form>
+</div>

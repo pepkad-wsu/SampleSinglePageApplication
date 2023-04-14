@@ -1,0 +1,252 @@
+<script src="~/js/viewModels/autos/fileStorageAutos.js?v=@Html.Raw(Guid.NewGuid().ToString().Replace("-", ""))"></script>
+<div id="view-filestorages-auto">
+	<div data-bind="visible:MainModel().CurrentView() == 'filestoragesauto'">
+		<div data-bind="css:{fixed: MainModel().StickyMenus() == true}">
+			<i class="sticky-menu-icon" data-bind="html:MainModel().StickyIcon(), click:function() {MainModel().ToggleStickyMenus()}"></i>
+			<h1 class="display-7"><i data-bind="html:MainModel().IconAndText('FileStorages')"></i></h1>
+			<div class="padbottom-5">
+				<div class="btn-group" role="group">
+					<button type="button" class="btn btn-success" data-bind="click:function() { MainModel().Nav('newfilestorageauto') }">
+						<i data-bind="html:MainModel().IconAndText('FileStorage.AddNew')"></i>
+					</button>
+					
+					<button type="button" class="btn btn-primary" data-bind="click:ClearFileStorageFilter">
+						<i data-bind="html:MainModel().IconAndText('FileStorage.Clear')"></i>
+					</button>
+					
+					<button type="button" class="btn btn-dark" data-bind="visible:Filter().showFilters() == false, click:ToggleShowFileStorageFilter, enable:Loading() == false">
+						<i data-bind="html:MainModel().IconAndText('FileStorage.ShowFilter')"></i>
+					</button>
+					<button type="button" class="btn btn-dark" data-bind="visible:Filter().showFilters() == true, click:ToggleShowFileStorageFilter, enable:Loading()  == false">
+						<i data-bind="html:MainModel().IconAndText('FileStorage.HideFilter')"></i>
+					</button>
+					<button type="button" class="btn btn-dark" data-bind="click:RefreshFileStorageFilter, enable:Loading()  == false">
+						<i data-bind="html:MainModel().IconAndText('FileStorage.Refresh')"></i>
+					</button>
+				</div>
+			</div>
+		</div>
+
+		<div data-bind="visible:GettingSavedFileStorageFilterName() == true">
+		    <label for="saved-filestoragefilter-name" data-bind="html:MainModel().Language('FileStorage.SavedFilterName')"></label>
+		    <div class="input-group">
+		        <button type="button" class="btn btn-outline-dark" data-bind="html:MainModel().IconAndText('Cancel'), click:function(){GettingSavedFileStorageFilterName(false)}"></button>
+		        <button type="button" class="btn btn-outline-success" data-bind="html:MainModel().IconAndText('Save'), click:SaveFileStorageFilterRecord"></button>
+		        <input type="text" class="form-control" id="saved-filestoragefilter-name" data-bind="value:SavedFileStorageFilterName" />
+		    </div>
+		</div>
+		<div class="row" data-bind="visible:Loading() == true">
+		 <div class="col-sm-12" data-bind="html:MainModel().Language('FileStorage.Loading');"></div>
+		</div>
+		<div class="row" data-bind="visible:Loading() == false">
+		 <div data-bind="visible:Filter().showFilters() == true">
+		  <div class="row padbottom">
+				@* DateTime UploadDate *@
+					<div class="col-sm-2 padbottom" data-bind="visible:Filter().showFilters() == true && Loading() == false">
+						<label for="filestorages-filter-uploaddatestartauto" data-bind="html:MainModel().Language('FileStorage.UploadDateStart')">Upload Date Start</label>
+						<input type="text" id="filestorages-filter-uploaddatestartauto" class="form-control datePicker" data-bind="date:Filter().uploadDateStart" placeholder="Search Upload Date Start" />
+					</div>
+					<div class="col-sm-2 padbottom" data-bind="visible:Filter().showFilters() == true && Loading() == false">
+						<label for="filestorages-filter-uploaddateend" data-bind="html:MainModel().Language('FileStorage.UploadDateEnd')">Upload Date End</label>
+						<input type="text" id="filestorages-filter-uploaddateend" class="form-control datePicker" data-bind="date:Filter().uploadDateEnd" placeholder="Search Upload Date End" />
+					</div>
+				@* String Base64value *@
+					<!-- !ERROR_IsOnEFModel   Base64value   -->
+				@* String Extension *@
+					<div class="col-sm-3 padbottom" data-bind="visible:Filter().showFilters() == true && Loading() == false">
+						<label for="filestorages-filter-extension" data-bind="html:MainModel().Language('FileStorage.Extension')">Extension</label>
+						<div class="form-check form-switch right">
+							<input type="checkbox" id="filestorages-filter-extensionfilterexact" role="switch" class="form-check-input"  data-bind="checked:Filter().extensionFilterExact">
+							<label for="filestorages-filter-extensionfilterexact" class="unbold" data-bind="html:MainModel().Language('FileStorage.ExtensionFilterExact')">Filter Exact</label>
+						</div>
+						<input type="text" id="filestorages-filter-extension" class="form-control" data-bind="value:Filter().extension" placeholder="Search Extension" />
+					</div>
+				@* String FileName *@
+					<div class="col-sm-3 padbottom" data-bind="visible:Filter().showFilters() == true && Loading() == false">
+						<label for="filestorages-filter-filename" data-bind="html:MainModel().Language('FileStorage.FileName')">File Name</label>
+						<div class="form-check form-switch right">
+							<input type="checkbox" id="filestorages-filter-filenamefilterexact" role="switch" class="form-check-input"  data-bind="checked:Filter().fileNameFilterExact">
+							<label for="filestorages-filter-filenamefilterexact" class="unbold" data-bind="html:MainModel().Language('FileStorage.FileNameFilterExact')">Filter Exact</label>
+						</div>
+						<input type="text" id="filestorages-filter-filename" class="form-control" data-bind="value:Filter().fileName" placeholder="Search File Name" />
+					</div>
+				@* String SourceFileId *@
+					<div class="col-sm-3 padbottom" data-bind="visible:Filter().showFilters() == true && Loading() == false">
+						<label for="filestorages-filter-sourcefileid" data-bind="html:MainModel().Language('FileStorage.SourceFileId')">Source File Id</label>
+						<div class="form-check form-switch right">
+							<input type="checkbox" id="filestorages-filter-sourcefileidfilterexact" role="switch" class="form-check-input"  data-bind="checked:Filter().sourceFileIdFilterExact">
+							<label for="filestorages-filter-sourcefileidfilterexact" class="unbold" data-bind="html:MainModel().Language('FileStorage.SourceFileIdFilterExact')">Filter Exact</label>
+						</div>
+						<input type="text" id="filestorages-filter-sourcefileid" class="form-control" data-bind="value:Filter().sourceFileId" placeholder="Search Source File Id" />
+					</div>
+				@* Int64 Bytes *@
+					<div class="col-sm-3 padbottom" data-bind="visible:Filter().showFilters() == true && Loading() == false">
+						<label for="filestorages-filter-bytes" data-bind="html:MainModel().Language('FileStorage.Bytes')">Bytes</label>
+						<input type="number" id="filestorages-filter-bytes" class="form-control" data-bind="value:Filter().bytes" />
+					</div>
+				@* Byte Value *@
+					<!-- ERROR_ISBYTE   Value   -->
+				@* Guid FileId *@
+					<!-- ERROR_ISGUID   FileId   -->
+				@* Guid ItemId *@
+					<!-- ERROR_ISGUID   ItemId   -->
+				@* Guid TenantId *@
+					<!-- ERROR_ISGUID   TenantId   -->
+				@* Guid UserId *@
+					<!-- ERROR_ISGUID   UserId   -->
+				@* BooleanResponse ActionResponse *@
+					<!-- !ERROR_IsOnEFModel   ActionResponse   -->
+				@* UDF 1 *@
+					<div class="col-3 padbottom" data-bind="visible:MainModel().UDFShowInFilter('FileStorages', 1) == true">
+						<label for="filestorages-filter-udf01" data-bind="text:MainModel().UDFLabel('FileStorages', 1)"></label>
+						<select class="form-control" id="filestorages-filter-udf01" size="4"data-bind="value:Filter().udf01,options: MainModel().UDFFilterOptions('FileStorages', 1),optionsCaption: '',valueAllowUnset: true"></select>
+					</div>
+				@* UDF 2 *@
+					<div class="col-3 padbottom" data-bind="visible:MainModel().UDFShowInFilter('FileStorages', 2) == true">
+						<label for="filestorages-filter-udf02" data-bind="text:MainModel().UDFLabel('FileStorages', 2)"></label>
+						<select class="form-control" id="filestorages-filter-udf02" size="4"data-bind="value:Filter().udf02,options: MainModel().UDFFilterOptions('FileStorages', 2),optionsCaption: '',valueAllowUnset: true"></select>
+					</div>
+				@* UDF 3 *@
+					<div class="col-3 padbottom" data-bind="visible:MainModel().UDFShowInFilter('FileStorages', 3) == true">
+						<label for="filestorages-filter-udf03" data-bind="text:MainModel().UDFLabel('FileStorages', 3)"></label>
+						<select class="form-control" id="filestorages-filter-udf03" size="4"data-bind="value:Filter().udf03,options: MainModel().UDFFilterOptions('FileStorages', 3),optionsCaption: '',valueAllowUnset: true"></select>
+					</div>
+				@* UDF 4 *@
+					<div class="col-3 padbottom" data-bind="visible:MainModel().UDFShowInFilter('FileStorages', 4) == true">
+						<label for="filestorages-filter-udf04" data-bind="text:MainModel().UDFLabel('FileStorages', 4)"></label>
+						<select class="form-control" id="filestorages-filter-udf04" size="4"data-bind="value:Filter().udf04,options: MainModel().UDFFilterOptions('FileStorages', 4),optionsCaption: '',valueAllowUnset: true"></select>
+					</div>
+				@* UDF 5 *@
+					<div class="col-3 padbottom" data-bind="visible:MainModel().UDFShowInFilter('FileStorages', 5) == true">
+						<label for="filestorages-filter-udf05" data-bind="text:MainModel().UDFLabel('FileStorages', 5)"></label>
+						<select class="form-control" id="filestorages-filter-udf05" size="4"data-bind="value:Filter().udf05,options: MainModel().UDFFilterOptions('FileStorages', 5),optionsCaption: '',valueAllowUnset: true"></select>
+					</div>
+				@* UDF 6 *@
+					<div class="col-3 padbottom" data-bind="visible:MainModel().UDFShowInFilter('FileStorages', 6) == true">
+						<label for="filestorages-filter-udf06" data-bind="text:MainModel().UDFLabel('FileStorages', 6)"></label>
+						<select class="form-control" id="filestorages-filter-udf06" size="4"data-bind="value:Filter().udf06,options: MainModel().UDFFilterOptions('FileStorages', 6),optionsCaption: '',valueAllowUnset: true"></select>
+					</div>
+				@* UDF 7 *@
+					<div class="col-3 padbottom" data-bind="visible:MainModel().UDFShowInFilter('FileStorages', 7) == true">
+						<label for="filestorages-filter-udf07" data-bind="text:MainModel().UDFLabel('FileStorages', 7)"></label>
+						<select class="form-control" id="filestorages-filter-udf07" size="4"data-bind="value:Filter().udf07,options: MainModel().UDFFilterOptions('FileStorages', 7),optionsCaption: '',valueAllowUnset: true"></select>
+					</div>
+				@* UDF 8 *@
+					<div class="col-3 padbottom" data-bind="visible:MainModel().UDFShowInFilter('FileStorages', 8) == true">
+						<label for="filestorages-filter-udf08" data-bind="text:MainModel().UDFLabel('FileStorages', 8)"></label>
+						<select class="form-control" id="filestorages-filter-udf08" size="4"data-bind="value:Filter().udf08,options: MainModel().UDFFilterOptions('FileStorages', 8),optionsCaption: '',valueAllowUnset: true"></select>
+					</div>
+				@* UDF 9 *@
+					<div class="col-3 padbottom" data-bind="visible:MainModel().UDFShowInFilter('FileStorages', 9) == true">
+						<label for="filestorages-filter-udf09" data-bind="text:MainModel().UDFLabel('FileStorages', 9)"></label>
+						<select class="form-control" id="filestorages-filter-udf09" size="4"data-bind="value:Filter().udf09,options: MainModel().UDFFilterOptions('FileStorages', 9),optionsCaption: '',valueAllowUnset: true"></select>
+					</div>
+				@* UDF 10 *@
+					<div class="col-3 padbottom" data-bind="visible:MainModel().UDFShowInFilter('FileStorages', 10) == true">
+						<label for="filestorages-filter-udf10" data-bind="text:MainModel().UDFLabel('FileStorages', 10)"></label>
+						<select class="form-control" id="filestorages-filter-udf10" size="4"data-bind="value:Filter().udf10,options: MainModel().UDFFilterOptions('FileStorages', 10),optionsCaption: '',valueAllowUnset: true"></select>
+					</div>
+				</div>
+			</div>
+		
+			<div data-bind="visible:Filter().recordCount() == 0, html:MainModel().Language('FileStorage.FileStorageNoRecords')"></div>
+		
+			<div data-bind="visible:Filter().recordCount() > 0">
+				<div id="filestorage-records-auto"></div>
+			</div>
+		</div>
+	</div>
+
+	<div data-bind="visible:(MainModel().CurrentView() == 'editfilestorageauto' || MainModel().CurrentView() == 'newfilestorageauto')">
+		<div data-bind="css:{fixed: MainModel().StickyMenus() == true}">
+			<i class="sticky-menu-icon" data-bind="html:MainModel().StickyIcon(), click:function() {MainModel().ToggleStickyMenus()}"></i>
+			<h1 class="display-7">
+				<!-- ko if: MainModel().CurrentView() == 'editfilestorageauto' -->
+				<i data-bind="html:MainModel().IconAndText('FileStorage.Edit')"></i>
+				<span class="element-id" data-bind="visible:Loading() == false">&ldquo;<span data-bind="text:MainModel().Id()"></span>&rdquo;</span>
+				<!-- /ko -->
+				<!-- ko if: MainModel().CurrentView() == 'newfilestorageauto' -->
+				<i data-bind="html:MainModel().Icon('FileStorages')"></i><span class="icon-text" data-bind="html:MainModel().Language('FileStorage.AddNew')"></span>
+				<span class="element-id" data-bind="visible:FileStorage().fileId() != null && FileStorage().fileId() != MainModel().GuidEmpty()">
+					&ldquo;<span data-bind="text:FileStorage().fileId"></span>&rdquo;
+				</span>
+				<!-- /ko -->
+			</h1>
+	
+			<div class="padbottom">
+				<button type="button" class="btn btn-dark" data-bind="click:function() { MainModel().Nav('filestoragesauto') }, html:MainModel().IconAndText('FileStorage.Back')"></button>
+				<button type="button" class="btn btn-success" data-bind="click:SaveFileStorage, html:MainModel().IconAndText('FileStorage.Save')"></button>
+				<!-- ko if: MainModel().Id() != null && MainModel().Id() != '' -->
+				<!-- ko if: ConfirmDeleteFileStorage() != MainModel().Id() -->
+				<button type="button" class="btn btn-danger" data-bind="html:MainModel().IconAndText('FileStorage.ConfirmDelete'), click:function() { ConfirmDeleteFileStorage(MainModel().Id()) }"></button>
+				<!-- /ko -->
+				<!-- ko if: ConfirmDeleteFileStorage() == MainModel().Id() -->
+				<div class="btn-group" role="group">
+					<button type="button" class="btn btn-dark" data-bind="html:MainModel().IconAndText('FileStorage.Cancel'), click:function() { ConfirmDeleteFileStorage('') }"></button>
+					<button type="button" class="btn btn-danger" data-bind="html:MainModel().IconAndText('FileStorage.ConfirmDelete'), click:DeleteFileStorage"></button>
+				</div>
+				<!-- /ko -->
+				<!-- /ko -->
+			</div>
+		</div>
+	
+		<div data-bind="visible:Loading() == true, html:MainModel().Language('FileStorage.Loading')"></div>
+	
+		<div data-bind="visible:FileStorage().fileId() != null && Loading() == false">
+	
+			<table class="table first-column-small first-column-bold first-column-right">
+				@* DateTime UploadDate *@
+							<tr>
+					<td><label for="edit-filestorage-uploaddate" data-bind="html:MainModel().Language('FileStorage.UploadDate', null, true)"></label></td>
+					<td><input type="text" id="edit-filestorage-uploaddate" class="form-control dateTimePicker" data-bind="dateTime:FileStorage().uploadDate" /></td>
+				</tr>
+				@* String Base64value *@
+				<tr>
+					<td><label for="edit-filestorage-base64value" data-bind="html:MainModel().Language('FileStorage.Base64value', null, true)"></label></td>
+					<td><input type="text" id="edit-filestorage-base64value"class="form-control" data-bind="value:FileStorage().base64value" /></td>
+				</tr>
+				@* String Extension *@
+				<tr>
+					<td><label for="edit-filestorage-extension" data-bind="html:MainModel().Language('FileStorage.Extension', null, true)"></label></td>
+					<td><input type="text" id="edit-filestorage-extension"class="form-control" data-bind="value:FileStorage().extension" /></td>
+				</tr>
+				@* String FileName *@
+				<tr>
+					<td><label for="edit-filestorage-filename" data-bind="html:MainModel().Language('FileStorage.FileName', null, true)"></label></td>
+					<td><input type="text" id="edit-filestorage-filename"class="form-control" data-bind="value:FileStorage().fileName" /></td>
+				</tr>
+				@* String SourceFileId *@
+				<tr>
+					<td><label for="edit-filestorage-sourcefileid" data-bind="html:MainModel().Language('FileStorage.SourceFileId', null, true)"></label></td>
+					<td><input type="text" id="edit-filestorage-sourcefileid"class="form-control" data-bind="value:FileStorage().sourceFileId" /></td>
+				</tr>
+				@* Int64 Bytes *@
+						<tr>
+					<td><label for="edit-filestorage-bytes" data-bind="html:MainModel().Language('FileStorage.Bytes', null, true)"></label></td>
+					<td><input type="number" id="edit-filestorage-bytes" class="form-control" data-bind="value:FileStorage().bytes" /></td>
+				</tr>
+				@* Byte Value *@
+				@* Guid FileId *@
+				@* Guid ItemId *@
+				<tr>
+					<td><label for="edit-filestorage-itemid" data-bind="html:MainModel().Language('FileStorage.ItemId', null, true)"></label></td>
+					<td><input type="text" id="edit-filestorage-itemid"class="form-control" data-bind="value:FileStorage().itemId" /></td>
+				</tr>
+				@* Guid TenantId *@
+				@* Guid UserId *@
+				<tr>
+					<td><label for="edit-filestorage-userid" data-bind="html:MainModel().Language('FileStorage.UserId', null, true)"></label></td>
+					<td><input type="text" id="edit-filestorage-userid"class="form-control" data-bind="value:FileStorage().userId" /></td>
+				</tr>
+				@* BooleanResponse ActionResponse *@
+			</table>
+		</div>
+	
+		<div id="edit-filestorage-udf-fields" data-bind="visible:Loading() == false"></div>
+	</div>
+	<form id="filestorage-filter-download" method="post" action="/File/DownloadFileStorages/" target="_blank" style="display:none;">
+		<textarea name="filestorage-filter" id="filestorage-filter" aria-hidden="true"></textarea>
+		<input type="hidden" name="filestorage-filter-tenantid" id="filestorage-filter-tenantid" data-bind="value:MainModel().TenantId()" />
+		<input type="hidden" name="filestorage-filter-user-token" id="filestorage-filter-user-token" data-bind="value:MainModel().Token()" />
+	</form>
+</div>

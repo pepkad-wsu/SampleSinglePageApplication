@@ -1,0 +1,528 @@
+<script src="~/js/viewModels/autos/userAutos.js?v=@Html.Raw(Guid.NewGuid().ToString().Replace("-", ""))"></script>
+<div id="view-users-auto">
+	<div data-bind="visible:MainModel().CurrentView() == 'usersauto'">
+		<div data-bind="css:{fixed: MainModel().StickyMenus() == true}">
+			<i class="sticky-menu-icon" data-bind="html:MainModel().StickyIcon(), click:function() {MainModel().ToggleStickyMenus()}"></i>
+			<h1 class="display-7"><i data-bind="html:MainModel().IconAndText('Users')"></i></h1>
+			<div class="padbottom-5">
+				<div class="btn-group" role="group">
+					<button type="button" class="btn btn-success" data-bind="click:function() { MainModel().Nav('newuserauto') }">
+						<i data-bind="html:MainModel().IconAndText('User.AddNew')"></i>
+					</button>
+					
+					<button type="button" class="btn btn-primary" data-bind="click:ClearUserFilter">
+						<i data-bind="html:MainModel().IconAndText('User.Clear')"></i>
+					</button>
+					
+					<button type="button" class="btn btn-dark" data-bind="visible:Filter().showFilters() == false, click:ToggleShowUserFilter, enable:Loading() == false">
+						<i data-bind="html:MainModel().IconAndText('User.ShowFilter')"></i>
+					</button>
+					<button type="button" class="btn btn-dark" data-bind="visible:Filter().showFilters() == true, click:ToggleShowUserFilter, enable:Loading()  == false">
+						<i data-bind="html:MainModel().IconAndText('User.HideFilter')"></i>
+					</button>
+					<button type="button" class="btn btn-dark" data-bind="click:RefreshUserFilter, enable:Loading()  == false">
+						<i data-bind="html:MainModel().IconAndText('User.Refresh')"></i>
+					</button>
+				</div>
+			</div>
+		</div>
+
+		<div data-bind="visible:GettingSavedUserFilterName() == true">
+		    <label for="saved-userfilter-name" data-bind="html:MainModel().Language('User.SavedFilterName')"></label>
+		    <div class="input-group">
+		        <button type="button" class="btn btn-outline-dark" data-bind="html:MainModel().IconAndText('Cancel'), click:function(){GettingSavedUserFilterName(false)}"></button>
+		        <button type="button" class="btn btn-outline-success" data-bind="html:MainModel().IconAndText('Save'), click:SaveUserFilterRecord"></button>
+		        <input type="text" class="form-control" id="saved-userfilter-name" data-bind="value:SavedUserFilterName" />
+		    </div>
+		</div>
+		<div class="row" data-bind="visible:Loading() == true">
+		 <div class="col-sm-12" data-bind="html:MainModel().Language('User.Loading');"></div>
+		</div>
+		<div class="row" data-bind="visible:Loading() == false">
+		 <div data-bind="visible:Filter().showFilters() == true">
+		  <div class="row padbottom">
+				@* DateTime LastLockoutDate *@
+					<div class="col-sm-2 padbottom" data-bind="visible:Filter().showFilters() == true && Loading() == false">
+						<label for="users-filter-lastlockoutdatestartauto" data-bind="html:MainModel().Language('User.LastLockoutDateStart')">Last Lockout Date Start</label>
+						<input type="text" id="users-filter-lastlockoutdatestartauto" class="form-control datePicker" data-bind="date:Filter().lastLockoutDateStart" placeholder="Search Last Lockout Date Start" />
+					</div>
+					<div class="col-sm-2 padbottom" data-bind="visible:Filter().showFilters() == true && Loading() == false">
+						<label for="users-filter-lastlockoutdateend" data-bind="html:MainModel().Language('User.LastLockoutDateEnd')">Last Lockout Date End</label>
+						<input type="text" id="users-filter-lastlockoutdateend" class="form-control datePicker" data-bind="date:Filter().lastLockoutDateEnd" placeholder="Search Last Lockout Date End" />
+					</div>
+				@* DateTime LastLogin *@
+					<div class="col-sm-2 padbottom" data-bind="visible:Filter().showFilters() == true && Loading() == false">
+						<label for="users-filter-lastloginstartauto" data-bind="html:MainModel().Language('User.LastLoginStart')">Last Login Start</label>
+						<input type="text" id="users-filter-lastloginstartauto" class="form-control datePicker" data-bind="date:Filter().lastLoginStart" placeholder="Search Last Login Start" />
+					</div>
+					<div class="col-sm-2 padbottom" data-bind="visible:Filter().showFilters() == true && Loading() == false">
+						<label for="users-filter-lastloginend" data-bind="html:MainModel().Language('User.LastLoginEnd')">Last Login End</label>
+						<input type="text" id="users-filter-lastloginend" class="form-control datePicker" data-bind="date:Filter().lastLoginEnd" placeholder="Search Last Login End" />
+					</div>
+				@* String AuthToken *@
+					<!-- !ERROR_IsOnEFModel   AuthToken   -->
+				@* String DepartmentName *@
+					<!-- !ERROR_IsOnEFModel   DepartmentName   -->
+				@* String DisplayName *@
+					<!-- !ERROR_IsOnEFModel   DisplayName   -->
+				@* String Email *@
+					<div class="col-sm-3 padbottom" data-bind="visible:Filter().showFilters() == true && Loading() == false">
+						<label for="users-filter-email" data-bind="html:MainModel().Language('User.Email')">Email</label>
+						<div class="form-check form-switch right">
+							<input type="checkbox" id="users-filter-emailfilterexact" role="switch" class="form-check-input"  data-bind="checked:Filter().emailFilterExact">
+							<label for="users-filter-emailfilterexact" class="unbold" data-bind="html:MainModel().Language('User.EmailFilterExact')">Filter Exact</label>
+						</div>
+						<input type="text" id="users-filter-email" class="form-control" data-bind="value:Filter().email" placeholder="Search Email" />
+					</div>
+				@* String EmployeeId *@
+					<div class="col-sm-3 padbottom" data-bind="visible:Filter().showFilters() == true && Loading() == false">
+						<label for="users-filter-employeeid" data-bind="html:MainModel().Language('User.EmployeeId')">Employee Id</label>
+						<div class="form-check form-switch right">
+							<input type="checkbox" id="users-filter-employeeidfilterexact" role="switch" class="form-check-input"  data-bind="checked:Filter().employeeIdFilterExact">
+							<label for="users-filter-employeeidfilterexact" class="unbold" data-bind="html:MainModel().Language('User.EmployeeIdFilterExact')">Filter Exact</label>
+						</div>
+						<input type="text" id="users-filter-employeeid" class="form-control" data-bind="value:Filter().employeeId" placeholder="Search Employee Id" />
+					</div>
+				@* String FirstName *@
+					<div class="col-sm-3 padbottom" data-bind="visible:Filter().showFilters() == true && Loading() == false">
+						<label for="users-filter-firstname" data-bind="html:MainModel().Language('User.FirstName')">First Name</label>
+						<div class="form-check form-switch right">
+							<input type="checkbox" id="users-filter-firstnamefilterexact" role="switch" class="form-check-input"  data-bind="checked:Filter().firstNameFilterExact">
+							<label for="users-filter-firstnamefilterexact" class="unbold" data-bind="html:MainModel().Language('User.FirstNameFilterExact')">Filter Exact</label>
+						</div>
+						<input type="text" id="users-filter-firstname" class="form-control" data-bind="value:Filter().firstName" placeholder="Search First Name" />
+					</div>
+				@* String LastName *@
+					<div class="col-sm-3 padbottom" data-bind="visible:Filter().showFilters() == true && Loading() == false">
+						<label for="users-filter-lastname" data-bind="html:MainModel().Language('User.LastName')">Last Name</label>
+						<div class="form-check form-switch right">
+							<input type="checkbox" id="users-filter-lastnamefilterexact" role="switch" class="form-check-input"  data-bind="checked:Filter().lastNameFilterExact">
+							<label for="users-filter-lastnamefilterexact" class="unbold" data-bind="html:MainModel().Language('User.LastNameFilterExact')">Filter Exact</label>
+						</div>
+						<input type="text" id="users-filter-lastname" class="form-control" data-bind="value:Filter().lastName" placeholder="Search Last Name" />
+					</div>
+				@* String Location *@
+					<div class="col-sm-3 padbottom" data-bind="visible:Filter().showFilters() == true && Loading() == false">
+						<label for="users-filter-location" data-bind="html:MainModel().Language('User.Location')">Location</label>
+						<div class="form-check form-switch right">
+							<input type="checkbox" id="users-filter-locationfilterexact" role="switch" class="form-check-input"  data-bind="checked:Filter().locationFilterExact">
+							<label for="users-filter-locationfilterexact" class="unbold" data-bind="html:MainModel().Language('User.LocationFilterExact')">Filter Exact</label>
+						</div>
+						<input type="text" id="users-filter-location" class="form-control" data-bind="value:Filter().location" placeholder="Search Location" />
+					</div>
+				@* String Password *@
+					<div class="col-sm-3 padbottom" data-bind="visible:Filter().showFilters() == true && Loading() == false">
+						<label for="users-filter-password" data-bind="html:MainModel().Language('User.Password')">Password</label>
+						<div class="form-check form-switch right">
+							<input type="checkbox" id="users-filter-passwordfilterexact" role="switch" class="form-check-input"  data-bind="checked:Filter().passwordFilterExact">
+							<label for="users-filter-passwordfilterexact" class="unbold" data-bind="html:MainModel().Language('User.PasswordFilterExact')">Filter Exact</label>
+						</div>
+						<input type="text" id="users-filter-password" class="form-control" data-bind="value:Filter().password" placeholder="Search Password" />
+					</div>
+				@* String Phone *@
+					<div class="col-sm-3 padbottom" data-bind="visible:Filter().showFilters() == true && Loading() == false">
+						<label for="users-filter-phone" data-bind="html:MainModel().Language('User.Phone')">Phone</label>
+						<div class="form-check form-switch right">
+							<input type="checkbox" id="users-filter-phonefilterexact" role="switch" class="form-check-input"  data-bind="checked:Filter().phoneFilterExact">
+							<label for="users-filter-phonefilterexact" class="unbold" data-bind="html:MainModel().Language('User.PhoneFilterExact')">Filter Exact</label>
+						</div>
+						<input type="text" id="users-filter-phone" class="form-control" data-bind="value:Filter().phone" placeholder="Search Phone" />
+					</div>
+				@* String Source *@
+					<div class="col-sm-3 padbottom" data-bind="visible:Filter().showFilters() == true && Loading() == false">
+						<label for="users-filter-source" data-bind="html:MainModel().Language('User.Source')">Source</label>
+						<div class="form-check form-switch right">
+							<input type="checkbox" id="users-filter-sourcefilterexact" role="switch" class="form-check-input"  data-bind="checked:Filter().sourceFilterExact">
+							<label for="users-filter-sourcefilterexact" class="unbold" data-bind="html:MainModel().Language('User.SourceFilterExact')">Filter Exact</label>
+						</div>
+						<input type="text" id="users-filter-source" class="form-control" data-bind="value:Filter().source" placeholder="Search Source" />
+					</div>
+				@* String Title *@
+					<div class="col-sm-3 padbottom" data-bind="visible:Filter().showFilters() == true && Loading() == false">
+						<label for="users-filter-title" data-bind="html:MainModel().Language('User.Title')">Title</label>
+						<div class="form-check form-switch right">
+							<input type="checkbox" id="users-filter-titlefilterexact" role="switch" class="form-check-input"  data-bind="checked:Filter().titleFilterExact">
+							<label for="users-filter-titlefilterexact" class="unbold" data-bind="html:MainModel().Language('User.TitleFilterExact')">Filter Exact</label>
+						</div>
+						<input type="text" id="users-filter-title" class="form-control" data-bind="value:Filter().title" placeholder="Search Title" />
+					</div>
+				@* String udf01 *@
+					<!-- !ERROR_IsOnEFModel   udf01   -->
+				@* String udf02 *@
+					<!-- !ERROR_IsOnEFModel   udf02   -->
+				@* String udf03 *@
+					<!-- !ERROR_IsOnEFModel   udf03   -->
+				@* String udf04 *@
+					<!-- !ERROR_IsOnEFModel   udf04   -->
+				@* String udf05 *@
+					<!-- !ERROR_IsOnEFModel   udf05   -->
+				@* String udf06 *@
+					<!-- !ERROR_IsOnEFModel   udf06   -->
+				@* String udf07 *@
+					<!-- !ERROR_IsOnEFModel   udf07   -->
+				@* String udf08 *@
+					<!-- !ERROR_IsOnEFModel   udf08   -->
+				@* String udf09 *@
+					<!-- !ERROR_IsOnEFModel   udf09   -->
+				@* String udf10 *@
+					<!-- !ERROR_IsOnEFModel   udf10   -->
+				@* String Username *@
+					<div class="col-sm-3 padbottom" data-bind="visible:Filter().showFilters() == true && Loading() == false">
+						<label for="users-filter-username" data-bind="html:MainModel().Language('User.Username')">Username</label>
+						<div class="form-check form-switch right">
+							<input type="checkbox" id="users-filter-usernamefilterexact" role="switch" class="form-check-input"  data-bind="checked:Filter().usernameFilterExact">
+							<label for="users-filter-usernamefilterexact" class="unbold" data-bind="html:MainModel().Language('User.UsernameFilterExact')">Filter Exact</label>
+						</div>
+						<input type="text" id="users-filter-username" class="form-control" data-bind="value:Filter().username" placeholder="Search Username" />
+					</div>
+				@* Boolean Admin *@
+					<div class="col-sm-3" data-bind="visible:Filter().showFilters() == true && Loading() == false">
+						<label for="users-filter-admin" data-bind="html:MainModel().Language('User.Admin')"></label>
+						<select class="form-control" size="4" id="users-filter-admin" data-bind="value:Filter().admin">
+							<option value="">All</option>
+							<option value="true">Is Admin</option>
+							<option value="false">Is not Admin </option>
+						</select>
+					</div>
+				@* Boolean AppAdmin *@
+					<!-- !ERROR_IsOnEFModel   AppAdmin   -->
+				@* Boolean Enabled *@
+					<div class="col-sm-3" data-bind="visible:Filter().showFilters() == true && Loading() == false">
+						<label for="users-filter-enabled" data-bind="html:MainModel().Language('User.Enabled')"></label>
+						<select class="form-control" size="4" id="users-filter-enabled" data-bind="value:Filter().enabled">
+							<option value="">All</option>
+							<option value="true">Is Enabled</option>
+							<option value="false">Is not Enabled </option>
+						</select>
+					</div>
+				@* Boolean HasLocalPassword *@
+					<!-- !ERROR_IsOnEFModel   HasLocalPassword   -->
+				@* Boolean PreventPasswordChange *@
+					<div class="col-sm-3" data-bind="visible:Filter().showFilters() == true && Loading() == false">
+						<label for="users-filter-preventpasswordchange" data-bind="html:MainModel().Language('User.PreventPasswordChange')"></label>
+						<select class="form-control" size="4" id="users-filter-preventpasswordchange" data-bind="value:Filter().preventPasswordChange">
+							<option value="">All</option>
+							<option value="true">Is PreventPasswordChange</option>
+							<option value="false">Is not PreventPasswordChange </option>
+						</select>
+					</div>
+				@* Int32 FailedLoginAttempts *@
+					<div class="col-sm-3 padbottom" data-bind="visible:Filter().showFilters() == true && Loading() == false">
+						<label for="users-filter-failedloginattempts" data-bind="html:MainModel().Language('User.FailedLoginAttempts')">Failed Login Attempts</label>
+						<input type="number" id="users-filter-failedloginattempts" class="form-control" data-bind="value:Filter().failedLoginAttempts" />
+					</div>
+				@* Guid DepartmentId *@
+					<!-- ERROR_ISGUID   DepartmentId   -->
+				@* Guid Photo *@
+					<!-- !ERROR_IsOnEFModel   Photo   -->
+				@* Guid TenantId *@
+					<!-- ERROR_ISGUID   TenantId   -->
+				@* Guid UserId *@
+					<!-- ERROR_ISGUID   UserId   -->
+				@* BooleanResponse ActionResponse *@
+					<!-- !ERROR_IsOnEFModel   ActionResponse   -->
+				@* SavedFilterDepartmentGroupsAuto SavedFiltersDepartmentGroupsAuto *@
+					<!-- !ERROR_IsOnEFModel   SavedFiltersDepartmentGroupsAuto   -->
+				@* SavedFilterDepartmentsAuto SavedFiltersDepartmentsAuto *@
+					<!-- !ERROR_IsOnEFModel   SavedFiltersDepartmentsAuto   -->
+				@* SavedFilterFileStoragesAuto SavedFiltersFileStoragesAuto *@
+					<!-- !ERROR_IsOnEFModel   SavedFiltersFileStoragesAuto   -->
+				@* SavedFilterSettingsAuto SavedFiltersSettingsAuto *@
+					<!-- !ERROR_IsOnEFModel   SavedFiltersSettingsAuto   -->
+				@* SavedFilterTenantsAuto SavedFiltersTenantsAuto *@
+					<!-- !ERROR_IsOnEFModel   SavedFiltersTenantsAuto   -->
+				@* SavedFilterUserGroupsAuto SavedFiltersUserGroupsAuto *@
+					<!-- !ERROR_IsOnEFModel   SavedFiltersUserGroupsAuto   -->
+				@* SavedFilterUsersAuto SavedFiltersUsersAuto *@
+					<!-- !ERROR_IsOnEFModel   SavedFiltersUsersAuto   -->
+				@* Tenant Tenants *@
+					<!-- !ERROR_IsOnEFModel   Tenants   -->
+				@* UserTenant UserTenants *@
+					<!-- !ERROR_IsOnEFModel   UserTenants   -->
+				@* UDF 1 *@
+					<div class="col-3 padbottom" data-bind="visible:MainModel().UDFShowInFilter('Users', 1) == true">
+						<label for="users-filter-udf01" data-bind="text:MainModel().UDFLabel('Users', 1)"></label>
+						<select class="form-control" id="users-filter-udf01" size="4"data-bind="value:Filter().udf01,options: MainModel().UDFFilterOptions('Users', 1),optionsCaption: '',valueAllowUnset: true"></select>
+					</div>
+				@* UDF 2 *@
+					<div class="col-3 padbottom" data-bind="visible:MainModel().UDFShowInFilter('Users', 2) == true">
+						<label for="users-filter-udf02" data-bind="text:MainModel().UDFLabel('Users', 2)"></label>
+						<select class="form-control" id="users-filter-udf02" size="4"data-bind="value:Filter().udf02,options: MainModel().UDFFilterOptions('Users', 2),optionsCaption: '',valueAllowUnset: true"></select>
+					</div>
+				@* UDF 3 *@
+					<div class="col-3 padbottom" data-bind="visible:MainModel().UDFShowInFilter('Users', 3) == true">
+						<label for="users-filter-udf03" data-bind="text:MainModel().UDFLabel('Users', 3)"></label>
+						<select class="form-control" id="users-filter-udf03" size="4"data-bind="value:Filter().udf03,options: MainModel().UDFFilterOptions('Users', 3),optionsCaption: '',valueAllowUnset: true"></select>
+					</div>
+				@* UDF 4 *@
+					<div class="col-3 padbottom" data-bind="visible:MainModel().UDFShowInFilter('Users', 4) == true">
+						<label for="users-filter-udf04" data-bind="text:MainModel().UDFLabel('Users', 4)"></label>
+						<select class="form-control" id="users-filter-udf04" size="4"data-bind="value:Filter().udf04,options: MainModel().UDFFilterOptions('Users', 4),optionsCaption: '',valueAllowUnset: true"></select>
+					</div>
+				@* UDF 5 *@
+					<div class="col-3 padbottom" data-bind="visible:MainModel().UDFShowInFilter('Users', 5) == true">
+						<label for="users-filter-udf05" data-bind="text:MainModel().UDFLabel('Users', 5)"></label>
+						<select class="form-control" id="users-filter-udf05" size="4"data-bind="value:Filter().udf05,options: MainModel().UDFFilterOptions('Users', 5),optionsCaption: '',valueAllowUnset: true"></select>
+					</div>
+				@* UDF 6 *@
+					<div class="col-3 padbottom" data-bind="visible:MainModel().UDFShowInFilter('Users', 6) == true">
+						<label for="users-filter-udf06" data-bind="text:MainModel().UDFLabel('Users', 6)"></label>
+						<select class="form-control" id="users-filter-udf06" size="4"data-bind="value:Filter().udf06,options: MainModel().UDFFilterOptions('Users', 6),optionsCaption: '',valueAllowUnset: true"></select>
+					</div>
+				@* UDF 7 *@
+					<div class="col-3 padbottom" data-bind="visible:MainModel().UDFShowInFilter('Users', 7) == true">
+						<label for="users-filter-udf07" data-bind="text:MainModel().UDFLabel('Users', 7)"></label>
+						<select class="form-control" id="users-filter-udf07" size="4"data-bind="value:Filter().udf07,options: MainModel().UDFFilterOptions('Users', 7),optionsCaption: '',valueAllowUnset: true"></select>
+					</div>
+				@* UDF 8 *@
+					<div class="col-3 padbottom" data-bind="visible:MainModel().UDFShowInFilter('Users', 8) == true">
+						<label for="users-filter-udf08" data-bind="text:MainModel().UDFLabel('Users', 8)"></label>
+						<select class="form-control" id="users-filter-udf08" size="4"data-bind="value:Filter().udf08,options: MainModel().UDFFilterOptions('Users', 8),optionsCaption: '',valueAllowUnset: true"></select>
+					</div>
+				@* UDF 9 *@
+					<div class="col-3 padbottom" data-bind="visible:MainModel().UDFShowInFilter('Users', 9) == true">
+						<label for="users-filter-udf09" data-bind="text:MainModel().UDFLabel('Users', 9)"></label>
+						<select class="form-control" id="users-filter-udf09" size="4"data-bind="value:Filter().udf09,options: MainModel().UDFFilterOptions('Users', 9),optionsCaption: '',valueAllowUnset: true"></select>
+					</div>
+				@* UDF 10 *@
+					<div class="col-3 padbottom" data-bind="visible:MainModel().UDFShowInFilter('Users', 10) == true">
+						<label for="users-filter-udf10" data-bind="text:MainModel().UDFLabel('Users', 10)"></label>
+						<select class="form-control" id="users-filter-udf10" size="4"data-bind="value:Filter().udf10,options: MainModel().UDFFilterOptions('Users', 10),optionsCaption: '',valueAllowUnset: true"></select>
+					</div>
+				</div>
+			</div>
+		
+			<div data-bind="visible:Filter().recordCount() == 0, html:MainModel().Language('User.UserNoRecords')"></div>
+		
+			<div data-bind="visible:Filter().recordCount() > 0">
+				<div id="user-records-auto"></div>
+			</div>
+		</div>
+	</div>
+
+	<div data-bind="visible:(MainModel().CurrentView() == 'edituserauto' || MainModel().CurrentView() == 'newuserauto')">
+		<div data-bind="css:{fixed: MainModel().StickyMenus() == true}">
+			<i class="sticky-menu-icon" data-bind="html:MainModel().StickyIcon(), click:function() {MainModel().ToggleStickyMenus()}"></i>
+			<h1 class="display-7">
+				<!-- ko if: MainModel().CurrentView() == 'edituserauto' -->
+				<i data-bind="html:MainModel().IconAndText('User.Edit')"></i>
+				<span class="element-id" data-bind="visible:Loading() == false">&ldquo;<span data-bind="text:MainModel().Id()"></span>&rdquo;</span>
+				<!-- /ko -->
+				<!-- ko if: MainModel().CurrentView() == 'newuserauto' -->
+				<i data-bind="html:MainModel().Icon('Users')"></i><span class="icon-text" data-bind="html:MainModel().Language('User.AddNew')"></span>
+				<span class="element-id" data-bind="visible:User().userId() != null && User().userId() != MainModel().GuidEmpty()">
+					&ldquo;<span data-bind="text:User().userId"></span>&rdquo;
+				</span>
+				<!-- /ko -->
+			</h1>
+	
+			<div class="padbottom">
+				<button type="button" class="btn btn-dark" data-bind="click:function() { MainModel().Nav('usersauto') }, html:MainModel().IconAndText('User.Back')"></button>
+				<button type="button" class="btn btn-success" data-bind="click:SaveUser, html:MainModel().IconAndText('User.Save')"></button>
+				<!-- ko if: MainModel().Id() != null && MainModel().Id() != '' -->
+				<!-- ko if: ConfirmDeleteUser() != MainModel().Id() -->
+				<button type="button" class="btn btn-danger" data-bind="html:MainModel().IconAndText('User.ConfirmDelete'), click:function() { ConfirmDeleteUser(MainModel().Id()) }"></button>
+				<!-- /ko -->
+				<!-- ko if: ConfirmDeleteUser() == MainModel().Id() -->
+				<div class="btn-group" role="group">
+					<button type="button" class="btn btn-dark" data-bind="html:MainModel().IconAndText('User.Cancel'), click:function() { ConfirmDeleteUser('') }"></button>
+					<button type="button" class="btn btn-danger" data-bind="html:MainModel().IconAndText('User.ConfirmDelete'), click:DeleteUser"></button>
+				</div>
+				<!-- /ko -->
+				<!-- /ko -->
+			</div>
+		</div>
+	
+		<div data-bind="visible:Loading() == true, html:MainModel().Language('User.Loading')"></div>
+	
+		<div data-bind="visible:User().userId() != null && Loading() == false">
+	
+			<table class="table first-column-small first-column-bold first-column-right">
+				@* DateTime LastLockoutDate *@
+							<tr>
+					<td><label for="edit-user-lastlockoutdate" data-bind="html:MainModel().Language('User.LastLockoutDate', null, true)"></label></td>
+					<td><input type="text" id="edit-user-lastlockoutdate" class="form-control dateTimePicker" data-bind="dateTime:User().lastLockoutDate" /></td>
+				</tr>
+				@* DateTime LastLogin *@
+							<tr>
+					<td><label for="edit-user-lastlogin" data-bind="html:MainModel().Language('User.LastLogin', null, true)"></label></td>
+					<td><input type="text" id="edit-user-lastlogin" class="form-control dateTimePicker" data-bind="dateTime:User().lastLogin" /></td>
+				</tr>
+				@* String AuthToken *@
+				<tr>
+					<td><label for="edit-user-authtoken" data-bind="html:MainModel().Language('User.AuthToken', null, true)"></label></td>
+					<td><input type="text" id="edit-user-authtoken"class="form-control" data-bind="value:User().authToken" /></td>
+				</tr>
+				@* String DepartmentName *@
+				<tr>
+					<td><label for="edit-user-departmentname" data-bind="html:MainModel().Language('User.DepartmentName', null, true)"></label></td>
+					<td><input type="text" id="edit-user-departmentname"class="form-control" data-bind="value:User().departmentName" /></td>
+				</tr>
+				@* String DisplayName *@
+				<tr>
+					<td><label for="edit-user-displayname" data-bind="html:MainModel().Language('User.DisplayName', null, true)"></label></td>
+					<td><input type="text" id="edit-user-displayname"class="form-control" data-bind="value:User().displayName" /></td>
+				</tr>
+				@* String Email *@
+				<tr>
+					<td><label for="edit-user-email" data-bind="html:MainModel().Language('User.Email', null, true)"></label></td>
+					<td><input type="text" id="edit-user-email"class="form-control" data-bind="value:User().email" /></td>
+				</tr>
+				@* String EmployeeId *@
+				<tr>
+					<td><label for="edit-user-employeeid" data-bind="html:MainModel().Language('User.EmployeeId', null, true)"></label></td>
+					<td><input type="text" id="edit-user-employeeid"class="form-control" data-bind="value:User().employeeId" /></td>
+				</tr>
+				@* String FirstName *@
+				<tr>
+					<td><label for="edit-user-firstname" data-bind="html:MainModel().Language('User.FirstName', null, true)"></label></td>
+					<td><input type="text" id="edit-user-firstname"class="form-control" data-bind="value:User().firstName" /></td>
+				</tr>
+				@* String LastName *@
+				<tr>
+					<td><label for="edit-user-lastname" data-bind="html:MainModel().Language('User.LastName', null, true)"></label></td>
+					<td><input type="text" id="edit-user-lastname"class="form-control" data-bind="value:User().lastName" /></td>
+				</tr>
+				@* String Location *@
+				<tr>
+					<td><label for="edit-user-location" data-bind="html:MainModel().Language('User.Location', null, true)"></label></td>
+					<td><input type="text" id="edit-user-location"class="form-control" data-bind="value:User().location" /></td>
+				</tr>
+				@* String Password *@
+				<tr>
+					<td><label for="edit-user-password" data-bind="html:MainModel().Language('User.Password', null, true)"></label></td>
+					<td><input type="text" id="edit-user-password"class="form-control" data-bind="value:User().password" /></td>
+				</tr>
+				@* String Phone *@
+				<tr>
+					<td><label for="edit-user-phone" data-bind="html:MainModel().Language('User.Phone', null, true)"></label></td>
+					<td><input type="text" id="edit-user-phone"class="form-control" data-bind="value:User().phone" /></td>
+				</tr>
+				@* String Source *@
+				<tr>
+					<td><label for="edit-user-source" data-bind="html:MainModel().Language('User.Source', null, true)"></label></td>
+					<td><input type="text" id="edit-user-source"class="form-control" data-bind="value:User().source" /></td>
+				</tr>
+				@* String Title *@
+				<tr>
+					<td><label for="edit-user-title" data-bind="html:MainModel().Language('User.Title', null, true)"></label></td>
+					<td><input type="text" id="edit-user-title"class="form-control" data-bind="value:User().title" /></td>
+				</tr>
+				@* String udf01 *@
+				<tr>
+					<td><label for="edit-user-udf01" data-bind="html:MainModel().Language('User.udf01', null, true)"></label></td>
+					<td><input type="text" id="edit-user-udf01"class="form-control" data-bind="value:User().udf01" /></td>
+				</tr>
+				@* String udf02 *@
+				<tr>
+					<td><label for="edit-user-udf02" data-bind="html:MainModel().Language('User.udf02', null, true)"></label></td>
+					<td><input type="text" id="edit-user-udf02"class="form-control" data-bind="value:User().udf02" /></td>
+				</tr>
+				@* String udf03 *@
+				<tr>
+					<td><label for="edit-user-udf03" data-bind="html:MainModel().Language('User.udf03', null, true)"></label></td>
+					<td><input type="text" id="edit-user-udf03"class="form-control" data-bind="value:User().udf03" /></td>
+				</tr>
+				@* String udf04 *@
+				<tr>
+					<td><label for="edit-user-udf04" data-bind="html:MainModel().Language('User.udf04', null, true)"></label></td>
+					<td><input type="text" id="edit-user-udf04"class="form-control" data-bind="value:User().udf04" /></td>
+				</tr>
+				@* String udf05 *@
+				<tr>
+					<td><label for="edit-user-udf05" data-bind="html:MainModel().Language('User.udf05', null, true)"></label></td>
+					<td><input type="text" id="edit-user-udf05"class="form-control" data-bind="value:User().udf05" /></td>
+				</tr>
+				@* String udf06 *@
+				<tr>
+					<td><label for="edit-user-udf06" data-bind="html:MainModel().Language('User.udf06', null, true)"></label></td>
+					<td><input type="text" id="edit-user-udf06"class="form-control" data-bind="value:User().udf06" /></td>
+				</tr>
+				@* String udf07 *@
+				<tr>
+					<td><label for="edit-user-udf07" data-bind="html:MainModel().Language('User.udf07', null, true)"></label></td>
+					<td><input type="text" id="edit-user-udf07"class="form-control" data-bind="value:User().udf07" /></td>
+				</tr>
+				@* String udf08 *@
+				<tr>
+					<td><label for="edit-user-udf08" data-bind="html:MainModel().Language('User.udf08', null, true)"></label></td>
+					<td><input type="text" id="edit-user-udf08"class="form-control" data-bind="value:User().udf08" /></td>
+				</tr>
+				@* String udf09 *@
+				<tr>
+					<td><label for="edit-user-udf09" data-bind="html:MainModel().Language('User.udf09', null, true)"></label></td>
+					<td><input type="text" id="edit-user-udf09"class="form-control" data-bind="value:User().udf09" /></td>
+				</tr>
+				@* String udf10 *@
+				<tr>
+					<td><label for="edit-user-udf10" data-bind="html:MainModel().Language('User.udf10', null, true)"></label></td>
+					<td><input type="text" id="edit-user-udf10"class="form-control" data-bind="value:User().udf10" /></td>
+				</tr>
+				@* String Username *@
+				<tr>
+					<td><label for="edit-user-username" data-bind="html:MainModel().Language('User.Username', null, true)"></label></td>
+					<td><input type="text" id="edit-user-username"class="form-control" data-bind="value:User().username" /></td>
+				</tr>
+				@* Boolean Admin *@
+				<tr>
+					<td><label for="edit-user-admin" data-bind="html:MainModel().Language('User.Admin', null, true)"></label></td>
+					<td><input type="checkbox" id="edit-user-admin" role="switch" class="form-check-input" data-bind="checked:User().admin" /></td>
+				</tr>
+				@* Boolean AppAdmin *@
+				<tr>
+					<td><label for="edit-user-appadmin" data-bind="html:MainModel().Language('User.AppAdmin', null, true)"></label></td>
+					<td><input type="checkbox" id="edit-user-appadmin" role="switch" class="form-check-input" data-bind="checked:User().appAdmin" /></td>
+				</tr>
+				@* Boolean Enabled *@
+				<tr>
+					<td><label for="edit-user-enabled" data-bind="html:MainModel().Language('User.Enabled', null, true)"></label></td>
+					<td><input type="checkbox" id="edit-user-enabled" role="switch" class="form-check-input" data-bind="checked:User().enabled" /></td>
+				</tr>
+				@* Boolean HasLocalPassword *@
+				<tr>
+					<td><label for="edit-user-haslocalpassword" data-bind="html:MainModel().Language('User.HasLocalPassword', null, true)"></label></td>
+					<td><input type="checkbox" id="edit-user-haslocalpassword" role="switch" class="form-check-input" data-bind="checked:User().hasLocalPassword" /></td>
+				</tr>
+				@* Boolean PreventPasswordChange *@
+				<tr>
+					<td><label for="edit-user-preventpasswordchange" data-bind="html:MainModel().Language('User.PreventPasswordChange', null, true)"></label></td>
+					<td><input type="checkbox" id="edit-user-preventpasswordchange" role="switch" class="form-check-input" data-bind="checked:User().preventPasswordChange" /></td>
+				</tr>
+				@* Int32 FailedLoginAttempts *@
+						<tr>
+					<td><label for="edit-user-failedloginattempts" data-bind="html:MainModel().Language('User.FailedLoginAttempts', null, true)"></label></td>
+					<td><input type="number" id="edit-user-failedloginattempts" class="form-control" data-bind="value:User().failedLoginAttempts" /></td>
+				</tr>
+				@* Guid DepartmentId *@
+				<tr>
+					<td><label for="edit-user-departmentid" data-bind="html:MainModel().Language('User.DepartmentId', null, true)"></label></td>
+					<td><input type="text" id="edit-user-departmentid"class="form-control" data-bind="value:User().departmentId" /></td>
+				</tr>
+				@* Guid Photo *@
+				<tr>
+					<td><label for="edit-user-photo" data-bind="html:MainModel().Language('User.Photo', null, true)"></label></td>
+					<td><input type="text" id="edit-user-photo"class="form-control" data-bind="value:User().photo" /></td>
+				</tr>
+				@* Guid TenantId *@
+				@* Guid UserId *@
+				@* BooleanResponse ActionResponse *@
+				@* SavedFilterDepartmentGroupsAuto SavedFiltersDepartmentGroupsAuto *@
+				@* SavedFilterDepartmentsAuto SavedFiltersDepartmentsAuto *@
+				@* SavedFilterFileStoragesAuto SavedFiltersFileStoragesAuto *@
+				@* SavedFilterSettingsAuto SavedFiltersSettingsAuto *@
+				@* SavedFilterTenantsAuto SavedFiltersTenantsAuto *@
+				@* SavedFilterUserGroupsAuto SavedFiltersUserGroupsAuto *@
+				@* SavedFilterUsersAuto SavedFiltersUsersAuto *@
+				@* Tenant Tenants *@
+				@* UserTenant UserTenants *@
+			</table>
+		</div>
+	
+		<div id="edit-user-udf-fields" data-bind="visible:Loading() == false"></div>
+	</div>
+	<form id="user-filter-download" method="post" action="/File/DownloadUsers/" target="_blank" style="display:none;">
+		<textarea name="user-filter" id="user-filter" aria-hidden="true"></textarea>
+		<input type="hidden" name="user-filter-tenantid" id="user-filter-tenantid" data-bind="value:MainModel().TenantId()" />
+		<input type="hidden" name="user-filter-user-token" id="user-filter-user-token" data-bind="value:MainModel().Token()" />
+	</form>
+</div>

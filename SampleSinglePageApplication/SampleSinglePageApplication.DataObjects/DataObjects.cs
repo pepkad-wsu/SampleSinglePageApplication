@@ -1,7 +1,8 @@
 ﻿using System.Text.Json.Serialization;
+using static SampleSinglePageApplication.DataObjects;
 
 namespace SampleSinglePageApplication;
-public class DataObjects
+public partial class DataObjects
 {
     public enum SettingType
     {
@@ -18,9 +19,18 @@ public class DataObjects
 
     public enum SignalRUpdateType
     {
+        This,
+        That,
         Setting,
         Unknown,
-        Files
+        Files,
+        DataMigration,
+        Department,
+        DepartmentGroup,
+        FileStorage,
+        Tenant,
+        User,
+        UserGroup
     }
 
     public enum UserLookupType
@@ -147,7 +157,7 @@ public class DataObjects
         public bool SqlServer_TrustServerCertificate { get; set; }
     }
 
-    public class DataMigration
+    public class DataMigration : ActionResponseObject
     {
         public List<string> Migration { get; set; } = new List<string>();
         public string MigrationId { get; set; } = String.Empty;
@@ -168,6 +178,11 @@ public class DataObjects
         public Guid DepartmentGroupId { get; set; }
         public Guid TenantId { get; set; }
         public string? DepartmentGroupName { get; set; }
+    }
+    public class DropDownEnum
+    {
+        public string Name { get; set; }
+        public int Value { get; set; }
     }
 
     public class Dictionary
@@ -219,18 +234,19 @@ public class DataObjects
         [JsonConverter(typeof(UTCDateTimeConverter))]
         public DateTime UploadDate { get; set; }
         public Guid? UserId { get; set; }
+        public string? Base64value { get; set; }
     }
 
     public class Filter : ActionResponseObject
     {
         public Guid TenantId { get; set; }
         public double ExecutionTime { get; set; }
-        public bool Loading { get; set; }
         public bool ShowFilters { get; set; }
         [JsonConverter(typeof(UTCDateTimeConverter))]
         public DateTime? Start { get; set; }
         [JsonConverter(typeof(UTCDateTimeConverter))]
         public DateTime? End { get; set; }
+        public Guid? FilterId { get; set; }
         public string? Keyword { get; set; }
         public string? Sort { get; set; }
         public string? SortOrder { get; set; }
@@ -243,6 +259,16 @@ public class DataObjects
         public List<FilterColumn>? Columns { get; set; }
         public object[]? Records { get; set; }
         public string? CultureCode { get; set; }
+        public string? udf01 { get; set; }
+        public string? udf02 { get; set; }
+        public string? udf03 { get; set; }
+        public string? udf04 { get; set; }
+        public string? udf05 { get; set; }
+        public string? udf06 { get; set; }
+        public string? udf07 { get; set; }
+        public string? udf08 { get; set; }
+        public string? udf09 { get; set; }
+        public string? udf10 { get; set; }
     }
 
     public class FilterColumn
@@ -259,6 +285,7 @@ public class DataObjects
 
     public class FilterUsers : Filter
     {
+        public string? Loading { get; set; }
         public List<Guid>? FilterDepartments { get; set; }
         public string? Enabled { get; set; }
         public string? Admin { get; set; }
@@ -350,6 +377,7 @@ public class DataObjects
         public List<DepartmentGroup>? DepartmentGroups { get; set; } = null!;
         public TenantSettings TenantSettings { get; set; } = new TenantSettings();
         public List<udfLabel>? udfLabels { get; set; } = null!;
+        public List<ListItem> ListItems { get; set; } = new List<ListItem>();
     }
 
     public class TenantList
@@ -405,7 +433,21 @@ public class DataObjects
         }
     }
 
-    public class User : ActionResponseObject
+
+    //WARNING: This will need to be updated every time you add a new table the database when using the transcriber.
+    public class TodoUserAuto : ActionResponseObject
+    {
+        //public List<SavedFilterDataMigrationsAuto>? SavedFiltersDataMigrationsAuto { get; set; }
+        public List<SavedFilterDepartmentsAuto>? SavedFiltersDepartmentsAuto { get; set; }
+        public List<SavedFilterDepartmentGroupsAuto>? SavedFiltersDepartmentGroupsAuto { get; set; }
+        public List<SavedFilterFileStoragesAuto>? SavedFiltersFileStoragesAuto { get; set; }
+        public List<SavedFilterSettingsAuto>? SavedFiltersSettingsAuto { get; set; }
+        public List<SavedFilterTenantsAuto>? SavedFiltersTenantsAuto { get; set; }
+        public List<SavedFilterUsersAuto>? SavedFiltersUsersAuto { get; set; }
+        public List<SavedFilterUserGroupsAuto>? SavedFiltersUserGroupsAuto { get; set; }
+    }
+
+    public class User : TodoUserAuto
     {
         public Guid UserId { get; set; }
         public Guid TenantId { get; set; }
@@ -455,7 +497,7 @@ public class DataObjects
         public string? Name { get; set; }
         public bool Enabled { get; set; }
         public List<Guid>? Users { get; set; }
-        public UserGroupSettings Settings { get; set; } = new UserGroupSettings();
+        public UserGroupSettings? Settings { get; set; }
     }
 
     public class UserGroupSettings

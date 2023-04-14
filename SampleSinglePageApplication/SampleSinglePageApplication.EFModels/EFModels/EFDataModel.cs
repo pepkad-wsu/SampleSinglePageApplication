@@ -33,6 +33,10 @@ public partial class EFDataModel : DbContext
 
     public virtual DbSet<UserInGroup> UserInGroups { get; set; }
 
+    // this is required for doing the transcriber. Can be removed before production
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        => optionsBuilder.UseSqlServer("Server=(local);Database=sspa_main;Trusted_Connection=True;TrustServerCertificate=True");
+
     //protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     // #warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see http://go.microsoft.com/fwlink/?LinkId=723263.
     // => optionsBuilder.UseSqlServer("Data Source=(local);Initial Catalog=SampleSinglePageApplication;Persist Security Info=True;User ID=sa;Password=saPassword;MultipleActiveResultSets=True;TrustServerCertificate=True;");

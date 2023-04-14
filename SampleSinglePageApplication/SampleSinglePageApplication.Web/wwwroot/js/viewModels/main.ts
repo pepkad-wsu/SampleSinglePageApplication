@@ -222,8 +222,8 @@ class MainModel {
 
     AjaxUserSearch(req: any, callbackHandler: any) {
         let lookup: ajaxLookup = new ajaxLookup();
-        lookup.Search(req.term);
-        lookup.TenantId(window.tenantId);
+        lookup.search(req.term);
+        lookup.tenantId(window.tenantId);
 
         $.ajax({
             url: window.baseURL + "api/Data/AjaxUserSearch/",
@@ -249,8 +249,8 @@ class MainModel {
 
     AjaxUserSearchLocalOnly(req: any, callbackHandler: any) {
         let lookup: ajaxLookup = new ajaxLookup();
-        lookup.Search(req.term);
-        lookup.TenantId(window.tenantId);
+        lookup.search(req.term);
+        lookup.tenantId(window.tenantId);
 
         $.ajax({
             url: window.baseURL + "api/Data/AjaxUserSearchLocalOnly/",

@@ -1,0 +1,4 @@
+﻿@{
+    string unique = "v=" + Guid.NewGuid().ToString().Replace("-", "");
+}
+<script src="~/js/viewModels/autos/ViewModelBindingAutos.js?@Html.Raw(unique)"></script>

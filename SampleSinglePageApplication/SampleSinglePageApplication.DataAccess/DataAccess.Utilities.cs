@@ -387,6 +387,11 @@ public partial class DataAccess
         return guid.HasValue ? (Guid)guid : Guid.Empty;
     }
 
+    public Guid GuidOrEmpty(Guid? guid)
+    {
+        return guid.HasValue ? (Guid)guid : Guid.Empty;
+    }
+
     public string HtmlToPlainText(string html)
     {
         string output = Regex.Replace(html, @"<(.|\n)*?>", "");
@@ -830,6 +835,11 @@ public partial class DataAccess
     }
 
     public string StringValue(string? input)
+    {
+        return !String.IsNullOrEmpty(input) ? input : String.Empty;
+    }
+
+    public string StringOrEmpty(string? input)
     {
         return !String.IsNullOrEmpty(input) ? input : String.Empty;
     }

@@ -22,7 +22,7 @@
                     <i data-bind="html:MainModel().IconAndText('Refresh')"></i>
                 </button>
             </div>
-            <div class="keyword-search mb-2" data-bind="visible:Filter().showFilters() == true && Filter().loading() == false">
+            <div class="keyword-search mb-2" data-bind="visible:Filter().showFilters() == true && Loading() == false">
                 <label for="users-filter-keyword">Keyword</label>
                 <div class="fixed-200">
                     <input type="text" id="users-filter-keyword" class="form-control" data-bind="value:Filter().keyword" placeholder="Search Users" />
@@ -31,11 +31,11 @@
         </div>
 
 
-        <div class="row" data-bind="visible:Filter().loading() == true">
+        <div class="row" data-bind="visible:Loading() == true">
             <div class="col-sm-12" data-bind="html:MainModel().Language('LoadingWait');"></div>
         </div>
 
-        <div class="row" data-bind="visible:Filter().loading() == false">
+        <div class="row" data-bind="visible:Loading() == false">
             <div data-bind="visible:Filter().showFilters() == true">
                 <div class="row mb-2">
                     <div class="col-sm-3" data-bind="visible:MainModel().BlockModuleDepartments() == false">

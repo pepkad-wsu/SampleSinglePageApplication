@@ -22,7 +22,7 @@ namespace TouchPoints.Selenium
         IWebDriver driver;
         IWebElement viewDiv;
 
-        string url = "https://localhost:7118/";
+        string url = "https://localhost:7118/";// "https://dev.em.wsu.edu/samplespa/"; //
 
         string _connectionString = "Data Source=(local);Initial Catalog=SampleSinglePageApplication;Persist Security Info=True;Trusted_Connection=True;MultipleActiveResultSets=True;TrustServerCertificate=True";
         string _databaseType = "SQLServer";
@@ -55,7 +55,6 @@ namespace TouchPoints.Selenium
             driver.Url = url;
 
             IWebElement viewLoginDiv = driver.FindElement(By.Id("view-login"));
-            
             if (url.Contains("dev.em.wsu.edu")) {
                 // if you are running locally the default settings don't have sso enabled,
                 // if you are going to dev then we need to pick the local login

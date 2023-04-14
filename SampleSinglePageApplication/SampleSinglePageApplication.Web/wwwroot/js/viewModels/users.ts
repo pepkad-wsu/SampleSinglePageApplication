@@ -2,6 +2,7 @@
     AddToSelectedTeam: KnockoutObservable<string> = ko.observable("");
     ConfirmDelete: KnockoutObservable<string> = ko.observable("");
     Filter: KnockoutObservable<filterUsers> = ko.observable(new filterUsers);
+    FilterLoading: KnockoutObservable<boolean> = ko.observable(false);
     Loading: KnockoutObservable<boolean> = ko.observable(false);
     MainModel: KnockoutObservable<MainModel> = ko.observable(window.mainModel);
     NewPassword: KnockoutObservable<string> = ko.observable("");
@@ -153,7 +154,7 @@
      * records are being reloaded.
      */
     FilterChanged(): void {
-        if (!this.Filter().loading()) {
+        if (!this.FilterLoading()) {
             this.GetUsers();
         }
     }
@@ -170,7 +171,7 @@
             this.Filter().Load(JSON.parse(savedFilter));
             this.StartFilterMonitoring();
         }
-
+        this.FilterLoading(false);
         this.GetUsers();
     }
 
@@ -179,7 +180,7 @@
      */
     GetUsers(): void {
         // Load the filter
-        this.Filter().loading(true);
+        this.FilterLoading(true);
         if (this.Filter().recordsPerPage() == null || this.Filter().recordsPerPage() == 0) {
             this.Filter().recordsPerPage(10);
         }
@@ -193,14 +194,14 @@
 
                     this.RenderUserTable();
 
-                    this.Filter().loading(false);
+                    this.FilterLoading(false);
                 } else {
                     this.MainModel().Message_Errors(data.actionResponse.messages);
                 }
             } else {
                 this.MainModel().Message_Error("An unknown error occurred attempting to load user records.");
             }
-            this.Filter().loading(false);
+            this.FilterLoading(false);
         };
 
         let postFilter: filterUsers = new filterUsers();

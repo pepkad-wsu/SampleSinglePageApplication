@@ -1,0 +1,228 @@
+<script src="~/js/viewModels/autos/settingAutos.js?v=@Html.Raw(Guid.NewGuid().ToString().Replace("-", ""))"></script>
+<div id="view-settings-auto">
+	<div data-bind="visible:MainModel().CurrentView() == 'settingsauto'">
+		<div data-bind="css:{fixed: MainModel().StickyMenus() == true}">
+			<i class="sticky-menu-icon" data-bind="html:MainModel().StickyIcon(), click:function() {MainModel().ToggleStickyMenus()}"></i>
+			<h1 class="display-7"><i data-bind="html:MainModel().IconAndText('Settings')"></i></h1>
+			<div class="padbottom-5">
+				<div class="btn-group" role="group">
+					<button type="button" class="btn btn-success" data-bind="click:function() { MainModel().Nav('newsettingauto') }">
+						<i data-bind="html:MainModel().IconAndText('Setting.AddNew')"></i>
+					</button>
+					
+					<button type="button" class="btn btn-primary" data-bind="click:ClearSettingFilter">
+						<i data-bind="html:MainModel().IconAndText('Setting.Clear')"></i>
+					</button>
+					
+					<button type="button" class="btn btn-dark" data-bind="visible:Filter().showFilters() == false, click:ToggleShowSettingFilter, enable:Loading() == false">
+						<i data-bind="html:MainModel().IconAndText('Setting.ShowFilter')"></i>
+					</button>
+					<button type="button" class="btn btn-dark" data-bind="visible:Filter().showFilters() == true, click:ToggleShowSettingFilter, enable:Loading()  == false">
+						<i data-bind="html:MainModel().IconAndText('Setting.HideFilter')"></i>
+					</button>
+					<button type="button" class="btn btn-dark" data-bind="click:RefreshSettingFilter, enable:Loading()  == false">
+						<i data-bind="html:MainModel().IconAndText('Setting.Refresh')"></i>
+					</button>
+				</div>
+			</div>
+		</div>
+
+		<div data-bind="visible:GettingSavedSettingFilterName() == true">
+		    <label for="saved-settingfilter-name" data-bind="html:MainModel().Language('Setting.SavedFilterName')"></label>
+		    <div class="input-group">
+		        <button type="button" class="btn btn-outline-dark" data-bind="html:MainModel().IconAndText('Cancel'), click:function(){GettingSavedSettingFilterName(false)}"></button>
+		        <button type="button" class="btn btn-outline-success" data-bind="html:MainModel().IconAndText('Save'), click:SaveSettingFilterRecord"></button>
+		        <input type="text" class="form-control" id="saved-settingfilter-name" data-bind="value:SavedSettingFilterName" />
+		    </div>
+		</div>
+		<div class="row" data-bind="visible:Loading() == true">
+		 <div class="col-sm-12" data-bind="html:MainModel().Language('Setting.Loading');"></div>
+		</div>
+		<div class="row" data-bind="visible:Loading() == false">
+		 <div data-bind="visible:Filter().showFilters() == true">
+		  <div class="row padbottom">
+				@* String SettingName *@
+					<div class="col-sm-3 padbottom" data-bind="visible:Filter().showFilters() == true && Loading() == false">
+						<label for="settings-filter-settingname" data-bind="html:MainModel().Language('Setting.SettingName')">Setting Name</label>
+						<div class="form-check form-switch right">
+							<input type="checkbox" id="settings-filter-settingnamefilterexact" role="switch" class="form-check-input"  data-bind="checked:Filter().settingNameFilterExact">
+							<label for="settings-filter-settingnamefilterexact" class="unbold" data-bind="html:MainModel().Language('Setting.SettingNameFilterExact')">Filter Exact</label>
+						</div>
+						<input type="text" id="settings-filter-settingname" class="form-control" data-bind="value:Filter().settingName" placeholder="Search Setting Name" />
+					</div>
+				@* String SettingNotes *@
+					<div class="col-sm-3 padbottom" data-bind="visible:Filter().showFilters() == true && Loading() == false">
+						<label for="settings-filter-settingnotes" data-bind="html:MainModel().Language('Setting.SettingNotes')">Setting Notes</label>
+						<div class="form-check form-switch right">
+							<input type="checkbox" id="settings-filter-settingnotesfilterexact" role="switch" class="form-check-input"  data-bind="checked:Filter().settingNotesFilterExact">
+							<label for="settings-filter-settingnotesfilterexact" class="unbold" data-bind="html:MainModel().Language('Setting.SettingNotesFilterExact')">Filter Exact</label>
+						</div>
+						<input type="text" id="settings-filter-settingnotes" class="form-control" data-bind="value:Filter().settingNotes" placeholder="Search Setting Notes" />
+					</div>
+				@* String SettingText *@
+					<div class="col-sm-3 padbottom" data-bind="visible:Filter().showFilters() == true && Loading() == false">
+						<label for="settings-filter-settingtext" data-bind="html:MainModel().Language('Setting.SettingText')">Setting Text</label>
+						<div class="form-check form-switch right">
+							<input type="checkbox" id="settings-filter-settingtextfilterexact" role="switch" class="form-check-input"  data-bind="checked:Filter().settingTextFilterExact">
+							<label for="settings-filter-settingtextfilterexact" class="unbold" data-bind="html:MainModel().Language('Setting.SettingTextFilterExact')">Filter Exact</label>
+						</div>
+						<input type="text" id="settings-filter-settingtext" class="form-control" data-bind="value:Filter().settingText" placeholder="Search Setting Text" />
+					</div>
+				@* String SettingType *@
+					<div class="col-sm-3 padbottom" data-bind="visible:Filter().showFilters() == true && Loading() == false">
+						<label for="settings-filter-settingtype" data-bind="html:MainModel().Language('Setting.SettingType')">Setting Type</label>
+						<div class="form-check form-switch right">
+							<input type="checkbox" id="settings-filter-settingtypefilterexact" role="switch" class="form-check-input"  data-bind="checked:Filter().settingTypeFilterExact">
+							<label for="settings-filter-settingtypefilterexact" class="unbold" data-bind="html:MainModel().Language('Setting.SettingTypeFilterExact')">Filter Exact</label>
+						</div>
+						<input type="text" id="settings-filter-settingtype" class="form-control" data-bind="value:Filter().settingType" placeholder="Search Setting Type" />
+					</div>
+				@* Int32 SettingId *@
+					<div class="col-sm-3 padbottom" data-bind="visible:Filter().showFilters() == true && Loading() == false">
+						<label for="settings-filter-settingid" data-bind="html:MainModel().Language('Setting.SettingId')">Setting Id</label>
+						<input type="number" id="settings-filter-settingid" class="form-control" data-bind="value:Filter().settingId" />
+					</div>
+				@* Guid TenantId *@
+					<!-- ERROR_ISGUID   TenantId   -->
+				@* Guid UserId *@
+					<!-- ERROR_ISGUID   UserId   -->
+				@* BooleanResponse ActionResponse *@
+					<!-- !ERROR_IsOnEFModel   ActionResponse   -->
+				@* UDF 1 *@
+					<div class="col-3 padbottom" data-bind="visible:MainModel().UDFShowInFilter('Settings', 1) == true">
+						<label for="settings-filter-udf01" data-bind="text:MainModel().UDFLabel('Settings', 1)"></label>
+						<select class="form-control" id="settings-filter-udf01" size="4"data-bind="value:Filter().udf01,options: MainModel().UDFFilterOptions('Settings', 1),optionsCaption: '',valueAllowUnset: true"></select>
+					</div>
+				@* UDF 2 *@
+					<div class="col-3 padbottom" data-bind="visible:MainModel().UDFShowInFilter('Settings', 2) == true">
+						<label for="settings-filter-udf02" data-bind="text:MainModel().UDFLabel('Settings', 2)"></label>
+						<select class="form-control" id="settings-filter-udf02" size="4"data-bind="value:Filter().udf02,options: MainModel().UDFFilterOptions('Settings', 2),optionsCaption: '',valueAllowUnset: true"></select>
+					</div>
+				@* UDF 3 *@
+					<div class="col-3 padbottom" data-bind="visible:MainModel().UDFShowInFilter('Settings', 3) == true">
+						<label for="settings-filter-udf03" data-bind="text:MainModel().UDFLabel('Settings', 3)"></label>
+						<select class="form-control" id="settings-filter-udf03" size="4"data-bind="value:Filter().udf03,options: MainModel().UDFFilterOptions('Settings', 3),optionsCaption: '',valueAllowUnset: true"></select>
+					</div>
+				@* UDF 4 *@
+					<div class="col-3 padbottom" data-bind="visible:MainModel().UDFShowInFilter('Settings', 4) == true">
+						<label for="settings-filter-udf04" data-bind="text:MainModel().UDFLabel('Settings', 4)"></label>
+						<select class="form-control" id="settings-filter-udf04" size="4"data-bind="value:Filter().udf04,options: MainModel().UDFFilterOptions('Settings', 4),optionsCaption: '',valueAllowUnset: true"></select>
+					</div>
+				@* UDF 5 *@
+					<div class="col-3 padbottom" data-bind="visible:MainModel().UDFShowInFilter('Settings', 5) == true">
+						<label for="settings-filter-udf05" data-bind="text:MainModel().UDFLabel('Settings', 5)"></label>
+						<select class="form-control" id="settings-filter-udf05" size="4"data-bind="value:Filter().udf05,options: MainModel().UDFFilterOptions('Settings', 5),optionsCaption: '',valueAllowUnset: true"></select>
+					</div>
+				@* UDF 6 *@
+					<div class="col-3 padbottom" data-bind="visible:MainModel().UDFShowInFilter('Settings', 6) == true">
+						<label for="settings-filter-udf06" data-bind="text:MainModel().UDFLabel('Settings', 6)"></label>
+						<select class="form-control" id="settings-filter-udf06" size="4"data-bind="value:Filter().udf06,options: MainModel().UDFFilterOptions('Settings', 6),optionsCaption: '',valueAllowUnset: true"></select>
+					</div>
+				@* UDF 7 *@
+					<div class="col-3 padbottom" data-bind="visible:MainModel().UDFShowInFilter('Settings', 7) == true">
+						<label for="settings-filter-udf07" data-bind="text:MainModel().UDFLabel('Settings', 7)"></label>
+						<select class="form-control" id="settings-filter-udf07" size="4"data-bind="value:Filter().udf07,options: MainModel().UDFFilterOptions('Settings', 7),optionsCaption: '',valueAllowUnset: true"></select>
+					</div>
+				@* UDF 8 *@
+					<div class="col-3 padbottom" data-bind="visible:MainModel().UDFShowInFilter('Settings', 8) == true">
+						<label for="settings-filter-udf08" data-bind="text:MainModel().UDFLabel('Settings', 8)"></label>
+						<select class="form-control" id="settings-filter-udf08" size="4"data-bind="value:Filter().udf08,options: MainModel().UDFFilterOptions('Settings', 8),optionsCaption: '',valueAllowUnset: true"></select>
+					</div>
+				@* UDF 9 *@
+					<div class="col-3 padbottom" data-bind="visible:MainModel().UDFShowInFilter('Settings', 9) == true">
+						<label for="settings-filter-udf09" data-bind="text:MainModel().UDFLabel('Settings', 9)"></label>
+						<select class="form-control" id="settings-filter-udf09" size="4"data-bind="value:Filter().udf09,options: MainModel().UDFFilterOptions('Settings', 9),optionsCaption: '',valueAllowUnset: true"></select>
+					</div>
+				@* UDF 10 *@
+					<div class="col-3 padbottom" data-bind="visible:MainModel().UDFShowInFilter('Settings', 10) == true">
+						<label for="settings-filter-udf10" data-bind="text:MainModel().UDFLabel('Settings', 10)"></label>
+						<select class="form-control" id="settings-filter-udf10" size="4"data-bind="value:Filter().udf10,options: MainModel().UDFFilterOptions('Settings', 10),optionsCaption: '',valueAllowUnset: true"></select>
+					</div>
+				</div>
+			</div>
+		
+			<div data-bind="visible:Filter().recordCount() == 0, html:MainModel().Language('Setting.SettingNoRecords')"></div>
+		
+			<div data-bind="visible:Filter().recordCount() > 0">
+				<div id="setting-records-auto"></div>
+			</div>
+		</div>
+	</div>
+
+	<div data-bind="visible:(MainModel().CurrentView() == 'editsettingauto' || MainModel().CurrentView() == 'newsettingauto')">
+		<div data-bind="css:{fixed: MainModel().StickyMenus() == true}">
+			<i class="sticky-menu-icon" data-bind="html:MainModel().StickyIcon(), click:function() {MainModel().ToggleStickyMenus()}"></i>
+			<h1 class="display-7">
+				<!-- ko if: MainModel().CurrentView() == 'editsettingauto' -->
+				<i data-bind="html:MainModel().IconAndText('Setting.Edit')"></i>
+				<span class="element-id" data-bind="visible:Loading() == false">&ldquo;<span data-bind="text:MainModel().Id()"></span>&rdquo;</span>
+				<!-- /ko -->
+				<!-- ko if: MainModel().CurrentView() == 'newsettingauto' -->
+				<i data-bind="html:MainModel().Icon('Settings')"></i><span class="icon-text" data-bind="html:MainModel().Language('Setting.AddNew')"></span>
+				<span class="element-id" data-bind="visible:Setting().settingId() != null && Setting().settingId() != null && Setting().settingId() != 0">
+					&ldquo;<span data-bind="text:Setting().settingId"></span>&rdquo;
+				</span>
+				<!-- /ko -->
+			</h1>
+	
+			<div class="padbottom">
+				<button type="button" class="btn btn-dark" data-bind="click:function() { MainModel().Nav('settingsauto') }, html:MainModel().IconAndText('Setting.Back')"></button>
+				<button type="button" class="btn btn-success" data-bind="click:SaveSetting, html:MainModel().IconAndText('Setting.Save')"></button>
+				<!-- ko if: MainModel().Id() != null && MainModel().Id() != '' -->
+				<!-- ko if: ConfirmDeleteSetting() != MainModel().Id() -->
+				<button type="button" class="btn btn-danger" data-bind="html:MainModel().IconAndText('Setting.ConfirmDelete'), click:function() { ConfirmDeleteSetting(MainModel().Id()) }"></button>
+				<!-- /ko -->
+				<!-- ko if: ConfirmDeleteSetting() == MainModel().Id() -->
+				<div class="btn-group" role="group">
+					<button type="button" class="btn btn-dark" data-bind="html:MainModel().IconAndText('Setting.Cancel'), click:function() { ConfirmDeleteSetting('') }"></button>
+					<button type="button" class="btn btn-danger" data-bind="html:MainModel().IconAndText('Setting.ConfirmDelete'), click:DeleteSetting"></button>
+				</div>
+				<!-- /ko -->
+				<!-- /ko -->
+			</div>
+		</div>
+	
+		<div data-bind="visible:Loading() == true, html:MainModel().Language('Setting.Loading')"></div>
+	
+		<div data-bind="visible:Setting().settingId() != null && Loading() == false">
+	
+			<table class="table first-column-small first-column-bold first-column-right">
+				@* String SettingName *@
+				<tr>
+					<td><label for="edit-setting-settingname" data-bind="html:MainModel().Language('Setting.SettingName', null, true)"></label></td>
+					<td><input type="text" id="edit-setting-settingname"class="form-control" data-bind="value:Setting().settingName" /></td>
+				</tr>
+				@* String SettingNotes *@
+				<tr>
+					<td><label for="edit-setting-settingnotes" data-bind="html:MainModel().Language('Setting.SettingNotes', null, true)"></label></td>
+					<td><input type="text" id="edit-setting-settingnotes"class="form-control" data-bind="value:Setting().settingNotes" /></td>
+				</tr>
+				@* String SettingText *@
+				<tr>
+					<td><label for="edit-setting-settingtext" data-bind="html:MainModel().Language('Setting.SettingText', null, true)"></label></td>
+					<td><input type="text" id="edit-setting-settingtext"class="form-control" data-bind="value:Setting().settingText" /></td>
+				</tr>
+				@* String SettingType *@
+				<tr>
+					<td><label for="edit-setting-settingtype" data-bind="html:MainModel().Language('Setting.SettingType', null, true)"></label></td>
+					<td><input type="text" id="edit-setting-settingtype"class="form-control" data-bind="value:Setting().settingType" /></td>
+				</tr>
+				@* Int32 SettingId *@
+				@* Guid TenantId *@
+				@* Guid UserId *@
+				<tr>
+					<td><label for="edit-setting-userid" data-bind="html:MainModel().Language('Setting.UserId', null, true)"></label></td>
+					<td><input type="text" id="edit-setting-userid"class="form-control" data-bind="value:Setting().userId" /></td>
+				</tr>
+				@* BooleanResponse ActionResponse *@
+			</table>
+		</div>
+	
+		<div id="edit-setting-udf-fields" data-bind="visible:Loading() == false"></div>
+	</div>
+	<form id="setting-filter-download" method="post" action="/File/DownloadSettings/" target="_blank" style="display:none;">
+		<textarea name="setting-filter" id="setting-filter" aria-hidden="true"></textarea>
+		<input type="hidden" name="setting-filter-tenantid" id="setting-filter-tenantid" data-bind="value:MainModel().TenantId()" />
+		<input type="hidden" name="setting-filter-user-token" id="setting-filter-user-token" data-bind="value:MainModel().Token()" />
+	</form>
+</div>

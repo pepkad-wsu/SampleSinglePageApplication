@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net7.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\SampleSinglePageApplication.DataAccess\SampleSinglePageApplication.DataAccess.csproj" />
+    <ProjectReference Include="..\SampleSinglePageApplication.DataObjects\SampleSinglePageApplication.DataObjects.csproj" />
+    <ProjectReference Include="..\SampleSinglePageApplication.EFModels\SampleSinglePageApplication.EFModels.csproj" />
+    <ProjectReference Include="..\SampleSinglePageApplication.Utilities\SampleSinglePageApplication.Utilities.csproj" />
+  </ItemGroup>
+
+</Project>

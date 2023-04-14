@@ -1,0 +1,197 @@
+<script src="~/js/viewModels/autos/userGroupAutos.js?v=@Html.Raw(Guid.NewGuid().ToString().Replace("-", ""))"></script>
+<div id="view-usergroups-auto">
+	<div data-bind="visible:MainModel().CurrentView() == 'usergroupsauto'">
+		<div data-bind="css:{fixed: MainModel().StickyMenus() == true}">
+			<i class="sticky-menu-icon" data-bind="html:MainModel().StickyIcon(), click:function() {MainModel().ToggleStickyMenus()}"></i>
+			<h1 class="display-7"><i data-bind="html:MainModel().IconAndText('UserGroups')"></i></h1>
+			<div class="padbottom-5">
+				<div class="btn-group" role="group">
+					<button type="button" class="btn btn-success" data-bind="click:function() { MainModel().Nav('newusergroupauto') }">
+						<i data-bind="html:MainModel().IconAndText('UserGroup.AddNew')"></i>
+					</button>
+					
+					<button type="button" class="btn btn-primary" data-bind="click:ClearUserGroupFilter">
+						<i data-bind="html:MainModel().IconAndText('UserGroup.Clear')"></i>
+					</button>
+					
+					<button type="button" class="btn btn-dark" data-bind="visible:Filter().showFilters() == false, click:ToggleShowUserGroupFilter, enable:Loading() == false">
+						<i data-bind="html:MainModel().IconAndText('UserGroup.ShowFilter')"></i>
+					</button>
+					<button type="button" class="btn btn-dark" data-bind="visible:Filter().showFilters() == true, click:ToggleShowUserGroupFilter, enable:Loading()  == false">
+						<i data-bind="html:MainModel().IconAndText('UserGroup.HideFilter')"></i>
+					</button>
+					<button type="button" class="btn btn-dark" data-bind="click:RefreshUserGroupFilter, enable:Loading()  == false">
+						<i data-bind="html:MainModel().IconAndText('UserGroup.Refresh')"></i>
+					</button>
+				</div>
+			</div>
+		</div>
+
+		<div data-bind="visible:GettingSavedUserGroupFilterName() == true">
+		    <label for="saved-usergroupfilter-name" data-bind="html:MainModel().Language('UserGroup.SavedFilterName')"></label>
+		    <div class="input-group">
+		        <button type="button" class="btn btn-outline-dark" data-bind="html:MainModel().IconAndText('Cancel'), click:function(){GettingSavedUserGroupFilterName(false)}"></button>
+		        <button type="button" class="btn btn-outline-success" data-bind="html:MainModel().IconAndText('Save'), click:SaveUserGroupFilterRecord"></button>
+		        <input type="text" class="form-control" id="saved-usergroupfilter-name" data-bind="value:SavedUserGroupFilterName" />
+		    </div>
+		</div>
+		<div class="row" data-bind="visible:Loading() == true">
+		 <div class="col-sm-12" data-bind="html:MainModel().Language('UserGroup.Loading');"></div>
+		</div>
+		<div class="row" data-bind="visible:Loading() == false">
+		 <div data-bind="visible:Filter().showFilters() == true">
+		  <div class="row padbottom">
+				@* String Name *@
+					<div class="col-sm-3 padbottom" data-bind="visible:Filter().showFilters() == true && Loading() == false">
+						<label for="usergroups-filter-name" data-bind="html:MainModel().Language('UserGroup.Name')">Name</label>
+						<div class="form-check form-switch right">
+							<input type="checkbox" id="usergroups-filter-namefilterexact" role="switch" class="form-check-input"  data-bind="checked:Filter().nameFilterExact">
+							<label for="usergroups-filter-namefilterexact" class="unbold" data-bind="html:MainModel().Language('UserGroup.NameFilterExact')">Filter Exact</label>
+						</div>
+						<input type="text" id="usergroups-filter-name" class="form-control" data-bind="value:Filter().name" placeholder="Search Name" />
+					</div>
+				@* Boolean Enabled *@
+					<div class="col-sm-3" data-bind="visible:Filter().showFilters() == true && Loading() == false">
+						<label for="usergroups-filter-enabled" data-bind="html:MainModel().Language('UserGroup.Enabled')"></label>
+						<select class="form-control" size="4" id="usergroups-filter-enabled" data-bind="value:Filter().enabled">
+							<option value="">All</option>
+							<option value="true">Is Enabled</option>
+							<option value="false">Is not Enabled </option>
+						</select>
+					</div>
+				@* Guid GroupId *@
+					<!-- ERROR_ISGUID   GroupId   -->
+				@* Guid TenantId *@
+					<!-- ERROR_ISGUID   TenantId   -->
+				@* Guid Users *@
+					<!-- !ERROR_IsOnEFModel   Users   -->
+				@* BooleanResponse ActionResponse *@
+					<!-- !ERROR_IsOnEFModel   ActionResponse   -->
+				@* UserGroupSettings Settings *@
+					<!-- Dont need filtering for Settings   -->
+				@* UDF 1 *@
+					<div class="col-3 padbottom" data-bind="visible:MainModel().UDFShowInFilter('UserGroups', 1) == true">
+						<label for="usergroups-filter-udf01" data-bind="text:MainModel().UDFLabel('UserGroups', 1)"></label>
+						<select class="form-control" id="usergroups-filter-udf01" size="4"data-bind="value:Filter().udf01,options: MainModel().UDFFilterOptions('UserGroups', 1),optionsCaption: '',valueAllowUnset: true"></select>
+					</div>
+				@* UDF 2 *@
+					<div class="col-3 padbottom" data-bind="visible:MainModel().UDFShowInFilter('UserGroups', 2) == true">
+						<label for="usergroups-filter-udf02" data-bind="text:MainModel().UDFLabel('UserGroups', 2)"></label>
+						<select class="form-control" id="usergroups-filter-udf02" size="4"data-bind="value:Filter().udf02,options: MainModel().UDFFilterOptions('UserGroups', 2),optionsCaption: '',valueAllowUnset: true"></select>
+					</div>
+				@* UDF 3 *@
+					<div class="col-3 padbottom" data-bind="visible:MainModel().UDFShowInFilter('UserGroups', 3) == true">
+						<label for="usergroups-filter-udf03" data-bind="text:MainModel().UDFLabel('UserGroups', 3)"></label>
+						<select class="form-control" id="usergroups-filter-udf03" size="4"data-bind="value:Filter().udf03,options: MainModel().UDFFilterOptions('UserGroups', 3),optionsCaption: '',valueAllowUnset: true"></select>
+					</div>
+				@* UDF 4 *@
+					<div class="col-3 padbottom" data-bind="visible:MainModel().UDFShowInFilter('UserGroups', 4) == true">
+						<label for="usergroups-filter-udf04" data-bind="text:MainModel().UDFLabel('UserGroups', 4)"></label>
+						<select class="form-control" id="usergroups-filter-udf04" size="4"data-bind="value:Filter().udf04,options: MainModel().UDFFilterOptions('UserGroups', 4),optionsCaption: '',valueAllowUnset: true"></select>
+					</div>
+				@* UDF 5 *@
+					<div class="col-3 padbottom" data-bind="visible:MainModel().UDFShowInFilter('UserGroups', 5) == true">
+						<label for="usergroups-filter-udf05" data-bind="text:MainModel().UDFLabel('UserGroups', 5)"></label>
+						<select class="form-control" id="usergroups-filter-udf05" size="4"data-bind="value:Filter().udf05,options: MainModel().UDFFilterOptions('UserGroups', 5),optionsCaption: '',valueAllowUnset: true"></select>
+					</div>
+				@* UDF 6 *@
+					<div class="col-3 padbottom" data-bind="visible:MainModel().UDFShowInFilter('UserGroups', 6) == true">
+						<label for="usergroups-filter-udf06" data-bind="text:MainModel().UDFLabel('UserGroups', 6)"></label>
+						<select class="form-control" id="usergroups-filter-udf06" size="4"data-bind="value:Filter().udf06,options: MainModel().UDFFilterOptions('UserGroups', 6),optionsCaption: '',valueAllowUnset: true"></select>
+					</div>
+				@* UDF 7 *@
+					<div class="col-3 padbottom" data-bind="visible:MainModel().UDFShowInFilter('UserGroups', 7) == true">
+						<label for="usergroups-filter-udf07" data-bind="text:MainModel().UDFLabel('UserGroups', 7)"></label>
+						<select class="form-control" id="usergroups-filter-udf07" size="4"data-bind="value:Filter().udf07,options: MainModel().UDFFilterOptions('UserGroups', 7),optionsCaption: '',valueAllowUnset: true"></select>
+					</div>
+				@* UDF 8 *@
+					<div class="col-3 padbottom" data-bind="visible:MainModel().UDFShowInFilter('UserGroups', 8) == true">
+						<label for="usergroups-filter-udf08" data-bind="text:MainModel().UDFLabel('UserGroups', 8)"></label>
+						<select class="form-control" id="usergroups-filter-udf08" size="4"data-bind="value:Filter().udf08,options: MainModel().UDFFilterOptions('UserGroups', 8),optionsCaption: '',valueAllowUnset: true"></select>
+					</div>
+				@* UDF 9 *@
+					<div class="col-3 padbottom" data-bind="visible:MainModel().UDFShowInFilter('UserGroups', 9) == true">
+						<label for="usergroups-filter-udf09" data-bind="text:MainModel().UDFLabel('UserGroups', 9)"></label>
+						<select class="form-control" id="usergroups-filter-udf09" size="4"data-bind="value:Filter().udf09,options: MainModel().UDFFilterOptions('UserGroups', 9),optionsCaption: '',valueAllowUnset: true"></select>
+					</div>
+				@* UDF 10 *@
+					<div class="col-3 padbottom" data-bind="visible:MainModel().UDFShowInFilter('UserGroups', 10) == true">
+						<label for="usergroups-filter-udf10" data-bind="text:MainModel().UDFLabel('UserGroups', 10)"></label>
+						<select class="form-control" id="usergroups-filter-udf10" size="4"data-bind="value:Filter().udf10,options: MainModel().UDFFilterOptions('UserGroups', 10),optionsCaption: '',valueAllowUnset: true"></select>
+					</div>
+				</div>
+			</div>
+		
+			<div data-bind="visible:Filter().recordCount() == 0, html:MainModel().Language('UserGroup.UserGroupNoRecords')"></div>
+		
+			<div data-bind="visible:Filter().recordCount() > 0">
+				<div id="usergroup-records-auto"></div>
+			</div>
+		</div>
+	</div>
+
+	<div data-bind="visible:(MainModel().CurrentView() == 'editusergroupauto' || MainModel().CurrentView() == 'newusergroupauto')">
+		<div data-bind="css:{fixed: MainModel().StickyMenus() == true}">
+			<i class="sticky-menu-icon" data-bind="html:MainModel().StickyIcon(), click:function() {MainModel().ToggleStickyMenus()}"></i>
+			<h1 class="display-7">
+				<!-- ko if: MainModel().CurrentView() == 'editusergroupauto' -->
+				<i data-bind="html:MainModel().IconAndText('UserGroup.Edit')"></i>
+				<span class="element-id" data-bind="visible:Loading() == false">&ldquo;<span data-bind="text:MainModel().Id()"></span>&rdquo;</span>
+				<!-- /ko -->
+				<!-- ko if: MainModel().CurrentView() == 'newusergroupauto' -->
+				<i data-bind="html:MainModel().Icon('UserGroups')"></i><span class="icon-text" data-bind="html:MainModel().Language('UserGroup.AddNew')"></span>
+				<span class="element-id" data-bind="visible:UserGroup().groupId() != null && UserGroup().groupId() != MainModel().GuidEmpty()">
+					&ldquo;<span data-bind="text:UserGroup().groupId"></span>&rdquo;
+				</span>
+				<!-- /ko -->
+			</h1>
+	
+			<div class="padbottom">
+				<button type="button" class="btn btn-dark" data-bind="click:function() { MainModel().Nav('usergroupsauto') }, html:MainModel().IconAndText('UserGroup.Back')"></button>
+				<button type="button" class="btn btn-success" data-bind="click:SaveUserGroup, html:MainModel().IconAndText('UserGroup.Save')"></button>
+				<!-- ko if: MainModel().Id() != null && MainModel().Id() != '' -->
+				<!-- ko if: ConfirmDeleteUserGroup() != MainModel().Id() -->
+				<button type="button" class="btn btn-danger" data-bind="html:MainModel().IconAndText('UserGroup.ConfirmDelete'), click:function() { ConfirmDeleteUserGroup(MainModel().Id()) }"></button>
+				<!-- /ko -->
+				<!-- ko if: ConfirmDeleteUserGroup() == MainModel().Id() -->
+				<div class="btn-group" role="group">
+					<button type="button" class="btn btn-dark" data-bind="html:MainModel().IconAndText('UserGroup.Cancel'), click:function() { ConfirmDeleteUserGroup('') }"></button>
+					<button type="button" class="btn btn-danger" data-bind="html:MainModel().IconAndText('UserGroup.ConfirmDelete'), click:DeleteUserGroup"></button>
+				</div>
+				<!-- /ko -->
+				<!-- /ko -->
+			</div>
+		</div>
+	
+		<div data-bind="visible:Loading() == true, html:MainModel().Language('UserGroup.Loading')"></div>
+	
+		<div data-bind="visible:UserGroup().groupId() != null && Loading() == false">
+	
+			<table class="table first-column-small first-column-bold first-column-right">
+				@* String Name *@
+				<tr>
+					<td><label for="edit-usergroup-name" data-bind="html:MainModel().Language('UserGroup.Name', null, true)"></label></td>
+					<td><input type="text" id="edit-usergroup-name"class="form-control" data-bind="value:UserGroup().name" /></td>
+				</tr>
+				@* Boolean Enabled *@
+				<tr>
+					<td><label for="edit-usergroup-enabled" data-bind="html:MainModel().Language('UserGroup.Enabled', null, true)"></label></td>
+					<td><input type="checkbox" id="edit-usergroup-enabled" role="switch" class="form-check-input" data-bind="checked:UserGroup().enabled" /></td>
+				</tr>
+				@* Guid GroupId *@
+				@* Guid TenantId *@
+				@* Guid Users *@
+				@* BooleanResponse ActionResponse *@
+				@* UserGroupSettings Settings *@
+@*ERROR: // not an int, bool, guid or string, or datetime. but it still on the ef model, how odd, maybe like a double? 			Settings = item.Settings ?? "", //OTHER nullable on ef model: base(UserGroupSettings) : actual(UserGroupSettings)*@
+			</table>
+		</div>
+	
+		<div id="edit-usergroup-udf-fields" data-bind="visible:Loading() == false"></div>
+	</div>
+	<form id="usergroup-filter-download" method="post" action="/File/DownloadUserGroups/" target="_blank" style="display:none;">
+		<textarea name="usergroup-filter" id="usergroup-filter" aria-hidden="true"></textarea>
+		<input type="hidden" name="usergroup-filter-tenantid" id="usergroup-filter-tenantid" data-bind="value:MainModel().TenantId()" />
+		<input type="hidden" name="usergroup-filter-user-token" id="usergroup-filter-user-token" data-bind="value:MainModel().Token()" />
+	</form>
+</div>

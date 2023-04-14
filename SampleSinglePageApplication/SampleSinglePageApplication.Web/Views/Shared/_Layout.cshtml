@@ -89,10 +89,10 @@
                 foreach (var t in allTenants) {
                     if (t.Enabled && t.TenantId.ToString() != "00000000-0000-0000-0000-000000000001") {
                         tenants.Add(new DataObjects.TenantList {
-                            TenantId = t.TenantId,
-                            TenantCode = t.TenantCode,
-                            Name = t.Name
-                        });
+                                    TenantId = t.TenantId,
+                                    TenantCode = t.TenantCode,
+                                    Name = t.Name
+                                });
                     }
                 }
             }
@@ -349,7 +349,7 @@
     @await Html.PartialAsync("_partialIncludes")
     <script src="~/js/viewModels/main.js?v=@Html.Raw(Guid.NewGuid().ToString().Replace("-", ""))"></script>
     @if(loggedIn){
-    <script src="~/js/signalr/dist/browser/signalr.js"></script>
+        <script src="~/js/signalr/dist/browser/signalr.js"></script>
     }
 </head>
 <body id="body-element">
@@ -405,7 +405,17 @@
                                                 <!-- /ko -->
                                             }
                                         </ul>
-                                    </li>                      
+                                    </li>
+                                }
+                                @if (appAdminUser) {
+                                    <li class="nav-item dropdown">
+                                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false" data-bind="css:{ active: CurrentViewAdmin() == true}">
+                                            <i data-bind="html:IconAndText('AdminAuto')"></i>
+                                        </a>
+                                        <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+                                            @await Html.PartialAsync("autos/_partialAdminNavBarAuto")
+                                        </ul>
+                                    </li>
                                 }
                             }
                         </ul>
@@ -415,7 +425,7 @@
                                     <li class="nav-item dropdown">
                                         <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                                             <!-- ko if: User().photo() == null || User().photo() == '' -->
-                                                <i data-bind="html:Icon('UserMenuIcon')"></i>
+                                            <i data-bind="html:Icon('UserMenuIcon')"></i>
                                             <!-- /ko -->
                                             <!-- ko if: User().photo() != null && User().photo() != '' -->
                                             <img class="user-menu-icon" data-bind="attr: { src: window.baseURL + 'File/View/' + User().photo() }"/>
@@ -434,14 +444,14 @@
                                             <!-- ko if: User().userTenants() != null && User().userTenants().length > 1 -->
                                             <p class="fixed-300 dropdown-text" data-bind="html:Language('SwitchAccountMessage')"></p>
                                             <li><hr class="dropdown-divider"></li>
-                                                <!-- ko foreach: User().userTenants() -->
-                                                    <!-- ko if: $data.tenantId() == window.tenantId -->
-                                                    <li><a class="dropdown-item disabled" href="#" data-bind="html:$data.tenantName()"></a></li>
-                                                    <!-- /ko -->
-                                                    <!-- ko if: $data.tenantId() != window.tenantId -->
-                                                    <li><a class="dropdown-item" href="#" data-bind="click:function(){$root.SwitchTenant($data.tenantCode())}, html:$data.tenantName"></a></li>
-                                                    <!-- /ko -->
-                                                <!-- /ko -->
+                                            <!-- ko foreach: User().userTenants() -->
+                                            <!-- ko if: $data.tenantId() == window.tenantId -->
+                                            <li><a class="dropdown-item disabled" href="#" data-bind="html:$data.tenantName()"></a></li>
+                                            <!-- /ko -->
+                                            <!-- ko if: $data.tenantId() != window.tenantId -->
+                                            <li><a class="dropdown-item" href="#" data-bind="click:function(){$root.SwitchTenant($data.tenantCode())}, html:$data.tenantName"></a></li>
+                                            <!-- /ko -->
+                                            <!-- /ko -->
                                             <!-- /ko -->
                                             <li><hr class="dropdown-divider" /></li>
                                             <p class="fixed-300 dropdown-text">
@@ -513,18 +523,16 @@
     </div>
     <div id="page-view-model-area" class="container-fluid page-view">
         <main role="main" class="pb-3">
-        <!-- BEGIN PUBLIC PARTIALS -->
-        @await Html.PartialAsync("_partialLogin")
-        <!-- END PUBLIC PARTIALS -->
-
-        @if (loggedIn) {
-            IgnoreBody();
+            <!-- BEGIN PUBLIC PARTIALS -->
+            @await Html.PartialAsync("_partialLogin")
+            <!-- END PUBLIC PARTIALS -->
+            @if (loggedIn) {
+                IgnoreBody();
                 <!-- BEGIN LOGGED IN PARTIALS -->
                 @await Html.PartialAsync("_partialSamplePage")
                 @await Html.PartialAsync("_partialHome")
                 @await Html.PartialAsync("_partialProfile")
                 <!-- END LOGGED IN PARTIALS -->
-
                 @if (adminUser) {
                 <!-- BEGIN ADMIN PARTIALS -->
                 @await Html.PartialAsync("_partialDepartments")
@@ -537,111 +545,114 @@
                 }
 
                 @if (appAdminUser) {
-                <!-- BEGIN APPADMIN PARTIALS -->
-                @await Html.PartialAsync("_partialAppSettings")
-                @await Html.PartialAsync("_partialTenants")
-                <!-- END APPADMIN PARTIALS -->
+                    <!-- BEGIN APPADMIN PARTIALS -->
+                    @await Html.PartialAsync("_partialAppSettings")
+                    @await Html.PartialAsync("_partialTenants")
+                    <!-- END APPADMIN PARTIALS -->
+                    @await Html.PartialAsync("autos/_partialIncludesAutos")
                 }
-        } else if (!validTenant && useTenantCodeInUrl) {
-            IgnoreBody();
-            <div id="invalid-tenant-code-message"></div>
+            } else if (!validTenant && useTenantCodeInUrl) {
+                IgnoreBody();
+                <div id="invalid-tenant-code-message"></div>
             } else {
-            IgnoreBody();
-        }
+                IgnoreBody();
+            }
         </main>
     </div>
     @await RenderSectionAsync("Scripts", required: false)
 
-<script type="text/javascript">
-    window.action = "@Html.Raw(routeHelper.Action)";
-    window.adminUser = @Html.Raw(adminUser.ToString().ToLower());
-    window.appName = "@Html.Raw(appName)";
-    window.appTitle = "@Html.Raw(appTitle)";
-    window.baseURL = "@Html.Raw(baseUrl)";
-    window.culture = "@Html.Raw(culture)";
-    window.GuidEmpty = "@Html.Raw(Guid.Empty.ToString())";
-    window.id = "@Html.Raw(routeHelper.Id)";
-    window.loggedIn = @Html.Raw(loggedIn.ToString().ToLower());
-    window.appAdmin = @Html.Raw(appAdminUser.ToString().ToLower());
-    window.mainModel;
-    window.models = [];
-    window.missingTenantCode = @Html.Raw(missingTenantCode.ToString().ToLower());
-    window.objCultureCodes = @Html.Raw(Utilities.SerializeObjectToJsonCamelCase(cultureCodes));
-    window.objCultures = @Html.Raw(Utilities.SerializeObjectToJsonPascalCase(cultures));
-    window.objDefaultLanguage = @Html.Raw(objDefaultLanguage);
-    window.objExtra = @Html.Raw(Utilities.SerializeObjectToJsonPascalCase(extra));
-    window.objLanguage = @Html.Raw(objLanguage);
-    window.objTenant = @Html.Raw(Utilities.SerializeObjectToJsonCamelCase(tenant));
-    window.objTenantList = @Html.Raw(Utilities.SerializeObjectToJsonCamelCase(tenants));
-    window.objUser = @Html.Raw(objUserJson);
-    window.objVersionInfo = @Html.Raw(Utilities.SerializeObjectToJsonCamelCase(versionInfo));
-    window.showTenantCodeFieldOnLoginForm = @Html.Raw(showTenantCodeFieldOnLoginForm.ToString().ToLower());
-    window.showTenantListingWhenMissingTenantCode = @Html.Raw(showTenantListingWhenMissingTenantCode.ToString().ToLower());
-    window.settingsModel;
-    window.tenantCode = "@Html.Raw(tenantCode)";
-    window.tenantId = "@Html.Raw(tenantId)";
-    window.token = "@Html.Raw(token)";
-    window.useAuthProviderCustom = @Html.Raw(useAuthProviderCustom.ToString().ToLower());
-    window.useAuthProviderFacebook = @Html.Raw(auth.UseFacebook.ToString().ToLower());
-    window.useAuthProviderGoogle = @Html.Raw(auth.UseGoogle.ToString().ToLower());
-    window.useAuthProviderMicrosoftAccount = @Html.Raw(auth.UseMicrosoftAccount.ToString().ToLower());
-    window.useAuthProviderOpenId = @Html.Raw(auth.UseOpenId.ToString().ToLower());
-    window.useTenantCodeInUrl = @Html.Raw(useTenantCodeInUrl.ToString().ToLower());
+    @await Html.PartialAsync("_partialIncludesModelBindings");
 
-    $(document).ready(function(){
-        Dropzone.autoDiscover = false;
+    <script type="text/javascript">
+        window.action = "@Html.Raw(routeHelper.Action)";
+        window.adminUser = @Html.Raw(adminUser.ToString().ToLower());
+        window.appName = "@Html.Raw(appName)";
+        window.appTitle = "@Html.Raw(appTitle)";
+        window.baseURL = "@Html.Raw(baseUrl)";
+        window.culture = "@Html.Raw(culture)";
+        window.GuidEmpty = "@Html.Raw(Guid.Empty.ToString())";
+        window.id = "@Html.Raw(routeHelper.Id)";
+        window.loggedIn = @Html.Raw(loggedIn.ToString().ToLower());
+        window.appAdmin = @Html.Raw(appAdminUser.ToString().ToLower());
+        window.mainModel;
+        window.models = [];
+        window.missingTenantCode = @Html.Raw(missingTenantCode.ToString().ToLower());
+        window.objCultureCodes = @Html.Raw(Utilities.SerializeObjectToJsonCamelCase(cultureCodes));
+        window.objCultures = @Html.Raw(Utilities.SerializeObjectToJsonPascalCase(cultures));
+        window.objDefaultLanguage = @Html.Raw(objDefaultLanguage);
+        window.objExtra = @Html.Raw(Utilities.SerializeObjectToJsonPascalCase(extra));
+        window.objLanguage = @Html.Raw(objLanguage);
+        window.objTenant = @Html.Raw(Utilities.SerializeObjectToJsonCamelCase(tenant));
+        window.objTenantList = @Html.Raw(Utilities.SerializeObjectToJsonCamelCase(tenants));
+        window.objUser = @Html.Raw(objUserJson);
+        window.objVersionInfo = @Html.Raw(Utilities.SerializeObjectToJsonCamelCase(versionInfo));
+        window.showTenantCodeFieldOnLoginForm = @Html.Raw(showTenantCodeFieldOnLoginForm.ToString().ToLower());
+        window.showTenantListingWhenMissingTenantCode = @Html.Raw(showTenantListingWhenMissingTenantCode.ToString().ToLower());
+        window.settingsModel;
+        window.tenantCode = "@Html.Raw(tenantCode)";
+        window.tenantId = "@Html.Raw(tenantId)";
+        window.token = "@Html.Raw(token)";
+        window.useAuthProviderCustom = @Html.Raw(useAuthProviderCustom.ToString().ToLower());
+        window.useAuthProviderFacebook = @Html.Raw(auth.UseFacebook.ToString().ToLower());
+        window.useAuthProviderGoogle = @Html.Raw(auth.UseGoogle.ToString().ToLower());
+        window.useAuthProviderMicrosoftAccount = @Html.Raw(auth.UseMicrosoftAccount.ToString().ToLower());
+        window.useAuthProviderOpenId = @Html.Raw(auth.UseOpenId.ToString().ToLower());
+        window.useTenantCodeInUrl = @Html.Raw(useTenantCodeInUrl.ToString().ToLower());
 
-        if(window.missingTenantCode && window.useTenantCodeInUrl){
-            if (window.tenantCode == undefined || window.tenantCode == null || window.tenantCode == "") {
-                // Missing a tenant code
-            } else {
-                var url = window.baseURL + window.tenantCode + "/";
-                window.history.pushState(null, null, url);
+        $(document).ready(function(){
+            Dropzone.autoDiscover = false;
+
+            if(window.missingTenantCode && window.useTenantCodeInUrl){
+                if (window.tenantCode == undefined || window.tenantCode == null || window.tenantCode == "") {
+                    // Missing a tenant code
+                } else {
+                    var url = window.baseURL + window.tenantCode + "/";
+                    window.history.pushState(null, null, url);
+                }
             }
-        }
 
-        // <BEGIN PUBLIC MODELS>
-        window.mainModel = new MainModel();
-        ko.applyBindings(window.mainModel, document.getElementById('main-model'));
-        window.models.push("MainModel");
+            // <BEGIN PUBLIC MODELS>
+            window.mainModel = new MainModel();
+            ko.applyBindings(window.mainModel, document.getElementById('main-model'));
+            window.models.push("MainModel");
 
-        window.loginModel = new LoginModel();
-        ko.applyBindings(window.loginModel, document.getElementById('view-login'));
-        window.models.push("LoginModel");
-        // <END PUBLIC MODELS>
+            window.loginModel = new LoginModel();
+            ko.applyBindings(window.loginModel, document.getElementById('view-login'));
+            window.models.push("LoginModel");
+            // <END PUBLIC MODELS>
 
-        if(window.loggedIn){
-            // <BEGIN LOGGED IN MODELS>
-            window.homeModel = new HomeModel();
-            ko.applyBindings(window.homeModel, document.getElementById('view-home'));
-            window.models.push("HomeModel");
+            if(window.loggedIn){
+                // <BEGIN LOGGED IN MODELS>
+                window.homeModel = new HomeModel();
+                ko.applyBindings(window.homeModel, document.getElementById('view-home'));
+                window.models.push("HomeModel");
 
-            window.profileModel = new ProfileModel();
-            ko.applyBindings(window.profileModel, document.getElementById('view-profile'));
-            window.models.push("ProfileModel");
+                window.profileModel = new ProfileModel();
+                ko.applyBindings(window.profileModel, document.getElementById('view-profile'));
+                window.models.push("ProfileModel");
 
-            window.samplePageModel = new SamplePageModel();
-            ko.applyBindings(window.samplePageModel, document.getElementById('view-samplepage'));
-            window.models.push("SamplePageModel");
-            // <END LOGGED IN MODELS>
+                window.samplePageModel = new SamplePageModel();
+                ko.applyBindings(window.samplePageModel, document.getElementById('view-samplepage'));
+                window.models.push("SamplePageModel");
+                // <END LOGGED IN MODELS>
 
-            if(window.adminUser){
-                // <BEGIN ADMIN MODELS>
-                window.settingsModel = new SettingsModel();
-                ko.applyBindings(window.settingsModel, document.getElementById('view-settings'));
-                window.models.push("SettingsModel");
+                if(window.adminUser){
+                    // <BEGIN ADMIN MODELS>
+                    window.settingsModel = new SettingsModel();
+                    ko.applyBindings(window.settingsModel, document.getElementById('view-settings'));
+                    window.models.push("SettingsModel");
 
-                window.departmentsModel = new DepartmentsModel();
-                ko.applyBindings(window.departmentsModel, document.getElementById('view-departments'));
-                window.models.push("DepartmentsModel");
+                    window.departmentsModel = new DepartmentsModel();
+                    ko.applyBindings(window.departmentsModel, document.getElementById('view-departments'));
+                    window.models.push("DepartmentsModel");
 
-                window.languageModel = new LanguageModel();
-                ko.applyBindings(window.languageModel, document.getElementById('view-language'));
-                window.models.push("LanguageModel");
+                    window.languageModel = new LanguageModel();
+                    ko.applyBindings(window.languageModel, document.getElementById('view-language'));
+                    window.models.push("LanguageModel");
 
-                window.udfLabelsModel = new UdfLabelsModel();
-                ko.applyBindings(window.udfLabelsModel, document.getElementById('view-udflabels'));
-                window.models.push("UdfLabelsModel");
+                    window.udfLabelsModel = new UdfLabelsModel();
+                    ko.applyBindings(window.udfLabelsModel, document.getElementById('view-udflabels'));
+                    window.models.push("UdfLabelsModel");
 
                 window.usersModel = new UsersModel();
                 ko.applyBindings(window.usersModel, document.getElementById('view-users'));
@@ -653,76 +664,78 @@
                 // <END ADMIN MODELS>
             }
 
-            if (window.appAdmin) {
-                // <BEGIN APPADMIN MODELS>
-                window.appSettingsModel = new AppSettingsModel();
-                ko.applyBindings(window.appSettingsModel, document.getElementById('view-appsettings'));
-                window.models.push("AppSettingsModel");
+                if (window.appAdmin) {
+                    // <BEGIN APPADMIN MODELS>
+                    window.appSettingsModel = new AppSettingsModel();
+                    ko.applyBindings(window.appSettingsModel, document.getElementById('view-appsettings'));
+                    window.models.push("AppSettingsModel");
 
-                window.tenantsModel = new TenantsModel();
-                ko.applyBindings(window.tenantsModel, document.getElementById('view-tenants'));
-                window.models.push("TenantsModel");
-                // <END APPADMIN MODELS>
+                    window.tenantsModel = new TenantsModel();
+                    ko.applyBindings(window.tenantsModel, document.getElementById('view-tenants'));
+                    window.models.push("TenantsModel");
+                    // <END APPADMIN MODELS>
+
+                    sampleSinglePageApplicationDataBindingAutos.ApplyKnockoutViewModelBindingsAuto();
+                }
+
+                var connection = new signalR.HubConnectionBuilder().withUrl(window.baseURL + "signalRHub").withAutomaticReconnect().build();
+
+                connection.on("SignalRUpdate", function (update) {
+                    //console.log("js SignalR Update", update);
+                    window.mainModel.SignalRUpdateHandler(update);
+                });
+
+                connection.start().then(function(){
+                    connection.invoke("JoinTenantId", window.tenantId);
+                });
             }
 
-            var connection = new signalR.HubConnectionBuilder().withUrl(window.baseURL + "signalRHub").withAutomaticReconnect().build();
+            configureDatePickers();
+            setupScrolling();
+        });
 
-            connection.on("SignalRUpdate", function (update) {
-                //console.log("js SignalR Update", update);
-                window.mainModel.SignalRUpdateHandler(update);
+        function configureDatePickers() {
+            $(".datePicker").datepicker({
+                showAnim: 'fadeIn',
+                dateFormat: "m/d/yy",
+                defaultDate: null
             });
-
-            connection.start().then(function(){
-                connection.invoke("JoinTenantId", window.tenantId);
+            $(".dateTimePicker").datetimepicker({
+                showAnim: 'fadeIn',
+                dateFormat: "m/d/yy",
+                timeFormat: "h:mm tt"
             });
         }
 
-        configureDatePickers();
-        setupScrolling();
-    });
+        function insertAtCursor(field, value) {
+            var $txt = jQuery("#" + field);
+            var caretPos = $txt[0].selectionStart;
+            var textAreaTxt = $txt.val();
+            $txt.val(textAreaTxt.substring(0, caretPos) + value + textAreaTxt.substring(caretPos));
+        }
 
-    function configureDatePickers() {
-        $(".datePicker").datepicker({
-            showAnim: 'fadeIn',
-            dateFormat: "m/d/yy",
-            defaultDate: null
-        });
-        $(".dateTimePicker").datetimepicker({
-            showAnim: 'fadeIn',
-            dateFormat: "m/d/yy",
-            timeFormat: "h:mm tt"
-        });
-    }
-
-    function insertAtCursor(field, value) {
-        var $txt = jQuery("#" + field);
-        var caretPos = $txt[0].selectionStart;
-        var textAreaTxt = $txt.val();
-        $txt.val(textAreaTxt.substring(0, caretPos) + value + textAreaTxt.substring(caretPos));
-    }
-
-    function RefreshChosenElements() {
-        $(".enhanced-select").each(function () {
-            $(this).chosen("destroy");
-            $(this).chosen({
-                width: "100%",
-                single_backstroke_delete: false
+        function RefreshChosenElements() {
+            $(".enhanced-select").each(function () {
+                $(this).chosen("destroy");
+                $(this).chosen({
+                    width: "100%",
+                    single_backstroke_delete: false
+                });
             });
-        });
-    }
+        }
 
-    function setupScrolling(){
-        $(document).on('scroll', function () {
-            var height = 10;
-            var scrollTop = $(document).scrollTop();
-            if (scrollTop < height) {
-                scrollTop = 0;
-            } else {
-                scrollTop = scrollTop - height;
-            }
-            $(".fixed").stop().animate({ "top": scrollTop + "px" }, 0);
-        });
-    }
-</script>
+        function setupScrolling(){
+            $(document).on('scroll', function () {
+                var height = 10;
+                var scrollTop = $(document).scrollTop();
+                if (scrollTop < height) {
+                    scrollTop = 0;
+                } else {
+                    scrollTop = scrollTop - height;
+                }
+                $(".fixed").stop().animate({ "top": scrollTop + "px" }, 0);
+            });
+        }
+    </script>
 </body>
 </html>

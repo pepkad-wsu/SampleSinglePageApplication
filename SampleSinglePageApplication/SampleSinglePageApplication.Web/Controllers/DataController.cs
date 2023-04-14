@@ -10,7 +10,7 @@ namespace SampleSinglePageApplication.Web.Controllers;
 [ApiController]
 [Route("~/api/[controller]/[action]")]
 [Produces("application/json")]
-public class DataController : ControllerBase
+public partial class DataController : ControllerBase
 {
 	private HttpContext? context;
 	private IDataAccess da;

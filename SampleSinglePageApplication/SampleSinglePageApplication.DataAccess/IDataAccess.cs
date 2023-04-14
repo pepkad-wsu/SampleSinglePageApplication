@@ -1,6 +1,6 @@
 ﻿namespace SampleSinglePageApplication;
 
-public interface IDataAccess
+public partial interface IDataAccess
 {
     DataObjects.BooleanResponse AddModule(DataObjects.AddModule module);
     Task<DataObjects.BooleanResponse> AddUserToGroup(Guid UserId, Guid GroupId);
